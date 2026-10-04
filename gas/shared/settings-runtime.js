@@ -12,7 +12,7 @@
  * Versión de LucaLib que se escribe en `Ajustes.luca.version` en cada pasada (ADR-006 §5): la web y el
  * sidebar comparan con la última publicada para avisar "hay una versión nueva". Subirla en cada release.
  */
-var LUCA_VERSION = '6';
+var LUCA_VERSION = '7';
 
 var AJUSTES_DEFAULTS_ = {
   // Fuentes de correo (remitentes transaccionales). Separados por coma.
