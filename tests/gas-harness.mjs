@@ -176,7 +176,12 @@ export function makeHarness(opts = {}) {
       getScriptLock: () => ({ waitLock: () => {}, releaseLock: () => {} }),
       getUserLock: () => ({ waitLock: () => {}, releaseLock: () => {} })
     },
-    ScriptApp: { getOAuthToken: () => 'TEST_OAUTH_TOKEN', getIdentityToken: () => 'TEST_ID_TOKEN' },
+    ScriptApp: {
+      getOAuthToken: () => 'TEST_OAUTH_TOKEN',
+      getIdentityToken: () => 'TEST_ID_TOKEN',
+      // execUrl: null → simula "sin despliegue del Web App" (getUrl lanza / devuelve null).
+      getService: () => ({ getUrl: () => { if (opts.execUrl === null) throw new Error('sin despliegue'); return opts.execUrl || 'https://script.google.com/macros/s/TEST/exec'; } })
+    },
     ContentService: {
       createTextOutput: (s) => { const out = { _text: String(s ?? ''), getContent: () => out._text, setMimeType() { return out; } }; return out; },
       MimeType: { JSON: 'application/json' }

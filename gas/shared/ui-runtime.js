@@ -60,8 +60,35 @@ var DISPATCH_ = {
   iniciarImportacion: function (sid, cfg, a) { return iniciarImportacion(sid, cfg, parseInt(a[0], 10)); },
   leerLedger:        function (sid, cfg, a) { return readLedger_(sid, cfg); },
   listarCategorias:  function (sid, cfg, a) { return listarCategorias(sid, cfg); },
-  recategorizar:     function (sid, cfg, a) { return recategorizar(sid, cfg, a[0] || {}); }
+  recategorizar:     function (sid, cfg, a) { return recategorizar(sid, cfg, a[0] || {}); },
+  conectarIphone:    function (sid, cfg, a) { return conectarIphone(sid, cfg); },
+  regenerarTokenIphone: function (sid, cfg, a) { return regenerarTokenIphone(sid, cfg); },
+  desconectarIphone: function (sid, cfg, a) { return desconectarIphone(sid, cfg); },
+  estadoLuca:        function (sid, cfg, a) { return estadoLuca(sid, cfg); }
 };
+
+/** Estado completo para el sidebar en una sola llamada (versión, cursor, último escaneo, conexiones). */
+function estadoLuca(sheetId, config) {
+  var a = config.ajustes || {};
+  var ledger = estadoLedger(sheetId, config);
+  var stats = null;
+  try { stats = a['scan.lastStats'] ? JSON.parse(a['scan.lastStats']) : null; } catch (e) { stats = null; }
+  return {
+    version: LUCA_VERSION,
+    versionEnAjustes: a['luca.version'] || '',
+    autorizado: !!config.gmail.cursor,
+    cursor: config.gmail.cursor,
+    cursorIso: config.gmail.cursor ? new Date(config.gmail.cursor * 1000).toISOString() : '',
+    lastRunAt: a['scan.lastRunAt'] || '',
+    lastStats: stats,
+    triggerInstaladoEn: a['triggers.installedAt'] || '',
+    importacion: { status: a['import.status'] || '', since: int_(a['import.since'], 0) },
+    ledger: ledger,
+    secretos: estadoSecretos_(),
+    execUrl: a['conexiones.execUrl'] || execUrl_(config),
+    iphone: telemetriaIphone_(a)
+  };
+}
 
 function dispatch(fnName, args, sheetId, config) {
   var fn = DISPATCH_[fnName];

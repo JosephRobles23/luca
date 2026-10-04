@@ -136,9 +136,11 @@ function scanGmail_(sheetId, config, opts) {
   return stats;
 }
 
-/** Acción de menú/sidebar: una pasada ahora. */
+/** Acción de menú/sidebar: una pasada ahora (también deja telemetría en Ajustes). */
 function escanearAhora(sheetId, config) {
-  return scanGmail_(sheetId, config, {});
+  var st = scanGmail_(sheetId, config, {});
+  writeTelemetria_(sheetId, config, st);
+  return st;
 }
 
 /**
@@ -154,18 +156,26 @@ function pasadaImportacion_(sheetId, config) {
   var since = int_(config.ajustes['import.since'], 0);
   if (!since || config.ajustes['import.status'] !== 'running') return { done: true, idle: true };
   var st = scanGmail_(sheetId, config, { afterEpoch: since, max: config.gmail.batch });
-  if (st.done) setAjustes_(sheetId, config, { 'import.status': 'done' });
+  if (st.done) {
+    var upd = { 'import.status': 'done' };
+    // Al terminar, el cursor incremental avanza hasta lo último importado (si estaba más atrás).
+    if (st.cursor && st.cursor > config.gmail.cursor) upd['gmail.cursor'] = String(st.cursor);
+    setAjustes_(sheetId, config, upd);
+  }
   return st;
 }
 
-/** Trigger temporal: importación en curso (si la hay) y luego escaneo incremental. */
+/** Trigger temporal: importación en curso (si la hay) y luego escaneo incremental. Deja telemetría en Ajustes. */
 function runDispatcher(sheetId, config) {
   var lock = LockService.getUserLock();
   try { lock.waitLock(5000); } catch (e) { return { skipped: 'locked' }; }
   try {
     var imp = pasadaImportacion_(sheetId, config);
-    if (imp && !imp.idle && !imp.done) return { import: imp };
-    return { import: imp, scan: scanGmail_(sheetId, config, {}) };
+    var out;
+    if (imp && !imp.idle && !imp.done) out = { import: imp };
+    else out = { import: imp, scan: scanGmail_(sheetId, config, {}) };
+    writeTelemetria_(sheetId, config, out.scan || out.import);
+    return out;
   } finally {
     lock.releaseLock();
   }

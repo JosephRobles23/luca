@@ -8,6 +8,12 @@
  * Sin import/export: runtime de Apps Script.
  */
 
+/**
+ * Versión de LucaLib que se escribe en `Ajustes.luca.version` en cada pasada (ADR-006 §5): la web y el
+ * sidebar comparan con la última publicada para avisar "hay una versión nueva". Subirla en cada release.
+ */
+var LUCA_VERSION = '4';
+
 var AJUSTES_DEFAULTS_ = {
   // Fuentes de correo (remitentes transaccionales). Separados por coma.
   'gmail.senders': 'notificaciones@notificacionesbcp.com.pe,notificaciones@yape.pe',
@@ -23,8 +29,22 @@ var AJUSTES_DEFAULTS_ = {
   // LLM (la key va en UserProperties).
   'llm.provider': 'gemini',
   'llm.model': 'gemini-3.7-flash',
+  // Tipo de cambio de respaldo para mostrar USD en PEN (ADR-005).
+  'fx.usd_pen': '3.50',
   // Wiki en Drive.
-  'brain.folderId': ''
+  'brain.folderId': '',
+  // Telemetría que escribe el Apps Script y leen la web y el sidebar (ADR-003/006). No editar a mano.
+  'luca.version': '',
+  'scan.lastRunAt': '',
+  'scan.lastStats': '',
+  'triggers.installedAt': '',
+  'conexiones.execUrl': '',
+  'conexiones.iphone.device': '',
+  'conexiones.iphone.lastEventAt': '',
+  'conexiones.iphone.eventsCount': '0',
+  'conexiones.iphone.lastError': '',
+  'conexiones.iphone.lastTestAt': '',
+  'conexiones.iphone.schemaVersion': ''
 };
 
 // --- Utilidades de pestaña key/value ---
@@ -117,5 +137,43 @@ function construirConfig(sheetId, staticConfig) {
 
 /** Para el sidebar/web: config visible (sin secretos). */
 function cargarConfig(sheetId, config) {
-  return { ajustes: config.ajustes, sheets: config.sheets, timezone: config.timezone };
+  return { ajustes: config.ajustes, sheets: config.sheets, timezone: config.timezone, version: LUCA_VERSION };
+}
+
+// --- Telemetría ---
+
+/**
+ * URL `/exec` del Web App de la copia del usuario, o '' si no hay despliegue.
+ * El stub la resuelve en su propio contexto (`config.execUrl`, ver gas/stub/config.js): `ScriptApp`
+ * dentro de la librería apunta al proyecto de la librería, no al contenedor. Si el stub no la trae
+ * (stub antiguo), se intenta igual y se tolera el fallo.
+ */
+function execUrl_(config) {
+  if (config && config.execUrl) return String(config.execUrl);
+  try { return String(ScriptApp.getService().getUrl() || ''); } catch (e) { return ''; }
+}
+
+/** Resumen de telemetría del iPhone leído de Ajustes (para sidebar/web). */
+function telemetriaIphone_(ajustes) {
+  var a = ajustes || {};
+  return {
+    device: a['conexiones.iphone.device'] || '',
+    lastEventAt: a['conexiones.iphone.lastEventAt'] || '',
+    eventsCount: int_(a['conexiones.iphone.eventsCount'], 0),
+    lastError: a['conexiones.iphone.lastError'] || '',
+    lastTestAt: a['conexiones.iphone.lastTestAt'] || '',
+    schemaVersion: a['conexiones.iphone.schemaVersion'] || ''
+  };
+}
+
+/**
+ * Escribe versión, URL del Web App y resultado de la pasada en Ajustes (ADR-003 §limitaciones, ADR-006 §4).
+ * Se llama en cada pasada del dispatcher y en "Escanear ahora". Nunca lanza: la telemetría no rompe un escaneo.
+ */
+function writeTelemetria_(sheetId, config, stats) {
+  try {
+    var upd = { 'luca.version': LUCA_VERSION, 'conexiones.execUrl': execUrl_(config), 'scan.lastRunAt': new Date().toISOString() };
+    if (stats !== undefined) upd['scan.lastStats'] = JSON.stringify(stats || {});
+    setAjustes_(sheetId, config, upd);
+  } catch (e) { Logger.log('writeTelemetria_: ' + (e && e.message || e)); }
 }
