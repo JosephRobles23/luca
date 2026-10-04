@@ -65,6 +65,38 @@ test('dispatch solo permite funciones de la lista blanca', () => {
   assert.throws(() => h.api.dispatch('appendTransactions_', [], SID, cfg), /no permitida/);
 });
 
+test('dedupe difuso push ↔ correo: misma clave moneda|monto|minuto y distinta fuente → flag fuzzy_dup, no se descarta', () => {
+  const h = makeHarness({ spreadsheets: { [SID]: {} } });
+  const cfg = configFor(h, SID);
+  const correo = h.api.parseEmail(emails.yape_p2p_sent);                 // S/ 10.00 · 2026-10-04T02:35
+  assert.equal(h.api.appendTransactions_(SID, cfg, [correo]).fuzzy, 0);
+  const push = h.api.parsePushEvent({ id: 'p', body: 'Yapeaste S/ 10 a Carlos', notified_at: '2026-10-04T02:35:40-05:00' });
+  assert.equal(h.api.txFuzzyKey(push), h.api.txFuzzyKey(correo));
+  const r = h.api.appendTransactions_(SID, cfg, [push]);
+  assert.deepEqual([r.added, r.fuzzy], [1, 1]);
+  const data = h.tab(SID, 'Movimientos');
+  const flags = data.slice(1).map((row) => row[data[0].indexOf('flags')]);
+  assert.equal(flags[0], '');
+  assert.match(flags[1], /fuzzy_dup/);
+  // Misma fuente con la misma clave (p. ej. dos yapeos iguales el mismo minuto) no se marca.
+  const h2 = makeHarness({ spreadsheets: { [SID]: {} } });
+  const cfg2 = configFor(h2, SID);
+  h2.api.appendTransactions_(SID, cfg2, [correo]);
+  const otroCorreo = { ...correo, id: 'yape:777', operation_id: '777', gmail_message_id: 'm-777' };
+  assert.equal(h2.api.appendTransactions_(SID, cfg2, [otroCorreo]).fuzzy, 0);
+  // Dentro de la misma pasada también se cruza (índice en memoria).
+  const r2 = h2.api.appendTransactions_(SID, cfg2, [{ ...correo, id: 'yape:778', operation_id: '778', gmail_message_id: 'm-778', occurred_at: '2026-10-04T09:00:00-05:00' },
+    { ...push, occurred_at: '2026-10-04T09:00:00-05:00' }]);
+  assert.deepEqual([r2.added, r2.fuzzy], [2, 1]);
+  // Si Sheets convirtió la fecha en Date, la clave sigue casando.
+  const h3 = makeHarness({ spreadsheets: { [SID]: {} } });
+  const cfg3 = configFor(h3, SID);
+  h3.api.appendTransactions_(SID, cfg3, [correo]);
+  const d3 = h3.tab(SID, 'Movimientos');
+  d3[1][d3[0].indexOf('fecha')] = new Date('2026-10-04T02:35:00-05:00');
+  assert.equal(h3.api.appendTransactions_(SID, cfg3, [push]).fuzzy, 1);
+});
+
 test('estadoLedger: transfer_in (yapeo recibido) se cuenta aparte y no como income', () => {
   const h = makeHarness({ spreadsheets: { [SID]: {} } });
   const cfg = configFor(h, SID);
