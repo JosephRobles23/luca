@@ -51,8 +51,9 @@ export function planKeyValueUpsert(tab: string, rows: string[][], updates: Recor
 }
 
 /** Clave normalizada de comercio/contraparte (misma idea que `normalizeMerchant` en GAS: sin acentos, minúsculas, espacios colapsados). */
+/** Misma clave que `merchantKey_` de GAS (categorize-runtime.js): sin acentos, minúsculas, un espacio, sin punto final. */
 export function merchantKey(name: string): string {
-  return name.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9|*]+/g, " ").trim().replace(/\s+/g, " ");
+  return name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim().replace(/\.$/, "");
 }
 
 export const COMERCIOS_HEADERS = ["clave", "nombre", "categoria", "categoria_origen", "veces", "actualizado_en"] as const;
@@ -88,7 +89,8 @@ export function planMerchantUpsert(tab: string, rows: string[][], m: { key: stri
 export function planRecategorize(tx: Tx, categoria: string, ledgerRows: string[][], comerciosRows: string[][], now: string, tabs = { ledger: "Movimientos", merchants: "Comercios" }) {
   const ledger = planRowFields(tabs.ledger, ledgerRows, tx.id, { categoria, categoria_origen: categoria ? "user" : "" });
   const name = tx.comercio || tx.contraparte;
-  const key = tx.comercio ? merchantKey(tx.comercio) : tx.contraparteKey || (tx.contraparte ? merchantKey(tx.contraparte) : "");
+  // GAS: comercio normalizado, o `p2p:<contraparte_key>` para personas.
+  const key = tx.comercio ? merchantKey(tx.comercio) : tx.contraparteKey ? "p2p:" + tx.contraparteKey : (tx.contraparte ? "p2p:" + merchantKey(tx.contraparte) + "|" : "");
   const merchants = categoria && name ? planMerchantUpsert(tabs.merchants, comerciosRows, { key, nombre: name, categoria, now }) : { updates: [], appends: [] };
   return { ledger, merchants };
 }

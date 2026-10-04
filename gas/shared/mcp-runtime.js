@@ -77,6 +77,7 @@ function mcpAction(e, sheetId, config) {
 
   var fn = MCP_OPS_[op];
   if (!fn) return mcpError_('unknown-op');
+  mcpTelemetria_(sheetId, config);
   try {
     var out = fn(sheetId, config, args) || {};
     out.ok = true;
@@ -445,6 +446,8 @@ function iniciarConexionMcp(sheetId, config) {
       ? 'El servidor MCP rechazó la conexión (' + json.error + ').'
       : 'No se pudo contactar al servidor MCP. Revisa que la Web App esté publicada y la URL del Worker.');
   }
+  // Telemetría no sensible para la web (conexiones.mcp*): enrolado; el pairing lo consume el Worker.
+  setAjustes_(sheetId, config, { 'conexiones.mcp': '1', 'conexiones.mcp.connectedAt': new Date().toISOString(), 'conexiones.workerUrl': estado.workerUrl });
   return {
     code: String(json.code),
     expiresInSeconds: json.expiresInSeconds || 600,
@@ -453,10 +456,20 @@ function iniciarConexionMcp(sheetId, config) {
   };
 }
 
+/** Última llamada y contador en Ajustes (la web lo muestra). Nunca falla la op por esto. */
+function mcpTelemetria_(sheetId, config) {
+  try {
+    var a = mcpAjustes_(config);
+    var n = parseInt(a['conexiones.mcp.callsCount'] || '0', 10) || 0;
+    setAjustes_(sheetId, config, { 'conexiones.mcp.lastCallAt': new Date().toISOString(), 'conexiones.mcp.callsCount': String(n + 1), 'conexiones.mcp': '1' });
+  } catch (e) { /* telemetría opcional */ }
+}
+
 /** Desconecta: borra el secreto → toda llamada Worker→GAS pasa a 'not-enrolled'. */
 function desconectarMcp(sheetId, config) {
   setSecret_('mcpSecret', '');
   setSecret_('tenantId', '');
+  setAjustes_(sheetId, config, { 'conexiones.mcp': '', 'conexiones.mcp.connectedAt': '', 'conexiones.mcp.lastCallAt': '', 'conexiones.mcp.callsCount': '0' });
   return { ok: true, connected: false };
 }
 

@@ -46,6 +46,8 @@ function guardarLlmKey(sheetId, config, apiKey) {
   var k = String(apiKey || '').trim();
   if (k.length < 20) throw new Error('La API key parece incompleta.');
   setSecret_('llmKey', k);
+  // Flag NO sensible para que la web muestre "configurada" sin ver la key.
+  setAjustes_(sheetId, config, { 'llm.apiKey.configured': '1' });
   return estadoSecretos_();
 }
 
@@ -59,14 +61,15 @@ var SHORTCUT_URL_ = 'https://www.icloud.com/shortcuts/PENDIENTE';
  */
 function conectarIphone(sheetId, config) {
   if (!getSecret_('deviceToken')) setSecret_('deviceToken', Utilities.getUuid());
-  setAjustes_(sheetId, config, { 'conexiones.execUrl': execUrl_(config) });
+  // conexiones.iphone.execUrl = URL con la que se importó el atajo (la web avisa si el /exec cambia).
+  setAjustes_(sheetId, config, { 'conexiones.execUrl': execUrl_(config), 'conexiones.iphone.execUrl': execUrl_(config) });
   return datosIphoneFor_(sheetId, config);
 }
 
 /** regenerarTokenIphone: invalida el token anterior (hay que reimportar/editar el atajo). */
 function regenerarTokenIphone(sheetId, config) {
   setSecret_('deviceToken', Utilities.getUuid());
-  setAjustes_(sheetId, config, { 'conexiones.iphone.lastError': '', 'conexiones.execUrl': execUrl_(config) });
+  setAjustes_(sheetId, config, { 'conexiones.iphone.lastError': '', 'conexiones.execUrl': execUrl_(config), 'conexiones.iphone.execUrl': execUrl_(config) });
   return datosIphoneFor_(sheetId, config);
 }
 
@@ -75,7 +78,7 @@ function desconectarIphone(sheetId, config) {
   setSecret_('deviceToken', '');
   setAjustes_(sheetId, config, {
     'conexiones.iphone.device': '', 'conexiones.iphone.lastEventAt': '', 'conexiones.iphone.eventsCount': '0',
-    'conexiones.iphone.lastError': '', 'conexiones.iphone.lastTestAt': '', 'conexiones.iphone.schemaVersion': ''
+    'conexiones.iphone.lastError': '', 'conexiones.iphone.lastTestAt': '', 'conexiones.iphone.schemaVersion': '', 'conexiones.iphone.execUrl': ''
   });
   return datosIphoneFor_(sheetId, config);
 }

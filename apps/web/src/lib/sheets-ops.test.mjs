@@ -45,7 +45,7 @@ test("planKeyValueUpsert: actualiza existentes y añade nuevas", () => {
 
 test("merchantKey normaliza acentos, mayúsculas y espacios", () => {
   assert.equal(merchantKey("  Menú  El Rincón "), "menu el rincon");
-  assert.equal(merchantKey("APPLE.COM/BILL"), "apple com bill");
+  assert.equal(merchantKey("APPLE.COM/BILL"), "apple.com/bill");   // igual que GAS
   assert.equal(merchantKey("Carlos Roj*"), "carlos roj*");
 });
 
@@ -71,7 +71,7 @@ test("planRecategorize: fila + Comercios (comercio o contraparte_key)", () => {
   assert.equal(r1.ledger.length, 2);
   assert.equal(r1.merchants.appends.at(-1)[0], "amazon");
   const r2 = planRecategorize(txs[1], "Transferencias", rows, [], now);
-  assert.equal(r2.merchants.appends.at(-1)[0], "Carlos Roj*|123");
+  assert.equal(r2.merchants.appends.at(-1)[0], "p2p:Carlos Roj*|123"); // misma clave que GAS (merchantKey_)
   const r3 = planRecategorize(txs[1], "", rows, [], now); // quitar categoría no aprende nada
   assert.deepEqual(r3.ledger.map((u) => u.values[0][0]), ["", ""]);
   assert.deepEqual(r3.merchants.appends, []);

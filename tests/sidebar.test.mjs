@@ -16,7 +16,7 @@ test('Sidebar: cada run(...) apunta a una función de DISPATCH_', () => {
   const h = makeHarness({ execUrl: 'https://script.google.com/macros/s/TEST/exec' });
   const usadas = [...html.matchAll(/run\('([A-Za-z_]+)'/g)].map((m) => m[1]);
   assert.ok(usadas.length >= 7, 'el sidebar llama a varias funciones');
-  for (const fn of usadas) assert.ok(h.api.DISPATCH_[fn], 'falta en DISPATCH_: ' + fn);
+  for (const fn of usadas) assert.ok(h.api.DISPATCH_[fn] || (h.api.MCP_DISPATCH_ && h.api.MCP_DISPATCH_[fn]), 'falta en DISPATCH_/MCP_DISPATCH_: ' + fn);
   for (const fn of ['estadoLuca', 'escanearAhora', 'guardarLlmKey', 'iniciarImportacion', 'conectarIphone', 'regenerarTokenIphone', 'desconectarIphone']) {
     assert.ok(usadas.includes(fn), 'el sidebar no usa ' + fn);
   }

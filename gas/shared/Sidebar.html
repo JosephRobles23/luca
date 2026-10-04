@@ -42,6 +42,12 @@
   <button class="sec" id="btnRegenerar" onclick="regenerar()">Regenerar token</button>
   <button class="danger" id="btnDesconectar" onclick="desconectar()">Desconectar iPhone</button>
 
+  <h3>Conectar con tu IA (Claude / ChatGPT)</h3>
+  <div class="hint">Genera un código de un solo uso (10 min). En tu IA añade el conector con la URL que aparece y pega el código cuando te lo pida. Requiere el Web App desplegado.</div>
+  <div id="mcp" class="box">cargando…</div>
+  <button id="btnMcp" onclick="conectarIa()">Generar código de conexión</button>
+  <button class="danger" id="btnMcpOff" onclick="desconectarIa()">Desconectar IA</button>
+
   <pre id="out"></pre>
 <script>
   function run(method) {
@@ -102,7 +108,27 @@
     document.getElementById('btnDesconectar').disabled = !d.conectado;
   }
 
+  function pintarMcp(st) {
+    var html = fila('Estado', st.connected ? '<span class="ok">conectada</span>' : '<span class="muted">no conectada</span>') +
+      fila('URL del conector', '<code>' + esc(st.connectorUrl) + '</code>') +
+      (st.webApp && !st.webApp.ready ? '<div class="warn" style="margin-top:6px">' + esc(st.webApp.message) + '</div>' : '');
+    if (st.code) html += '<div class="hint" style="margin-top:8px">Código (válido ' + Math.round((st.expiresInSeconds || 600) / 60) + ' min):</div><div style="font-size:22px;font-weight:700;letter-spacing:.2em">' + esc(st.code) + '</div>';
+    document.getElementById('mcp').innerHTML = html;
+    document.getElementById('btnMcp').disabled = !!(st.webApp && !st.webApp.ready);
+    document.getElementById('btnMcpOff').disabled = !st.connected;
+  }
+  function cargarIa() { run('cargarMcp').then(pintarMcp).catch(function (e) { document.getElementById('mcp').textContent = 'Error: ' + e.message; }); }
+  function conectarIa() {
+    show('generando código…');
+    run('iniciarConexionMcp').then(function (r) { run('cargarMcp').then(function (st) { st.code = r.code; st.expiresInSeconds = r.expiresInSeconds; pintarMcp(st); }); show('Código generado. Pégalo en la pantalla de autorización de tu IA.'); })
+      .catch(function (e) { show('Error: ' + e.message); });
+  }
+  function desconectarIa() {
+    if (!confirm('¿Desconectar la IA? Tus conectores dejarán de funcionar hasta que generes un código nuevo.')) return;
+    run('desconectarMcp').then(function () { cargarIa(); pintar(); show('IA desconectada.'); }).catch(function (e) { show('Error: ' + e.message); });
+  }
   function pintar() {
+    cargarIa();
     run('estadoLuca').then(pintarEstado).catch(function (e) { show('Error: ' + e.message); });
   }
   function escanear() { show('escaneando…'); run('escanearAhora').then(function (r) { show(r); pintar(); }).catch(function (e) { show('Error: ' + e.message); }); }
