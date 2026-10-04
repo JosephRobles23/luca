@@ -25,3 +25,17 @@ S7 validó (2026-10-04) que en iOS 27 una automatización "Notificación → Yap
 - El Worker **no tiene** endpoint `/events`; solo MCP y pairing.
 - El Web App pasa a ser necesario para iPhone y para IA; sin él, Luca funciona con correo + web.
 - El evento push lleva el nombre del remitente del yapeo: se guarda en la Sheet del usuario, en ningún otro sitio.
+
+## Limitaciones aceptadas y mitigaciones (añadido 2026-10-04)
+
+| Limitación | Mitigación (sin romper "directo") |
+|---|---|
+| Sin observabilidad central: no vemos fallos, volumen ni salud del canal | El Apps Script escribe telemetría en `Ajustes`: `conexiones.iphone.{device,lastEventAt,eventsCount,lastError,lastTestAt,schemaVersion}`; la web y el sidebar la muestran como tarjeta de estado |
+| No podemos actualizar el atajo ni revocar centralmente | `schema_version` en el payload; `eventsAction_` acepta versiones anteriores o responde `update-shortcut`; "Regenerar token" y "Desconectar" en el sidebar/web |
+| La URL `/exec` cambia si el usuario borra y recrea la implementación | GAS escribe `ScriptApp.getService().getUrl()` en cada escaneo; la web avisa "reimporta el atajo" si difiere de la que usa el atajo |
+| Ráfagas (varios yapeos en segundos) | `LockService.getUserLock()` en `eventsAction_` |
+| Sin reintentos de nuestro lado; APNs guarda solo la última notificación offline | Cola `luca_pendientes` + atajo Flush; Gmail como reconciliación para lo que tenga correo |
+| `/exec` público, sin rate limiting | `deviceToken` revocable; dedupe por `id`; el daño máximo es insertar filas en la Sheet del propio usuario |
+| Soporte a ciegas | Botón **Probar** (evento `source:test` que no toca el ledger) y aviso suave si `lastEventAt` > 7 días |
+
+Camino de vuelta si el soporte se vuelve pesado: opción (a) (Worker como relevo) cambiando solo la URL destino del atajo.

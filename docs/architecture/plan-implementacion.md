@@ -26,7 +26,8 @@ Leyenda: 🤖 lo hago yo · 🧑 lo haces tú (consola, dispositivo, cuentas) ·
 - 🤖 Tests con mock de `UrlFetchApp`.
 
 ## M4 — Conexiones: Web App, iPhone directo (⏱ 1)
-- 🤖 Paso "Activar conexiones": validación de `/exec` desde el sidebar, `deviceToken`, pantalla con enlace del atajo + QR; `eventsAction_` con token por dispositivo y dedupe (ADR-003).
+- 🤖 Paso "Activar conexiones": validación de `/exec` desde el sidebar, `deviceToken`, pantalla con enlace del atajo + QR; `eventsAction_` con token por dispositivo, `LockService`, `schema_version` y dedupe (ADR-003).
+- 🤖 Telemetría del canal en `Ajustes.conexiones.iphone.*` + tarjeta de estado (Probar / Regenerar token / Desconectar) en web y sidebar; aviso de URL cambiada y de silencio > 7 días.
 - 🧑 Crear el atajo definitivo en iOS 27 (prompt de la guía con URL y token como preguntas de importación), compartirlo por enlace de iCloud y probar con un yapeo recibido.
 - 🤖 Guía visual del despliegue del Web App (video de 40 s lo grabas 🧑).
 
