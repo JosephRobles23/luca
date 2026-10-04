@@ -7,64 +7,74 @@
   body { font-family: system-ui, sans-serif; max-width: 760px; margin: 32px auto; padding: 0 16px; color: #1d1a17; }
   label { display: block; margin: 10px 0 4px; font-size: 13px; color: #555; }
   input { width: 100%; padding: 8px; font: inherit; box-sizing: border-box; }
-  button { font: inherit; padding: 8px 14px; margin: 12px 8px 0 0; cursor: pointer; }
+  button { font: inherit; padding: 10px 16px; margin: 12px 8px 0 0; cursor: pointer; }
+  button.big { font-size: 16px; font-weight: 600; background: #d9623b; color: #fff; border: 0; border-radius: 8px; }
   pre { background: #f4efe8; padding: 12px; overflow: auto; font-size: 12px; white-space: pre-wrap; }
   .step { border: 1px solid #ddd; border-radius: 8px; padding: 12px 16px; margin-top: 16px; }
+  details { margin-top: 16px; }
+  #resumen { background: #e8f5ec; border: 1px solid #9fd3ad; }
 </style>
 </head>
 <body>
 <h1>Spike S1 / S2 — <code>drive.file</code></h1>
-<p>Sirve en <code>http://localhost:5173</code> (debe coincidir con el origen autorizado del cliente OAuth).</p>
+<ol>
+  <li>Pulsa <b>Autorizar</b> y elige <code>petter.chuquipiondo.r@gmail.com</code>.</li>
+  <li>Pulsa <b>Correr todo</b>. Si se abre el selector de Google, elige el archivo <b>"Luca Template (spike)"</b> (búscalo en "Compartidos conmigo" o escribe su nombre en el buscador).</li>
+  <li>Copia el <b>Resumen</b> verde y pégalo en el chat.</li>
+</ol>
 
 <div class="step">
-  <label>Client ID (Luca Web spikes)</label><input id="clientId" placeholder="xxxx.apps.googleusercontent.com">
-  <label>API key (Picker)</label><input id="apiKey">
-  <label>App ID (número de proyecto)</label><input id="appId" value="334287534871">
-  <button id="btnAuth">Autorizar (drive.file)</button>
+  <button id="btnAuth" class="big">1. Autorizar (drive.file)</button>
   <span id="authState"></span>
+  <br>
+  <button id="btnAll" class="big" disabled>2. Correr todo (S1 + S2)</button>
 </div>
 
-<div class="step">
-  <h3>S1 — copiar plantilla</h3>
-  <label>Template spreadsheet ID (compartido "cualquiera con el enlace")</label><input id="templateId">
-  <button id="btnCopy">S1: copiar plantilla</button>
-</div>
+<h3>Resumen</h3>
+<pre id="resumen">(aún nada)</pre>
 
-<div class="step">
-  <h3>S2 — Picker + Sheets API</h3>
-  <button id="btnPick">Elegir Sheet (Picker)</button>
-  <label>Spreadsheet ID elegido</label><input id="sheetId">
-  <button id="btnRead">Leer A1:C5</button>
-</div>
+<details>
+  <summary>Configuración (ya rellenada; solo falta la API key si está vacía)</summary>
+  <label>Client ID</label><input id="clientId" value="334287534871-9v2rvalbfm53uq8v7t93f0vhc9808b0i.apps.googleusercontent.com">
+  <label>API key (Picker)</label><input id="apiKey" placeholder="pega la API key del Picker">
+  <label>App ID (número de proyecto)</label><input id="appId" value="334287534871">
+  <label>Template spreadsheet ID</label><input id="templateId" value="1FMxSE00KcD68JdClICcWayMxdqvSROYr6tuL-va5KWA">
+</details>
 
-<pre id="out">(salida)</pre>
+<details>
+  <summary>Detalle técnico (log completo)</summary>
+  <pre id="out">(salida)</pre>
+</details>
 
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://apis.google.com/js/api.js" async defer onload="gapi.load('picker', () => {})"></script>
 <script>
   const $ = id => document.getElementById(id);
-  const out = (label, data) => { $('out').textContent = `[${new Date().toISOString()}] ${label}\n` + (typeof data === 'string' ? data : JSON.stringify(data, null, 2)) + '\n\n' + $('out').textContent; };
+  const log = (label, data) => { $('out').textContent = `[${new Date().toISOString()}] ${label}\n` + (typeof data === 'string' ? data : JSON.stringify(data, null, 2)) + '\n\n' + $('out').textContent; };
   const SCOPE = 'https://www.googleapis.com/auth/drive.file';
   let accessToken = null;
+  const resumen = [];
+  const addResumen = (line) => { resumen.push(line); $('resumen').textContent = resumen.join('\n'); };
 
-  // Persistir campos entre recargas (solo en este navegador).
-  ['clientId', 'apiKey', 'appId', 'templateId', 'sheetId'].forEach(id => {
-    try { $(id).value = localStorage.getItem('luca.' + id) || $(id).value; } catch {}
-    $(id).addEventListener('change', () => { try { localStorage.setItem('luca.' + id, $(id).value); } catch {} });
-  });
+  // Persistir solo lo que el usuario escribe (API key). Los IDs ya vienen en el HTML.
+  try { $('apiKey').value = localStorage.getItem('luca.apiKey') || ''; } catch {}
+  $('apiKey').addEventListener('change', () => { try { localStorage.setItem('luca.apiKey', $('apiKey').value.trim()); } catch {} });
+
+  const cleanId = (v) => (v || '').trim().replace(/^.*\/d\//, '').replace(/\/.*$/, ''); // acepta URL completa o ID
 
   $('btnAuth').onclick = () => {
     const client = google.accounts.oauth2.initTokenClient({
       client_id: $('clientId').value.trim(),
       scope: SCOPE,
       callback: (resp) => {
-        if (resp.error) return out('auth error', resp);
+        if (resp.error) { log('auth error', resp); return addResumen('AUTH: error ' + resp.error); }
         accessToken = resp.access_token;
-        $('authState').textContent = '✓ token obtenido (scope: ' + resp.scope + ')';
-        out('auth ok', { scope: resp.scope, expires_in: resp.expires_in });
+        $('authState').textContent = '✓ autorizado';
+        $('btnAll').disabled = false;
+        log('auth ok', { scope: resp.scope, expires_in: resp.expires_in });
       },
     });
-    client.requestAccessToken({ prompt: 'consent' });
+    client.requestAccessToken({ prompt: 'select_account' });
   };
 
   async function api(url, init = {}) {
@@ -74,42 +84,66 @@
     return { status: r.status, body };
   }
 
-  $('btnCopy').onclick = async () => {
-    if (!accessToken) return out('S1', 'Primero autoriza.');
-    const id = $('templateId').value.trim();
-    const res = await api(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}/copy?fields=id,name,webViewLink`, {
+  async function copiar(templateId, etiqueta) {
+    const res = await api(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(templateId)}/copy?fields=id,name,webViewLink`, {
       method: 'POST', body: JSON.stringify({ name: 'Luca Ledger (spike S1)' }),
     });
-    out(`S1 files.copy → HTTP ${res.status}`, res.body);
-    if (res.status === 200 && res.body.id) $('sheetId').value = res.body.id;
-  };
+    log(`${etiqueta} files.copy → HTTP ${res.status}`, res.body);
+    addResumen(`${etiqueta} files.copy(template) → HTTP ${res.status}${res.status === 200 ? ' (copia: ' + res.body.id + ')' : ' (' + (res.body.error && res.body.error.message || '') + ')'}`);
+    return res;
+  }
 
-  $('btnPick').onclick = () => {
-    if (!accessToken) return out('S2', 'Primero autoriza.');
-    const view = new google.picker.DocsView(google.picker.ViewId.SPREADSHEETS).setIncludeFolders(false).setOwnedByMe(true);
-    const picker = new google.picker.PickerBuilder()
-      .setAppId($('appId').value.trim())          // imprescindible para que el archivo entre en alcance de drive.file
-      .setOAuthToken(accessToken)
-      .setDeveloperKey($('apiKey').value.trim())
-      .addView(view)
-      .setCallback((data) => {
-        if (data.action === google.picker.Action.PICKED) {
-          const doc = data.docs[0];
-          $('sheetId').value = doc.id;
-          out('S2 picked', { id: doc.id, name: doc.name });
-        }
-      })
-      .build();
-    picker.setVisible(true);
-  };
+  async function leer(sheetId, etiqueta) {
+    const meta = await api(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sheetId)}?fields=properties.title,sheets.properties.title`);
+    log(`${etiqueta} spreadsheets.get → HTTP ${meta.status}`, meta.body);
+    const vals = await api(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(sheetId)}/values/A1:C5`);
+    log(`${etiqueta} values.get A1:C5 → HTTP ${vals.status}`, vals.body);
+    addResumen(`${etiqueta} spreadsheets.get → HTTP ${meta.status}${meta.status === 200 ? ' ("' + meta.body.properties.title + '")' : ''}`);
+    addResumen(`${etiqueta} values.get A1:C5 → HTTP ${vals.status}${vals.status === 200 ? ' (' + ((vals.body.values || []).length) + ' filas)' : ''}`);
+  }
 
-  $('btnRead').onclick = async () => {
-    if (!accessToken) return out('S2', 'Primero autoriza.');
-    const id = $('sheetId').value.trim();
-    const meta = await api(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}?fields=properties.title,sheets.properties.title`);
-    out(`S2 spreadsheets.get → HTTP ${meta.status}`, meta.body);
-    const vals = await api(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}/values/A1:C5`);
-    out(`S2 values.get A1:C5 → HTTP ${vals.status}`, vals.body);
+  function pick(titulo) {
+    return new Promise((resolve) => {
+      const view = new google.picker.DocsView(google.picker.ViewId.SPREADSHEETS).setIncludeFolders(false).setMode(google.picker.DocsViewMode.LIST);
+      new google.picker.PickerBuilder()
+        .setTitle(titulo)
+        .setAppId($('appId').value.trim())          // imprescindible para que el archivo entre en alcance de drive.file
+        .setOAuthToken(accessToken)
+        .setDeveloperKey($('apiKey').value.trim())
+        .addView(view)
+        .setCallback((data) => {
+          if (data.action === google.picker.Action.PICKED) resolve(data.docs[0]);
+          else if (data.action === google.picker.Action.CANCEL) resolve(null);
+        })
+        .build().setVisible(true);
+    });
+  }
+
+  $('btnAll').onclick = async () => {
+    $('btnAll').disabled = true;
+    resumen.length = 0; $('resumen').textContent = '';
+    const templateId = cleanId($('templateId').value);
+    addResumen(`template: ${templateId}`);
+    if (!$('apiKey').value.trim()) { addResumen('FALTA la API key del Picker (abre "Configuración" abajo y pégala).'); $('btnAll').disabled = false; return; }
+
+    // S1a: copiar sin que la plantilla esté en alcance
+    const r1 = await copiar(templateId, 'S1a');
+    let sheetId = r1.status === 200 ? r1.body.id : null;
+
+    if (!sheetId) {
+      // S1b: ¿elegirla con el Picker la mete en alcance?
+      const doc = await pick('Elige "Luca Template (spike)"');
+      if (!doc) { addResumen('S1b: Picker cancelado'); $('btnAll').disabled = false; return; }
+      log('picker picked', { id: doc.id, name: doc.name });
+      addResumen(`S1b picker → elegido "${doc.name}" (${doc.id})${doc.id !== templateId ? '  ⚠ no es el template' : ''}`);
+      const r2 = await copiar(doc.id, 'S1b');
+      sheetId = r2.status === 200 ? r2.body.id : doc.id;
+    }
+
+    // S2: leer con Sheets API lo que tengamos en alcance
+    await leer(sheetId, 'S2');
+    addResumen('— fin —');
+    $('btnAll').disabled = false;
   };
 </script>
 </body>

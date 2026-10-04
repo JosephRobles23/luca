@@ -65,7 +65,7 @@ Insumos:
 | Paso | Dónde | Qué pasa | Fricción |
 |---|---|---|---|
 | 1 | Web | Login con Google (`openid email profile`) | 1 clic |
-| 2 | Web | "Crear mi Sheet": pedir `drive.file` → `files.copy(plantilla)`. **Si falla (probable con plantilla pública):** abrir enlace `/copy` en pestaña nueva → al volver, Picker para elegir la copia | 2–4 clics |
+| 2 | Web | "Crear mi Sheet": pedir `drive.file` → abrir el **Picker** apuntando a la plantilla (elegirla la mete en alcance) → `files.copy(plantilla)` → guardamos `sub ↔ sheetId`. **Validado en S1 (2026-10-04):** copia directa 404, tras Picker 200, sin scopes sensibles | 2 clics |
 | 3 | Sheet | Abrir el Sheet; `onOpen` pinta el menú **Luca** | — |
 | 4 | Sheet | Menú Luca → **Autorizar**: consentimiento del proyecto por defecto del script. Cuentas @gmail.com verán "Google no ha verificado esta app" → Avanzado → Ir a Luca. La web muestra guía con capturas | **El punto de abandono.** Mitigar con video/capturas |
 | 5 | Web → Sheet | La web muestra un **código de 8 caracteres** (TTL 10 min, un uso). Menú Luca → **Conectar** → pegar código. GAS llama `WORKER/pair {code, idToken}`; Worker verifica y devuelve `{llmKey?, config, tenantId, secret}`. Si el usuario prefiere, pega la key a mano en el sidebar | 1 pegado |
@@ -127,8 +127,8 @@ luca/
 
 | Spike | Pregunta | Si falla |
 |---|---|---|
-| S1 | `files.copy` de la plantilla con solo `drive.file` ¿funciona? | Enlace `/copy` + Picker (`setAppId`) |
-| S2 | Picker + `drive.file` ¿deja leer la copia con Sheets API desde el navegador? | Pedir `spreadsheets.readonly` (sensible → verificación) |
+| S1 | ~~`files.copy` con `drive.file`~~ **Resuelto:** directo 404; con Picker previo 200 | — |
+| S2 | ~~Picker + `drive.file` → Sheets API~~ **Resuelto:** 200/200 | — |
 | S3 | UX real de "app no verificada" en la propia copia (cuenta @gmail.com) | Video guía; evaluar add-on más adelante |
 | S4 | `getIdentityToken` desde GAS: ¿`aud` estable por copia? ¿se puede anclar en el pairing? | Volver a secreto compartido como Vera |
 | S5 | Escrituras KV por flujo OAuth del Worker (medir con `wrangler tail`) | Paid $5 o mover estado a D1/DO |
