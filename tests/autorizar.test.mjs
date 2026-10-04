@@ -73,7 +73,7 @@ test('Autorizar con buzón vacío sigue siendo idempotente: la segunda vez escan
 });
 
 test('estadoLuca resume versión, cursor, último escaneo, importación y conexiones en una llamada', () => {
-  const h = makeHarness({ spreadsheets: { [SID]: {} }, gmailMessages: [reciente] });
+  const h = makeHarness({ execUrl: 'https://script.google.com/macros/s/TEST/exec', spreadsheets: { [SID]: {} }, gmailMessages: [reciente] });
   const antes = h.api.dispatch('estadoLuca', [], SID, configFor(h, SID));
   assert.equal(antes.autorizado, false);
   assert.equal(antes.version, '4');

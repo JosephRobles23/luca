@@ -13,7 +13,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const html = fs.readFileSync(path.join(HERE, '..', 'gas', 'shared', 'Sidebar.html'), 'utf8');
 
 test('Sidebar: cada run(...) apunta a una función de DISPATCH_', () => {
-  const h = makeHarness();
+  const h = makeHarness({ execUrl: 'https://script.google.com/macros/s/TEST/exec' });
   const usadas = [...html.matchAll(/run\('([A-Za-z_]+)'/g)].map((m) => m[1]);
   assert.ok(usadas.length >= 7, 'el sidebar llama a varias funciones');
   for (const fn of usadas) assert.ok(h.api.DISPATCH_[fn], 'falta en DISPATCH_: ' + fn);
@@ -34,7 +34,7 @@ test('Sidebar: cada onclick tiene su función definida y hay secciones Estado / 
 
 test('Sidebar: el enlace del atajo placeholder lo entrega el servidor (conectarIphone), no está cableado en el HTML', () => {
   assert.doesNotMatch(html, /icloud\.com\/shortcuts/);
-  const h = makeHarness({ spreadsheets: { s: {} } });
+  const h = makeHarness({ execUrl: 'https://script.google.com/macros/s/TEST/exec', spreadsheets: { s: {} } });
   const cfg = h.api.construirConfig('s', {});
   assert.equal(h.api.conectarIphone('s', cfg).shortcutUrl, 'https://www.icloud.com/shortcuts/PENDIENTE');
 });

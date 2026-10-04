@@ -21,7 +21,7 @@ test('GET /exec responde ok con la versión de la librería', () => {
 });
 
 test('conectarIphone genera un deviceToken en UserProperties y devuelve execUrl + token + enlace del atajo', () => {
-  const h = makeHarness({ spreadsheets: { [SID]: {} } });
+  const h = makeHarness({ execUrl: 'https://script.google.com/macros/s/TEST/exec', spreadsheets: { [SID]: {} } });
   const cfg = configFor(h, SID);
   assert.equal(h.api.estadoSecretos_().iphone, false);
   const r = h.api.dispatch('conectarIphone', [], SID, cfg);

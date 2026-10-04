@@ -6,7 +6,7 @@ import { emails, toGmailApi } from './fixtures/emails.mjs';
 const SID = 'sheet-1';
 
 test('runDispatcher escribe luca.version, conexiones.execUrl, scan.lastRunAt y scan.lastStats en Ajustes', () => {
-  const h = makeHarness({ spreadsheets: { [SID]: {} }, gmailMessages: [toGmailApi(emails.bcp_card_purchase_pen)] });
+  const h = makeHarness({ execUrl: 'https://script.google.com/macros/s/TEST/exec', spreadsheets: { [SID]: {} }, gmailMessages: [toGmailApi(emails.bcp_card_purchase_pen)] });
   assert.equal(h.api.LUCA_VERSION, '4');
   h.api.runDispatcher(SID, configFor(h, SID));
   const a = configFor(h, SID).ajustes;

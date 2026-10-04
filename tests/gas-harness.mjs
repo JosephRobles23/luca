@@ -181,7 +181,8 @@ export function makeHarness(opts = {}) {
       getOAuthToken: () => 'TEST_OAUTH_TOKEN',
       getIdentityToken: () => 'TEST_ID_TOKEN',
       // execUrl: null → simula "sin despliegue del Web App" (getUrl lanza / devuelve null).
-      getService: () => ({ getUrl: () => { if (opts.execUrl === null) throw new Error('sin despliegue'); return opts.execUrl || 'https://script.google.com/macros/s/TEST/exec'; } })
+      // Por defecto NO hay Web App desplegado (getUrl → ''). opts.execUrl: URL simulada; null: getUrl lanza.
+      getService: () => ({ getUrl: () => { if (opts.execUrl === null) throw new Error('sin despliegue'); return opts.execUrl || ''; } })
     },
     ContentService: {
       createTextOutput: (s) => { const out = { _text: String(s ?? ''), getContent: () => out._text, setMimeType() { return out; } }; return out; },

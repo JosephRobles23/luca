@@ -138,6 +138,8 @@ function categorize_(tx, ctx) {
   var key = merchantKey_(tx);
   var cached = key ? ctx.merchants[key] : null;
   var categoria = '', origen = '';
+  // Categoría fijada por el usuario (add_expense desde la IA, alta manual): gana y se aprende.
+  if (tx.category && tx.category_source === 'user') { categoria = tx.category; origen = 'user'; }
   if (cached && cached.categoria && cached.categoria_origen === 'user') { categoria = cached.categoria; origen = 'user'; }
   if (!categoria) { categoria = reglaCategoria_(tx); if (categoria) origen = 'rule'; }
   if (!categoria && cached && cached.categoria) { categoria = cached.categoria; origen = 'cache'; }
