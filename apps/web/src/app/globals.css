@@ -55,3 +55,21 @@ body { background: var(--bg); color: var(--text); }
 .track { height: 4px; background: var(--panel-2); border-radius: 4px; overflow: hidden; }
 .fill { height: 100%; background: var(--accent); }
 .src { font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase; padding: 1px 6px; border-radius: 4px; background: var(--panel-2); color: var(--muted); }
+
+/* Formularios */
+.input { width: 100%; font: inherit; font-size: 14px; background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+.input:focus-visible, .btn:focus-visible, a:focus-visible, button:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.field label { display: block; color: var(--muted); font-size: 11.5px; margin-bottom: 5px; }
+code { font-size: .9em; background: var(--panel-2); padding: 1px 5px; border-radius: 4px; }
+
+/* Páginas legales */
+.prose-luca { font-size: 14.5px; line-height: 1.65; }
+.prose-luca h2 { font-size: 16px; font-weight: 700; margin: 26px 0 8px; }
+.prose-luca p { margin: 10px 0; color: var(--text); }
+.prose-luca ul { margin: 8px 0 8px 18px; list-style: disc; display: grid; gap: 6px; }
+.prose-luca a { text-decoration: underline; }
+.prose-luca code { font-size: 12.5px; }
+
+@media (max-width: 420px) {
+  .card { padding: 12px; }
+}
