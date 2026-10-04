@@ -100,6 +100,8 @@ var DISPATCH_ = {
   leerLedger:        function (sid, cfg, a) { return readLedger_(sid, cfg); },
   listarCategorias:  function (sid, cfg, a) { return listarCategorias(sid, cfg); },
   recategorizar:     function (sid, cfg, a) { return recategorizar(sid, cfg, a[0] || {}); },
+  categorizarPendientes: function (sid, cfg, a) { return categorizarPendientes(sid, cfg, a[0] || {}); },
+  probarLlm:         function (sid, cfg, a) { return probarLlm(sid, cfg); },
   conectarIphone:    function (sid, cfg, a) { return conectarIphone(sid, cfg); },
   regenerarTokenIphone: function (sid, cfg, a) { return regenerarTokenIphone(sid, cfg); },
   desconectarIphone: function (sid, cfg, a) { return desconectarIphone(sid, cfg); },
@@ -124,6 +126,12 @@ function estadoLuca(sheetId, config) {
     importacion: { status: a['import.status'] || '', since: int_(a['import.since'], 0) },
     ledger: ledger,
     secretos: estadoSecretos_(),
+    llm: {
+      provider: (config.llm && config.llm.provider) || a['llm.provider'] || '',
+      model: (config.llm && config.llm.model) || a['llm.model'] || '',
+      lastTestAt: a['llm.lastTestAt'] || '', lastError: a['llm.lastError'] || '',
+      proveedores: llmProveedores_(), defaults: LLM_DEFAULT_MODELS_
+    },
     execUrl: a['conexiones.execUrl'] || execUrl_(config),
     iphone: telemetriaIphone_(a)
   };

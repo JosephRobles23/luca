@@ -21,6 +21,7 @@ export const RUNTIME_FILES = [
   'sheets-runtime.js',
   'settings-runtime.js',
   'secrets-runtime.js',
+  'llm-runtime.js',
   'email-parsers-runtime.js',
   'push-parsers-runtime.js',
   'categorize-runtime.js',

@@ -26,9 +26,18 @@
   <div class="hint" id="hintAutorizar"></div>
 
   <h3>API key del LLM (opcional)</h3>
-  <div class="hint">Mejora la categorización de comercios nuevos. Solo viajan comercio + monto. Se guarda en tu cuenta (UserProperties), nunca en el Sheet.</div>
-  <input id="llmKey" type="password" placeholder="pega tu API key (Gemini por defecto)">
-  <button onclick="guardarKey()">Guardar key</button>
+  <div class="hint">Mejora la categorización de comercios nuevos. Solo viajan comercio + monto + moneda + canal. La key se guarda en tu cuenta (UserProperties), nunca en el Sheet.</div>
+  <div id="llmEstado" class="box">cargando…</div>
+  <select id="llmProvider" onchange="cambiarProveedor()">
+    <option value="gemini">Gemini (Google AI Studio, gratis)</option>
+    <option value="openai">OpenAI</option>
+    <option value="anthropic">Anthropic</option>
+  </select>
+  <input id="llmModel" type="text" placeholder="modelo (vacío = por defecto)">
+  <input id="llmKey" type="password" placeholder="pega tu API key (déjalo vacío para no cambiarla)">
+  <button onclick="guardarKey()">Guardar proveedor, modelo y key</button>
+  <button class="sec" id="btnProbarKey" onclick="probarKey()">Probar key</button>
+  <button class="sec" id="btnCategorizar" onclick="categorizarPendientes()">Categorizar pendientes ahora</button>
 
   <h3>Importar historial</h3>
   <div class="hint">Autorizar ya importó el último mes. Para traer más atrás, elige una fecha; el trigger continúa por lotes.</div>
@@ -77,7 +86,39 @@
       fila('Conexión IA (MCP)', st.secretos.mcp ? '<span class="ok">activa</span>' : '<span class="muted">no conectada</span>');
     document.getElementById('btnEscanear').disabled = !st.autorizado;
     document.getElementById('hintAutorizar').textContent = st.autorizado ? '' : 'Primero autoriza desde el menú Luca → Autorizar (instala el escaneo automático e importa el último mes).';
+    pintarLlm(st);
     pintarIphone({ execUrl: st.execUrl, conectado: st.secretos.iphone, token: '' }, st.iphone);
+  }
+
+  var llmDefaults = { gemini: 'gemini-3.7-flash', openai: 'gpt-5-mini', anthropic: 'claude-haiku-4-5-20251001' };
+  function pintarLlm(st) {
+    var llm = st.llm || {};
+    if (llm.defaults) llmDefaults = llm.defaults;
+    var tieneKey = !!(st.secretos && st.secretos.llmKey);
+    document.getElementById('llmEstado').innerHTML =
+      fila('Key', tieneKey ? '<span class="ok">configurada</span>' : '<span class="warn">falta</span>') +
+      fila('Proveedor / modelo', esc(llm.provider || '') + ' · <code>' + esc(llm.model || '') + '</code>') +
+      fila('Última prueba', esc(fecha(llm.lastTestAt)) + (llm.lastError ? ' <span class="warn">' + esc(llm.lastError) + '</span>' : (llm.lastTestAt ? ' <span class="ok">ok</span>' : ''))) +
+      fila('Por categorizar', st.ledger && st.ledger.sinCategoria || 0);
+    var sel = document.getElementById('llmProvider');
+    if (llm.provider) sel.value = llm.provider;
+    document.getElementById('llmModel').value = llm.model || '';
+    document.getElementById('btnProbarKey').disabled = !tieneKey;
+    document.getElementById('btnCategorizar').disabled = !tieneKey || !(st.ledger && st.ledger.sinCategoria);
+  }
+  function cambiarProveedor() {
+    document.getElementById('llmModel').value = llmDefaults[document.getElementById('llmProvider').value] || '';
+  }
+  function probarKey() {
+    show('probando…');
+    run('probarLlm').then(function (r) { show((r.ok ? 'OK: ' : 'Error: ') + r.mensaje + (r.ms ? ' (' + r.ms + ' ms)' : '')); pintar(); }).catch(function (e) { show('Error: ' + e.message); });
+  }
+  function categorizarPendientes() {
+    show('categorizando pendientes…');
+    run('categorizarPendientes', { limit: 50 }).then(function (r) {
+      show('Revisadas: ' + r.procesadas + ' · Categorizadas: ' + r.categorizadas + ' · Llamadas al LLM: ' + r.llmCalls + (r.llmErrores ? ' · Errores: ' + r.llmErrores : '') + ' · Quedan: ' + r.restantes);
+      pintar();
+    }).catch(function (e) { show('Error: ' + e.message); });
   }
 
   function pintarIphone(d, tele) {
@@ -133,7 +174,13 @@
   }
   function escanear() { show('escaneando…'); run('escanearAhora').then(function (r) { show(r); pintar(); }).catch(function (e) { show('Error: ' + e.message); }); }
   function guardarKey() {
-    run('guardarLlmKey', document.getElementById('llmKey').value).then(function () { document.getElementById('llmKey').value = ''; pintar(); show('Key guardada.'); })
+    var provider = document.getElementById('llmProvider').value;
+    var model = document.getElementById('llmModel').value.trim() || llmDefaults[provider] || '';
+    var key = document.getElementById('llmKey').value.trim();
+    show('guardando…');
+    run('guardarAjustes', { 'llm.provider': provider, 'llm.model': model })
+      .then(function () { return key ? run('guardarLlmKey', key) : null; })
+      .then(function () { document.getElementById('llmKey').value = ''; pintar(); show(key ? 'Proveedor, modelo y key guardados.' : 'Proveedor y modelo guardados (la key no cambió).'); })
       .catch(function (e) { show('Error: ' + e.message); });
   }
   function importar() {

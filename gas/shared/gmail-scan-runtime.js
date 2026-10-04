@@ -173,7 +173,12 @@ function runDispatcher(sheetId, config) {
     var imp = pasadaImportacion_(sheetId, config);
     var out;
     if (imp && !imp.idle && !imp.done) out = { import: imp };
-    else out = { import: imp, scan: scanGmail_(sheetId, config, {}) };
+    else {
+      out = { import: imp, scan: scanGmail_(sheetId, config, {}) };
+      // LLM opcional (ADR-004): categoriza lo pendiente al final de la pasada, solo si hay key y con presupuesto.
+      var llm = categorizarPendientesAuto_(sheetId, config);
+      if (llm) { out.llm = llm; out.scan.llm = llm; }
+    }
     writeTelemetria_(sheetId, config, out.scan || out.import);
     return out;
   } finally {
