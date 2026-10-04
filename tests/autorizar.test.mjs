@@ -88,3 +88,12 @@ test('estadoLuca resume versión, cursor, último escaneo, importación y conexi
   assert.equal(st.iphone.eventsCount, 0);
   assert.equal(st.execUrl, 'https://script.google.com/macros/s/TEST/exec');
 });
+
+test('stub viejo: estadoLuca y Autorizar avisan que hay que actualizar el stub', () => {
+  const h = makeHarness({ spreadsheets: { [SID]: {} }, gmailMessages: [] });
+  const cfgViejo = { ...configFor(h, SID), stubVersion: '1' };
+  const st = h.api.estadoLuca(SID, cfgViejo);
+  assert.match(st.stubUpdate, /actualizarse/);
+  const cfgNuevo = { ...configFor(h, SID), stubVersion: '2' };
+  assert.equal(h.api.estadoLuca(SID, cfgNuevo).stubUpdate, '');
+});

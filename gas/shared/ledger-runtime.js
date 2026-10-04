@@ -11,7 +11,7 @@ var LEDGER_HEADERS_ = [
   'id', 'fecha', 'tipo', 'monto', 'moneda', 'tipo_cambio', 'comercio', 'contraparte', 'contraparte_key',
   'categoria', 'categoria_origen', 'medio', 'canal', 'fuente', 'operacion', 'gmail_id', 'flags', 'asunto', 'creado_en'
 ];
-var PROCESSED_HEADERS_ = ['gmail_id', 'resultado', 'tipo', 'fecha'];
+var PROCESSED_HEADERS_ = ['gmail_id', 'resultado', 'tipo', 'fecha', 'asunto', 'remitente'];
 
 function ledgerSheet_(sheetId, config) { return ensureSheet_(sheetId, config.sheets.ledger, LEDGER_HEADERS_); }
 function processedSheet_(sheetId, config) { return ensureSheet_(sheetId, config.sheets.processed, PROCESSED_HEADERS_); }
@@ -119,7 +119,7 @@ function markProcessed_(sheetId, config, entries) {
   (entries || []).forEach(function (e) {
     if (!e.gmail_id || done[e.gmail_id]) return;
     done[e.gmail_id] = true;
-    rows.push({ gmail_id: e.gmail_id, resultado: e.resultado, tipo: e.tipo || '', fecha: new Date().toISOString() });
+    rows.push({ gmail_id: e.gmail_id, resultado: e.resultado, tipo: e.tipo || '', fecha: new Date().toISOString(), asunto: e.asunto || '', remitente: e.remitente || '' });
   });
   appendRows_(sh, rows);
   return rows.length;

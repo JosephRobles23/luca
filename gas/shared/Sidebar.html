@@ -74,7 +74,8 @@
     var s = st.lastStats || {};
     var imp = st.importacion || {};
     document.getElementById('estado').innerHTML =
-      fila('Versión LucaLib', 'v' + esc(st.version)) +
+      fila('Versión LucaLib', 'v' + esc(st.version) + ' <span class="muted">· stub v' + esc(st.stubVersion || '1') + '</span>') +
+      (st.stubUpdate ? '<div class="warn" style="margin:4px 0">' + esc(st.stubUpdate) + '</div>' : '') +
       fila('Autorizado', st.autorizado ? '<span class="ok">sí</span>' : '<span class="warn">no — usa el menú Luca → Autorizar</span>') +
       fila('Cursor de Gmail', esc(fecha(st.cursorIso))) +
       fila('Último escaneo', esc(fecha(st.lastRunAt)) + (st.lastStats ? ' <span class="muted">(+' + (s.added || 0) + ')</span>' : '')) +

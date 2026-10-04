@@ -3,6 +3,10 @@
  * Lo editable vive en la pestaña `Ajustes`; getConfig_() mezcla ambos con LucaLib.construirConfig.
  */
 
+// Versión del STUB (no de la librería). La librería la compara con STUB_MIN_VERSION_ y avisa si hay que
+// actualizar los archivos del stub en la copia (ADR-006 §5). Subirla solo cuando cambie gas/stub/*.
+var STUB_VERSION = '2';
+
 var CONFIG_STATIC = {
   sheets: {
     ledger:     'Movimientos',
@@ -29,5 +33,6 @@ function getExecUrl_() {
 function getConfig_() {
   var cfg = LucaLib.construirConfig(getSheetId_(), CONFIG_STATIC);
   cfg.execUrl = getExecUrl_();
+  cfg.stubVersion = STUB_VERSION;
   return cfg;
 }

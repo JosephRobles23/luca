@@ -118,8 +118,8 @@ function scanGmail_(sheetId, config, opts) {
     n++;
     if (email.epoch > maxEpoch) maxEpoch = email.epoch;
     var r = parseEmail(email);
-    if (r.ignored) { stats.ignored++; procesados.push({ gmail_id: email.id, resultado: 'ignored:' + r.reason, tipo: r.type || '' }); continue; }
-    if (r.unknown) { stats.unknown++; procesados.push({ gmail_id: email.id, resultado: 'unknown', tipo: r.type }); continue; }
+    if (r.ignored) { stats.ignored++; procesados.push({ gmail_id: email.id, resultado: 'ignored:' + r.reason, tipo: r.type || '', asunto: email.subject, remitente: email.from }); continue; }
+    if (r.unknown) { stats.unknown++; procesados.push({ gmail_id: email.id, resultado: 'unknown', tipo: r.type, asunto: email.subject, remitente: email.from }); continue; }
     txs.push(r);
     procesados.push({ gmail_id: email.id, resultado: 'tx', tipo: r.type });
   }

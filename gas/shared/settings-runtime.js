@@ -12,7 +12,16 @@
  * Versión de LucaLib que se escribe en `Ajustes.luca.version` en cada pasada (ADR-006 §5): la web y el
  * sidebar comparan con la última publicada para avisar "hay una versión nueva". Subirla en cada release.
  */
-var LUCA_VERSION = '7';
+var LUCA_VERSION = '8';
+// Versión mínima del stub que esta librería necesita (stub v2 = pasa setupTriggers y execUrl/stubVersion).
+var STUB_MIN_VERSION_ = '2';
+
+/** '' si el stub está al día; mensaje si hay que actualizar los archivos del stub en la copia. */
+function stubUpdateMessage_(config) {
+  var v = parseInt((config && config.stubVersion) || '1', 10) || 1;
+  if (v >= parseInt(STUB_MIN_VERSION_, 10)) return '';
+  return 'Tu script necesita actualizarse (stub v' + v + ' < v' + STUB_MIN_VERSION_ + '): haz una copia nueva de la plantilla o reemplaza los archivos del stub (Extensiones → Apps Script).';
+}
 
 var AJUSTES_DEFAULTS_ = {
   // Fuentes de correo (remitentes transaccionales). Separados por coma.
@@ -175,7 +184,7 @@ function telemetriaIphone_(ajustes) {
  */
 function writeTelemetria_(sheetId, config, stats) {
   try {
-    var upd = { 'luca.version': LUCA_VERSION, 'conexiones.execUrl': execUrl_(config), 'scan.lastRunAt': new Date().toISOString() };
+    var upd = { 'luca.version': LUCA_VERSION, 'stub.version': String((config && config.stubVersion) || '1'), 'conexiones.execUrl': execUrl_(config), 'scan.lastRunAt': new Date().toISOString() };
     if (stats !== undefined) upd['scan.lastStats'] = JSON.stringify(stats || {});
     setAjustes_(sheetId, config, upd);
   } catch (e) { Logger.log('writeTelemetria_: ' + (e && e.message || e)); }

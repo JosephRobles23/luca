@@ -59,7 +59,7 @@ function autorizar(sheetId, config, installTriggers) {
     try { installTriggers(); trigger.installed = true; setAjustes_(sheetId, config, { 'triggers.installedAt': new Date().toISOString() }); }
     catch (e) { trigger.error = String(e && e.message || e); Logger.log('autorizar: no se pudo instalar el trigger: ' + trigger.error); }
   } else {
-    trigger.error = 'stub sin setupTriggers';
+    trigger.error = stubUpdateMessage_(config) || 'stub sin setupTriggers';
   }
   var since = Math.floor(Date.now() / 1000) - AUTORIZAR_DIAS_ * 86400;
   // El cursor se fija en `since` antes de importar: así Autorizar es idempotente aunque el buzón esté
@@ -116,6 +116,8 @@ function estadoLuca(sheetId, config) {
   try { stats = a['scan.lastStats'] ? JSON.parse(a['scan.lastStats']) : null; } catch (e) { stats = null; }
   return {
     version: LUCA_VERSION,
+    stubVersion: String(config.stubVersion || '1'),
+    stubUpdate: stubUpdateMessage_(config),
     versionEnAjustes: a['luca.version'] || '',
     autorizado: !!config.gmail.cursor,
     cursor: config.gmail.cursor,
