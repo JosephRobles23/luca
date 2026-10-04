@@ -7,10 +7,10 @@ const SID = 'sheet-1';
 
 test('runDispatcher escribe luca.version, conexiones.execUrl, scan.lastRunAt y scan.lastStats en Ajustes', () => {
   const h = makeHarness({ execUrl: 'https://script.google.com/macros/s/TEST/exec', spreadsheets: { [SID]: {} }, gmailMessages: [toGmailApi(emails.bcp_card_purchase_pen)] });
-  assert.equal(h.api.LUCA_VERSION, '4');
+  assert.match(h.api.LUCA_VERSION, /^\d+$/);
   h.api.runDispatcher(SID, configFor(h, SID));
   const a = configFor(h, SID).ajustes;
-  assert.equal(a['luca.version'], '4');
+  assert.equal(a['luca.version'], h.api.LUCA_VERSION);
   assert.equal(a['conexiones.execUrl'], 'https://script.google.com/macros/s/TEST/exec');
   assert.match(a['scan.lastRunAt'], /^\d{4}-\d{2}-\d{2}T/);
   const stats = JSON.parse(a['scan.lastStats']);
@@ -26,7 +26,7 @@ test('execUrl: prioriza la que trae el stub en config; sin despliegue queda vac�
   cfg.execUrl = 'https://script.google.com/macros/s/DEL-STUB/exec';
   h.api.escanearAhora(SID, cfg);
   assert.equal(configFor(h, SID).ajustes['conexiones.execUrl'], 'https://script.google.com/macros/s/DEL-STUB/exec');
-  assert.equal(h.api.cargarConfig(SID, cfg).version, '4');
+  assert.equal(h.api.cargarConfig(SID, cfg).version, h.api.LUCA_VERSION);
 });
 
 test('la importación histórica, al terminar, avanza el cursor incremental hasta lo último importado', () => {

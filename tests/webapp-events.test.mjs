@@ -17,7 +17,7 @@ const evento = (token, extra = {}) => ({
 test('GET /exec responde ok con la versión de la librería', () => {
   const h = makeHarness({ spreadsheets: { [SID]: {} } });
   const r = JSON.parse(h.api.webAction('get', { parameter: {} }, SID, configFor(h, SID)).getContent());
-  assert.deepEqual(r, { ok: true, app: 'luca', version: '4' });
+  assert.deepEqual(JSON.parse(JSON.stringify(r)), { ok: true, app: 'luca', version: h.api.LUCA_VERSION });
 });
 
 test('conectarIphone genera un deviceToken en UserProperties y devuelve execUrl + token + enlace del atajo', () => {

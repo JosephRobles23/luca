@@ -27,7 +27,7 @@ test('Autorizar (primera vez): instala el trigger vía callback del stub, import
   const a = configFor(h, SID).ajustes;
   assert.equal(a['import.status'], 'done');
   assert.match(a['triggers.installedAt'], /^\d{4}-/);
-  assert.equal(a['luca.version'], '4');
+  assert.equal(a['luca.version'], h.api.LUCA_VERSION);
   assert.ok(configFor(h, SID).gmail.cursor >= since, 'el cursor queda fijado');
   assert.equal(h.alerts.length, 1);
   assert.match(h.alerts[0][1], /activado/);
@@ -76,7 +76,7 @@ test('estadoLuca resume versión, cursor, último escaneo, importación y conexi
   const h = makeHarness({ execUrl: 'https://script.google.com/macros/s/TEST/exec', spreadsheets: { [SID]: {} }, gmailMessages: [reciente] });
   const antes = h.api.dispatch('estadoLuca', [], SID, configFor(h, SID));
   assert.equal(antes.autorizado, false);
-  assert.equal(antes.version, '4');
+  assert.equal(antes.version, h.api.LUCA_VERSION);
   h.api.menuAction('lucaMenu1', SID, configFor(h, SID), () => {});
   const st = h.api.dispatch('estadoLuca', [], SID, configFor(h, SID));
   assert.equal(st.autorizado, true);
