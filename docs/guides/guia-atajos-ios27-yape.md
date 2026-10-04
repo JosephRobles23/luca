@@ -456,6 +456,71 @@ Muestras (**redacta los datos personales**: nombres → `<NOMBRE>`, últimos dí
 
 ---
 
+## Prompt extra: generar el atajo de prueba con Gmail desde el generador de Atajos
+
+iOS 27 permite describir el atajo en lenguaje natural. Este prompt crea la versión de **prueba controlada**
+(disparador con la app Gmail en vez de Yape) que se usó el 2026-10-04 para verificar que la automatización
+corre sola y entrega `title`/`subtitle`/`body` (ver `prompt-atajo-ios27-yape.md` para las versiones de Yape y Flush).
+Reemplaza `<URL_WEBHOOK>` por tu URL de webhook.site antes de pegarlo.
+
+```text
+Crea un atajo llamado "Luca – Captura Gmail (prueba)" pensado para ejecutarse como automatización
+personal cuando llega una notificación de la app Gmail. Debe correr sin pedir confirmación, sin
+abrirse en pantalla y sin mostrar ninguna alerta ni notificación propia.
+
+Pasos exactos, en este orden:
+
+1. Toma la entrada del atajo (la notificación que lo disparó) y guarda en variables separadas:
+   - "titulo": el título de la notificación
+   - "subtitulo": el subtítulo de la notificación (puede estar vacío)
+   - "cuerpo": el texto o mensaje de la notificación
+   - "fechaNotif": la fecha de la notificación
+   - "raw": la entrada completa convertida a texto
+
+2. Guarda la fecha y hora actual en la variable "ahora", formateada como ISO 8601 incluyendo la
+   hora y la zona horaria (por ejemplo 2026-10-04T12:34:56-05:00), no solo la fecha.
+
+3. Genera un identificador único "eventId" concatenando "ahora" con un número aleatorio entre
+   100000 y 999999, separados por un guion.
+
+4. Obtén el nombre del dispositivo y guárdalo en "dispositivo".
+
+5. Comprueba si el dispositivo está bloqueado y guarda el resultado en "bloqueado" (si no existe
+   una acción para saberlo, pon el texto "desconocido").
+
+6. Construye un Diccionario con estas claves y valores:
+   - "schema_version": "1"
+   - "id": eventId
+   - "source": "gmail-test"
+   - "channel": "ios-notification"
+   - "token": "luca-test-7f3a9c2e"
+   - "title": titulo
+   - "subtitle": subtitulo
+   - "body": cuerpo
+   - "notified_at": fechaNotif
+   - "received_at": ahora
+   - "device": dispositivo
+   - "locked": bloqueado
+   - "raw": raw
+
+7. Haz una petición HTTP a "<URL_WEBHOOK>" con el método POST, tipo de cuerpo JSON, enviando el
+   Diccionario del paso 6 como cuerpo.
+
+8. Si la petición falla, guarda el Diccionario del paso 6 añadiéndolo a la lista "luca_pendientes"
+   del almacenamiento persistente de Atajos (acción "Añadir elemento a la lista" del grupo
+   Almacenamiento). No muestres nada en pantalla en ningún caso.
+```
+
+Después de generarlo:
+
+1. Abre el atajo → **Editar** → **ⓘ** → **Privacidad** → activa **"Permitir ejecución con el equipo bloqueado"** (etiqueta aprox.).
+2. **Editar** → **Automatización** → **Notificación** → App: **Gmail** → **Ejecutar inmediatamente** → Listo. Si el generador ya creó la automatización, solo verifica que esté en "Ejecutar inmediatamente".
+3. **No lo ejecutes con el botón "Ejecutar"**: sin notificación de entrada, todos los campos llegan vacíos.
+4. En Ajustes → Notificaciones → Gmail: **Entrega inmediata**, sin **Resumen programado**, previsualizar **Siempre**.
+5. **Prueba desbloqueado:** envíate un correo con asunto `PRUEBA LUCA 123` → en webhook.site debe aparecer el JSON con `title` (remitente), `subtitle` (asunto) y `body` (inicio del mensaje). *(Verificado el 2026-10-04.)*
+6. **Prueba bloqueado:** iPhone bloqueado con la pantalla apagada 1–2 min, envíate un correo con asunto `PRUEBA BLOQUEADO 456`. Anota si llegó, el valor de `locked` y si el iPhone mostró algún aviso de Atajos.
+7. Cuando ambas pasen, cambia la app del disparador a **Yape** y sigue con el Experimento 1 (pruebas A/B/C).
+
 ## Problemas frecuentes
 
 | # | Síntoma | Qué revisar |
