@@ -29,6 +29,9 @@ var AJUSTES_DEFAULTS_ = {
   // LLM (la key va en UserProperties).
   'llm.provider': 'gemini',
   'llm.model': 'gemini-3.7-flash',
+  // Resultado de "Probar key" (sidebar); la web lo muestra. No editar a mano.
+  'llm.lastTestAt': '',
+  'llm.lastError': '',
   // Tipo de cambio de respaldo para mostrar USD en PEN (ADR-005).
   'fx.usd_pen': '3.50',
   // Wiki en Drive.
