@@ -45,7 +45,7 @@ Pasos exactos, en este orden:
    - "subtitle": subtitulo
    - "body": cuerpo
    - "notified_at": fechaNotif
-   - "received_at": la fecha y hora actual en ISO 8601
+   - "received_at": la fecha y hora actual formateada como ISO 8601 INCLUYENDO la hora (p. ej. 2026-10-04T12:34:56-05:00), no solo la fecha
    - "device": dispositivo
    - "raw": raw (o el texto completo de la entrada)
 
@@ -60,11 +60,13 @@ No muestres ninguna alerta ni notificación propia. No uses acciones que requier
 ```
 
 Después de generarlo:
+0. **No lo pruebes con el botón "Ejecutar":** sin una notificación de entrada, todos los campos llegan vacíos (es normal). Solo vale cuando lo dispara la automatización.
 1. Ábrelo → **Editar** → **ⓘ** → **Privacidad** → activa **"Permitir ejecución con el equipo bloqueado"** (etiqueta aprox.).
 2. **Editar** → **Automatización** → **Notificación** → App: **Yape** → **Ejecutar inmediatamente** → Listo.
-3. Prueba A: con el iPhone **desbloqueado y la app Yape cerrada**, pide a alguien que te yapee S/1. En webhook.site debe aparecer un POST con el JSON.
-4. Prueba B: con el iPhone **bloqueado y la pantalla apagada** durante al menos 1 minuto, repite el yapeo de S/1.
-5. Prueba C (ingreso vs. envío): yapea tú S/1 a alguien. ¿Llegó una notificación de Yape? ¿Se disparó el atajo?
+3. Prueba 0 (controlada, sin Yape): cambia temporalmente la app del disparador a **Mail** o **Mensajes**, bloquea el iPhone y envíate un correo/SMS con asunto `PRUEBA LUCA 123`. Si `title`/`body` llegan con ese texto, iOS 27 entrega el contenido y corre bloqueado. Vuelve a poner **Yape**.
+4. Prueba A: con el iPhone **desbloqueado y la app Yape cerrada**, pide a alguien que te yapee S/1. En webhook.site debe aparecer un POST con el JSON.
+5. Prueba B: con el iPhone **bloqueado y la pantalla apagada** durante al menos 1 minuto, repite el yapeo de S/1.
+6. Prueba C (ingreso vs. envío): yapea tú S/1 a alguien. ¿Llegó una notificación de Yape? ¿Se disparó el atajo?
 
 Lo que anotar por cada prueba: ¿llegó el POST a webhook.site? ¿`title` y `body` traen texto real o vacío? ¿Apareció algún aviso o pregunta en el iPhone? ¿Cuántos segundos tardó?
 

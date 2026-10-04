@@ -135,4 +135,4 @@ Exportar 2–3 `.eml` por tipo (Gmail → ⋮ → "Descargar mensaje") a `spikes
 | S4 | 2026-10-04 | `iss` correcto; `aud` constante en 3 tokens de la misma copia y **distinto** en una segunda copia; `sub` igual en ambas; `email_verified=true`; 3600 s | 4 tokens decodificados en local con `s4-decode-jwt.mjs` | Pairing ancla `aud`+`sub`; después, auth GAS→Worker solo con la firma de Google (sin secreto compartido) |
 | S5 | | | | |
 | S6 | | | | |
-| S7 | | | | |
+| S7 | 2026-10-04 | Atajo generado por prompt; POST llega a webhook.site con la estructura correcta. Campos vacíos porque se ejecutó a mano (sin notificación): **no concluyente**. Pendiente prueba 0 (Mail/Mensajes bloqueado) y A/B/C con Yape | JSON en chat | — |
