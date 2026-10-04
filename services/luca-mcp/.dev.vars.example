@@ -1,0 +1,5 @@
+# Copia a .dev.vars para `wrangler dev` (.dev.vars está ignorado por git).
+# Hoy el Worker no necesita secretos: no guarda tokens de Google ni claves de usuarios.
+# Estas dos variables también están en [vars] de wrangler.toml; aquí solo para sobreescribirlas en local.
+LUCA_LIB_VERSION=3
+MIN_SHORTCUT_SCHEMA=1

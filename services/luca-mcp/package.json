@@ -1,0 +1,25 @@
+{
+  "name": "luca-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Servidor MCP remoto multi-tenant de Luca (Cloudflare Worker). Proxy al Web App /exec de cada usuario.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.mjs",
+    "db:init": "wrangler d1 execute luca-mcp --remote --file=schema.sql"
+  },
+  "dependencies": {
+    "@cloudflare/workers-oauth-provider": "^0.10.3",
+    "@modelcontextprotocol/server": "^2.0.0",
+    "agents": "^0.21.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260819.1",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.124.0"
+  }
+}
