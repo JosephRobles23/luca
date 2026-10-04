@@ -18,7 +18,7 @@ desde el navegador; Worker Cloudflare (`services/luca-mcp`) expone MCP. Vocabula
 
 ## Comandos
 ```bash
-npm test                 # 36+ tests Node (harness vm con mocks de Apps Script + lógica web)
+npm test                 # 69+ tests Node (harness vm con mocks de Apps Script, stub y lógica web)
 npm run lib:push         # clasp push de LucaLib (gas/shared)
 npm run lib:version      # nueva versión de LucaLib → luego subir "version" en gas/stub/appsscript.json
 npm run stub:push        # clasp push del stub a la plantilla (gas/stub)
@@ -33,6 +33,9 @@ Release: tests → `lib:push` → `lib:version` → bump en `gas/stub/appsscript
   las llama el stub, la UI (`DISPATCH_`) o los tests. Toda llamada de UI pasa por `lucaRun` → `dispatch`
   (lista blanca). Convención `fn(sheetId, config, ...args)`.
 - Nuevo runtime en `gas/shared` ⇒ añadirlo a `RUNTIME_FILES` en `tests/gas-harness.mjs`.
+- Triggers y `ScriptApp.getService().getUrl()` solo desde el stub (apuntan al proyecto contenedor): el stub
+  pasa `setupTriggers` como callback a `menuAction` y `config.execUrl` en `getConfig_()`.
+- Al publicar una versión nueva de LucaLib, subir `LUCA_VERSION` en `settings-runtime.js`.
 - Parsers deterministas primero; el LLM solo recibe `comercio + monto` (ADR-004).
 - Web: lógica pura en `apps/web/src/lib/*.ts` con tests `.test.mjs`; componentes solo presentan.
 - Al comparar objetos del sandbox vm en tests usar `JSON.parse(JSON.stringify(x))` (distinto realm).
