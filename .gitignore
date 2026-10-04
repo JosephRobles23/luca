@@ -8,7 +8,7 @@ docs/img/Screenshot_*.png
 # Secretos y config local
 .env
 .env.*
-.clasp.json
+# .clasp.json se versiona (scriptIds no son secretos); solo se ignoran credenciales
 .clasprc.json
 .dev.vars
 *.local.json

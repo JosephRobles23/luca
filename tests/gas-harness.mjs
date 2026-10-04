@@ -25,6 +25,7 @@ export const RUNTIME_FILES = [
   'push-parsers-runtime.js',
   'ledger-runtime.js',
   'gmail-scan-runtime.js',
+  'webapp-runtime.js',
   'ui-runtime.js'
 ];
 
