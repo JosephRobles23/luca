@@ -14,9 +14,10 @@ const recibido = {
   notified_at: '4 oct. 2026, 8:49 a. m.', received_at: '2026-10-04', device: 'iPhone X'
 };
 
-test('push Yape: yapeo recibido → income con contraparte, monto < S/10 y fecha de la notificación', () => {
+test('push Yape: yapeo recibido → transfer_in (no income) con contraparte, monto < S/10 y fecha de la notificación', () => {
   const tx = api.parsePushEvent(recibido);
-  assert.equal(tx.kind, 'income');
+  assert.equal(tx.kind, 'transfer_in');
+  assert.equal(tx.type, 'yape_push_income');
   assert.equal(tx.amount, 1.5);
   assert.equal(tx.currency, 'PEN');
   assert.equal(tx.counterparty_name, 'MARIA LOPEZ');
@@ -33,7 +34,7 @@ test('push Yape: variantes previstas de envío y pago (no verificadas en disposi
   const b = api.parsePushEvent({ id: 'b', body: 'Pagaste S/ 5.00 en Bodega Don Lucho', received_at: '2026-10-04T10:00:00-05:00' });
   assert.equal(b.kind, 'expense'); assert.equal(b.merchant, 'Bodega Don Lucho'); assert.equal(b.counterparty_name, '');
   const c = api.parsePushEvent({ id: 'c', body: 'PEDRO te yapeó S/ 20' });
-  assert.equal(c.kind, 'income'); assert.equal(c.amount, 20); assert.ok(c.flags.includes('no_date'));
+  assert.equal(c.kind, 'transfer_in'); assert.equal(c.amount, 20); assert.ok(c.flags.includes('no_date'));
 });
 
 test('push: sin body usa raw sin la primera línea (título); texto desconocido → unknown', () => {

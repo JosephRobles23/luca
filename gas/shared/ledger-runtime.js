@@ -94,10 +94,17 @@ function readLedger_(sheetId, config) {
   return readRows_(ledgerSheet_(sheetId, config));
 }
 
-/** Resumen rápido para la UI. */
+/**
+ * Resumen rápido para la UI. `porTipo` cuenta filas por `tipo` (ADR-005): `transfer_in` (yapeos
+ * recibidos) se reporta aparte (`recibidoYape`) y nunca se suma a `income`.
+ */
 function estadoLedger(sheetId, config) {
   var rows = readLedger_(sheetId, config);
-  var porTipo = {};
-  rows.forEach(function (r) { porTipo[r.tipo] = (porTipo[r.tipo] || 0) + 1; });
-  return { total: rows.length, porTipo: porTipo, cursor: config.gmail.cursor };
+  var porTipo = { expense: 0, income: 0, transfer_in: 0, internal_transfer: 0 };
+  var sinCategoria = 0;
+  rows.forEach(function (r) {
+    porTipo[r.tipo] = (porTipo[r.tipo] || 0) + 1;
+    if (r.tipo === 'expense' && !str_(r.categoria)) sinCategoria++;
+  });
+  return { total: rows.length, porTipo: porTipo, sinCategoria: sinCategoria, recibidoYape: porTipo.transfer_in, cursor: config.gmail.cursor };
 }

@@ -64,3 +64,18 @@ test('dispatch solo permite funciones de la lista blanca', () => {
   assert.ok(h.api.dispatch('cargarConfig', [], SID, cfg).ajustes);
   assert.throws(() => h.api.dispatch('appendTransactions_', [], SID, cfg), /no permitida/);
 });
+
+test('estadoLedger: transfer_in (yapeo recibido) se cuenta aparte y no como income', () => {
+  const h = makeHarness({ spreadsheets: { [SID]: {} } });
+  const cfg = configFor(h, SID);
+  const push = h.api.parsePushEvent({ id: 'p1', body: 'ANA te yapeó S/ 20', notified_at: '2026-10-04T10:00:00-05:00' });
+  const compra = h.api.parseEmail(emails.bcp_card_purchase_pen);
+  h.api.appendTransactions_(SID, cfg, [push, compra]);
+  const st = h.api.estadoLedger(SID, cfg);
+  assert.equal(st.total, 2);
+  assert.equal(st.porTipo.transfer_in, 1);
+  assert.equal(st.porTipo.income, 0);
+  assert.equal(st.recibidoYape, 1);
+  const data = h.tab(SID, 'Movimientos');
+  assert.equal(data[1][data[0].indexOf('tipo')], 'transfer_in');
+});
