@@ -31,23 +31,62 @@ function buildDialog(nombre) {
   return { html: html, titulo: d.titulo };
 }
 
-var MENU_ACTIONS_ = {
-  lucaMenu1: function (sheetId, config) {
+var AUTORIZAR_DIAS_ = 30;
+
+function resumenScan_(st) {
+  return 'Nuevos: ' + (st.added || 0) + ' · Ya existentes: ' + (st.skipped || 0) + ' · Ignorados: ' + (st.ignored || 0) + ' · Desconocidos: ' + (st.unknown || 0);
+}
+
+/**
+ * Autorizar (ADR-006 §3.2). Primera vez (sin cursor): (a) instala el trigger, (b) importa el último mes
+ * y corre la primera pasada, (c) muestra un resumen. Con cursor: escaneo normal.
+ *
+ * Triggers: en Apps Script un trigger solo puede apuntar a una función del PROYECTO CONTENEDOR (el stub),
+ * y `ScriptApp` dentro de la librería es el de la librería. Por eso el stub pasa su propia función
+ * `setupTriggers` como callback (`installTriggers`) y la librería solo la invoca: la creación del
+ * trigger ocurre en el contexto del stub y apunta a su `dispatcher`. Un stub antiguo que no pase el
+ * callback sigue funcionando (se avisa que falta el escaneo automático).
+ */
+function autorizar(sheetId, config, installTriggers) {
+  var ui = SpreadsheetApp.getUi();
+  if (config.gmail.cursor) {
     var st = escanearAhora(sheetId, config);
-    SpreadsheetApp.getUi().alert('Luca', 'Escaneo listo. Nuevos: ' + st.added + ' · Ya existentes: ' + st.skipped +
-      ' · Ignorados: ' + st.ignored + ' · Desconocidos: ' + st.unknown, SpreadsheetApp.getUi().ButtonSet.OK);
-    return st;
-  },
+    ui.alert('Luca', 'Escaneo listo. ' + resumenScan_(st), ui.ButtonSet.OK);
+    return { modo: 'scan', scan: st };
+  }
+  var trigger = { installed: false, error: '' };
+  if (typeof installTriggers === 'function') {
+    try { installTriggers(); trigger.installed = true; setAjustes_(sheetId, config, { 'triggers.installedAt': new Date().toISOString() }); }
+    catch (e) { trigger.error = String(e && e.message || e); Logger.log('autorizar: no se pudo instalar el trigger: ' + trigger.error); }
+  } else {
+    trigger.error = 'stub sin setupTriggers';
+  }
+  var since = Math.floor(Date.now() / 1000) - AUTORIZAR_DIAS_ * 86400;
+  // El cursor se fija en `since` antes de importar: así Autorizar es idempotente aunque el buzón esté
+  // vacío, y el escaneo incremental arranca donde termina la importación (pasadaImportacion_ lo avanza).
+  setAjustes_(sheetId, config, { 'gmail.cursor': String(since) });
+  var imp = iniciarImportacion(sheetId, config, since);
+  writeTelemetria_(sheetId, config, imp);
+  var msg = 'Luca quedó activado.\n' +
+    (trigger.installed ? 'Escaneo automático cada 15 min: instalado.\n' : 'Escaneo automático: NO se pudo instalar (' + trigger.error + ').\n') +
+    'Importación del último mes: ' + resumenScan_(imp) + (imp.done ? '.' : '. Continúa en segundo plano.');
+  ui.alert('Luca', msg, ui.ButtonSet.OK);
+  return { modo: 'autorizar', trigger: trigger, import: imp };
+}
+
+var MENU_ACTIONS_ = {
+  lucaMenu1: function (sheetId, config, extra) { return autorizar(sheetId, config, extra); },
   lucaMenu2: function (sheetId, config) {
     var d = buildDialog('dashboard');
     SpreadsheetApp.getUi().showModalDialog(d.html, d.titulo);
   }
 };
 
-function menuAction(slot, sheetId, config) {
+/** `extra`: para lucaMenu1, la función `setupTriggers` del stub (ver autorizar). */
+function menuAction(slot, sheetId, config, extra) {
   var fn = MENU_ACTIONS_[slot];
   if (!fn) throw new Error('Acción de menú no definida: ' + slot);
-  return fn(sheetId, config);
+  return fn(sheetId, config, extra);
 }
 
 var DISPATCH_ = {

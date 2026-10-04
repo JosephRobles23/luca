@@ -26,11 +26,12 @@ function lucaRun(fnName, argsJson) {
 }
 
 // Slots de menú: el menú lo arma la librería; la acción se define en LucaLib.menuAction.
-function lucaMenu1() { return LucaLib.menuAction('lucaMenu1', getSheetId_(), getConfig_()); }
+// lucaMenu1 = Autorizar: pasa `setupTriggers` (triggers.js) para que el trigger se cree en este proyecto.
+function lucaMenu1() { return LucaLib.menuAction('lucaMenu1', getSheetId_(), getConfig_(), setupTriggers); }
 function lucaMenu2() { return LucaLib.menuAction('lucaMenu2', getSheetId_(), getConfig_()); }
 function lucaMenu3() { return LucaLib.menuAction('lucaMenu3', getSheetId_(), getConfig_()); }
 
-// Web App (solo necesario para "Conectar con tu IA"; ver ADR-001). GET nunca muta.
+// Web App (necesario para el iPhone, ADR-003, y para "Conectar con tu IA", ADR-001). GET nunca muta.
 function doGet(e)  { return LucaLib.webAction('get', e, getSheetId_(), getConfig_()); }
 function doPost(e) { return LucaLib.webAction('post', e, getSheetId_(), getConfig_()); }
 
