@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "dev:mock": "LUCA_MOCK=1 AUTH_SECRET=dev-mock AUTH_GOOGLE_ID=mock AUTH_GOOGLE_SECRET=mock NEXT_PUBLIC_LUCA_LIB_VERSION=5 next dev",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:headed": "playwright test --headed"
   },
   "dependencies": {
     "next": "16.3.8",
@@ -15,6 +20,7 @@
     "react-dom": "19.2.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
