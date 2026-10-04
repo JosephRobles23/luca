@@ -62,7 +62,8 @@ var DISPATCH_ = {
 };
 
 function dispatch(fnName, args, sheetId, config) {
-  var fn = DISPATCH_[fnName];
+  // Módulos opcionales aportan su propia tabla (p. ej. MCP_DISPATCH_ en mcp-runtime.js).
+  var fn = DISPATCH_[fnName] || (typeof MCP_DISPATCH_ !== 'undefined' ? MCP_DISPATCH_[fnName] : null);
   if (!fn) throw new Error('Función no permitida vía lucaRun: ' + fnName);
   return fn(sheetId, config, args || []);
 }
