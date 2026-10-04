@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+<head>
+<base target="_top">
+<style>
+  body { font: 13px system-ui, sans-serif; margin: 16px; color: #1d1a17; }
+  table { border-collapse: collapse; width: 100%; font-size: 12px; }
+  td, th { padding: 6px 8px; border-bottom: 1px solid #eee; text-align: left; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+  <!-- Placeholder: el dashboard real reutilizará docs/html/dashboard-mock.html con un adaptador GasSource. -->
+  <h2>Luca — últimos movimientos</h2>
+  <div id="out">cargando…</div>
+<script>
+  google.script.run.withSuccessHandler(function (rows) {
+    rows = (rows || []).slice(-50).reverse();
+    var html = '<table><tr><th>Fecha</th><th>Tipo</th><th>Comercio / contraparte</th><th class="n">Monto</th><th>Categoría</th></tr>';
+    rows.forEach(function (r) {
+      html += '<tr><td>' + String(r.fecha).slice(0, 16).replace('T', ' ') + '</td><td>' + r.tipo + '</td><td>' +
+        (r.comercio || r.contraparte || '') + '</td><td class="n">' + r.moneda + ' ' + r.monto + '</td><td>' + (r.categoria || '—') + '</td></tr>';
+    });
+    document.getElementById('out').innerHTML = html + '</table>';
+  }).withFailureHandler(function (e) { document.getElementById('out').textContent = 'Error: ' + e.message; })
+    .lucaRun('leerLedger', '[]');
+</script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+<!doctype html>
+<html>
+<head>
+<base target="_top">
+<style>
+  body { font: 13px system-ui, sans-serif; margin: 12px; color: #1d1a17; }
+  h3 { margin: 14px 0 6px; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: #8b857c; }
+  input, button { font: inherit; width: 100%; box-sizing: border-box; padding: 7px 9px; margin-top: 6px; }
+  button { background: #d9623b; color: #fff; border: 0; border-radius: 6px; cursor: pointer; }
+  button.sec { background: #eee; color: #1d1a17; }
+  .ok { color: #2e7d4f; } .warn { color: #b26a00; }
+  pre { background: #f4efe8; padding: 8px; font-size: 11px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+  <h3>Estado</h3>
+  <div id="estado">cargando…</div>
+  <button class="sec" onclick="escanear()">Escanear Gmail ahora</button>
+
+  <h3>API key del LLM</h3>
+  <div>Se guarda solo en tu cuenta (UserProperties). Alternativa al código de la web.</div>
+  <input id="llmKey" type="password" placeholder="pega tu API key">
+  <button onclick="guardarKey()">Guardar key</button>
+
+  <h3>Importar historial</h3>
+  <input id="desde" type="date">
+  <button class="sec" onclick="importar()">Importar desde esa fecha</button>
+
+  <pre id="out"></pre>
+<script>
+  function run(method) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (resolve, reject) {
+      google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).lucaRun(method, JSON.stringify(args));
+    });
+  }
+  function show(x) { document.getElementById('out').textContent = typeof x === 'string' ? x : JSON.stringify(x, null, 2); }
+  function pintar() {
+    Promise.all([run('estadoLedger'), run('estadoSecretos')]).then(function (r) {
+      var l = r[0], s = r[1];
+      document.getElementById('estado').innerHTML =
+        'Movimientos: <b>' + l.total + '</b><br>' +
+        'API key LLM: <span class="' + (s.llmKey ? 'ok">configurada' : 'warn">falta') + '</span><br>' +
+        'Conexión MCP: <span class="' + (s.mcp ? 'ok">activa' : 'warn">no conectada') + '</span>';
+    }).catch(function (e) { show('Error: ' + e.message); });
+  }
+  function escanear() { show('escaneando…'); run('escanearAhora').then(function (r) { show(r); pintar(); }).catch(function (e) { show('Error: ' + e.message); }); }
+  function guardarKey() {
+    run('guardarLlmKey', document.getElementById('llmKey').value).then(function () { document.getElementById('llmKey').value = ''; pintar(); show('Key guardada.'); })
+      .catch(function (e) { show('Error: ' + e.message); });
+  }
+  function importar() {
+    var d = document.getElementById('desde').value;
+    if (!d) return show('Elige una fecha.');
+    var epoch = Math.floor(new Date(d + 'T00:00:00-05:00').getTime() / 1000);
+    show('importando…'); run('iniciarImportacion', epoch).then(function (r) { show(r); pintar(); }).catch(function (e) { show('Error: ' + e.message); });
+  }
+  pintar();
+</script>
+</body>
+</html>

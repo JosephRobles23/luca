@@ -12,3 +12,22 @@ Principio rector: **los datos viven y se procesan en el Google del usuario.** Lu
 - `docs/discovery/` — formatos de correos BCP/Yape, reuso de CoS-Agent, captura por iOS
 - `docs/guides/guia-atajos-ios27-yape.md` — experimentos en iPhone
 - `docs/html/dashboard-mock.html` — mockup del dashboard
+
+## Estructura
+
+```text
+gas/shared/      LucaLib (librería Apps Script): parsers de correo, ledger, escaneo Gmail, ajustes, UI
+gas/stub/        script ligado a la plantilla de Sheet (bootloader delgado; copiado con files.copy)
+services/        luca-mcp (Worker Cloudflare, fork de Vera-MCP) — pendiente
+spikes/          experimentos de validación S1–S7 y resultados
+tests/           harness vm de Node con mocks de Apps Script + fixtures sintéticos
+docs/            arquitectura, ADRs, research, discovery, guías
+```
+
+## Desarrollo
+
+```bash
+npm test            # 29 tests en Node (sin tocar Google)
+npm run lib:push    # clasp push de LucaLib (requiere gas/shared/.clasp.json)
+npm run stub:push   # clasp push del stub a la plantilla
+```

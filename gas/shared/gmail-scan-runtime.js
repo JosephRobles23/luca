@@ -1,0 +1,149 @@
+/**
+ * gmail-scan-runtime.js — Escaneo incremental de Gmail con el servicio avanzado (scope gmail.readonly).
+ *
+ * Se itera por MENSAJE (no por hilo: Gmail agrupa varias notificaciones en un hilo).
+ * Cursor en Ajustes (`gmail.cursor`, epoch segundos) con 1 día de solape; el dedupe lo absorbe.
+ * Presupuesto por pasada: `gmail.batch` mensajes o ~200 s, para no chocar con los 6 min.
+ *
+ * Sin import/export: runtime de Apps Script.
+ */
+
+var SCAN_BUDGET_MS_ = 200 * 1000;
+var SCAN_OVERLAP_S_ = 24 * 3600;
+
+/** Construye la query de Gmail a partir de los remitentes y el cursor. */
+function gmailQuery_(senders, afterEpoch, beforeEpoch) {
+  var q = 'from:(' + senders.join(' OR ') + ')';
+  if (afterEpoch) q += ' after:' + Math.max(0, afterEpoch - SCAN_OVERLAP_S_);
+  if (beforeEpoch) q += ' before:' + beforeEpoch;
+  return q;
+}
+
+/** Lista ids de mensajes que cumplen la query (pagina hasta `max`). */
+function gmailListIds_(query, max) {
+  var ids = [], token = null;
+  do {
+    var res = Gmail.Users.Messages.list('me', { q: query, maxResults: Math.min(100, max - ids.length), pageToken: token || undefined });
+    (res.messages || []).forEach(function (m) { ids.push(m.id); });
+    token = res.nextPageToken || null;
+  } while (token && ids.length < max);
+  return ids.slice(0, max);
+}
+
+function b64urlToString_(data) {
+  if (!data) return '';
+  var bytes = Utilities.base64DecodeWebSafe(data);
+  return Utilities.newBlob(bytes).getDataAsString('UTF-8');
+}
+
+/** Recorre las partes MIME y devuelve { html, plain }. */
+function gmailBodies_(payload) {
+  var out = { html: '', plain: '' };
+  function walk(p) {
+    if (!p) return;
+    var mime = String(p.mimeType || '');
+    if (p.body && p.body.data) {
+      if (mime === 'text/html' && !out.html) out.html = b64urlToString_(p.body.data);
+      else if (mime === 'text/plain' && !out.plain) out.plain = b64urlToString_(p.body.data);
+    }
+    (p.parts || []).forEach(walk);
+  }
+  walk(payload);
+  return out;
+}
+
+/** Mensaje de la Gmail API (format=full) → { id, from, subject, date, html, plain, epoch }. */
+function gmailMessageToEmail(msg) {
+  var headers = {};
+  ((msg.payload && msg.payload.headers) || []).forEach(function (h) { headers[String(h.name).toLowerCase()] = h.value; });
+  var bodies = gmailBodies_(msg.payload);
+  var epoch = Math.floor(parseInt(msg.internalDate || '0', 10) / 1000);
+  return {
+    id: msg.id,
+    from: headers['from'] || '',
+    subject: headers['subject'] || '',
+    date: epoch ? new Date(epoch * 1000) : null,
+    epoch: epoch,
+    html: bodies.html,
+    plain: bodies.plain
+  };
+}
+
+function gmailGetEmail_(id) {
+  return gmailMessageToEmail(Gmail.Users.Messages.get('me', id, { format: 'full' }));
+}
+
+/**
+ * Pasada de escaneo. opts: { afterEpoch, beforeEpoch, max } (por defecto usa el cursor y el batch de config).
+ * @return {{listed:number, processed:number, added:number, skipped:number, ignored:number, unknown:number, cursor:number, done:boolean}}
+ */
+function scanGmail_(sheetId, config, opts) {
+  opts = opts || {};
+  var t0 = Date.now();
+  var after = opts.afterEpoch != null ? opts.afterEpoch : config.gmail.cursor;
+  var max = opts.max || config.gmail.batch;
+  var query = gmailQuery_(config.gmail.senders, after, opts.beforeEpoch);
+  var ids = gmailListIds_(query, max * 3);         // se listan de más porque muchos ya estarán procesados
+  var yaVistos = processedSet_(sheetId, config);
+  var pendientes = ids.filter(function (id) { return !yaVistos[id]; });
+
+  var txs = [], procesados = [], maxEpoch = after || 0, n = 0;
+  var stats = { listed: ids.length, processed: 0, added: 0, skipped: 0, ignored: 0, unknown: 0 };
+  for (var i = 0; i < pendientes.length && n < max; i++) {
+    if (Date.now() - t0 > SCAN_BUDGET_MS_) break;
+    var email = gmailGetEmail_(pendientes[i]);
+    n++;
+    if (email.epoch > maxEpoch) maxEpoch = email.epoch;
+    var r = parseEmail(email);
+    if (r.ignored) { stats.ignored++; procesados.push({ gmail_id: email.id, resultado: 'ignored:' + r.reason, tipo: r.type || '' }); continue; }
+    if (r.unknown) { stats.unknown++; procesados.push({ gmail_id: email.id, resultado: 'unknown', tipo: r.type }); continue; }
+    txs.push(r);
+    procesados.push({ gmail_id: email.id, resultado: 'tx', tipo: r.type });
+  }
+  stats.processed = n;
+  var res = appendTransactions_(sheetId, config, txs);
+  stats.added = res.added; stats.skipped = res.skipped;
+  markProcessed_(sheetId, config, procesados);
+
+  var done = n >= pendientes.length;
+  // El cursor solo avanza cuando se agotó lo pendiente; si no, la siguiente pasada retoma.
+  if (done && maxEpoch && opts.afterEpoch == null) setAjustes_(sheetId, config, { 'gmail.cursor': String(maxEpoch) });
+  stats.cursor = done ? maxEpoch : after;
+  stats.done = done;
+  return stats;
+}
+
+/** Acción de menú/sidebar: una pasada ahora. */
+function escanearAhora(sheetId, config) {
+  return scanGmail_(sheetId, config, {});
+}
+
+/**
+ * Importación histórica: desde `sinceEpoch` hasta hoy, en pasadas sucesivas (la llama el dispatcher
+ * mientras `import.status` = 'running'). Primera llamada: inicia el job.
+ */
+function iniciarImportacion(sheetId, config, sinceEpoch) {
+  setAjustes_(sheetId, config, { 'import.since': String(sinceEpoch), 'import.status': 'running' });
+  return pasadaImportacion_(sheetId, construirConfig(sheetId, config));
+}
+
+function pasadaImportacion_(sheetId, config) {
+  var since = int_(config.ajustes['import.since'], 0);
+  if (!since || config.ajustes['import.status'] !== 'running') return { done: true, idle: true };
+  var st = scanGmail_(sheetId, config, { afterEpoch: since, max: config.gmail.batch });
+  if (st.done) setAjustes_(sheetId, config, { 'import.status': 'done' });
+  return st;
+}
+
+/** Trigger temporal: importación en curso (si la hay) y luego escaneo incremental. */
+function runDispatcher(sheetId, config) {
+  var lock = LockService.getUserLock();
+  try { lock.waitLock(5000); } catch (e) { return { skipped: 'locked' }; }
+  try {
+    var imp = pasadaImportacion_(sheetId, config);
+    if (imp && !imp.idle && !imp.done) return { import: imp };
+    return { import: imp, scan: scanGmail_(sheetId, config, {}) };
+  } finally {
+    lock.releaseLock();
+  }
+}
