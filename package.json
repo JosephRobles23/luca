@@ -5,7 +5,9 @@
   "description": "Gestión de gastos personales sobre el Google del usuario: Apps Script + web + MCP",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/*.test.mjs apps/web/src/lib/*.test.mjs",
+    "test": "node --test tests/*.test.mjs apps/web/src/lib/*.test.mjs services/luca-mcp/test/*.test.mjs",
+    "mcp:typecheck": "npm --prefix services/luca-mcp run typecheck",
+    "mcp:deploy": "npm --prefix services/luca-mcp run deploy",
     "lib:push": "clasp push --project gas/shared",
     "lib:version": "clasp create-version --project gas/shared",
     "stub:push": "clasp push --project gas/stub",
