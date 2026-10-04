@@ -30,10 +30,25 @@ function gmailListIds_(query, max) {
   return ids.slice(0, max);
 }
 
+/**
+ * base64url (Gmail API) → string UTF-8. Tolerante: normaliza alfabeto y padding y prueba ambos
+ * decodificadores; si aun así falla devuelve '' en vez de abortar el escaneo.
+ */
 function b64urlToString_(data) {
   if (!data) return '';
-  var bytes = Utilities.base64DecodeWebSafe(data);
-  return Utilities.newBlob(bytes).getDataAsString('UTF-8');
+  var s = String(data).replace(/\s+/g, '');
+  var std = s.replace(/-/g, '+').replace(/_/g, '/');
+  while (std.length % 4) std += '=';
+  var attempts = [
+    function () { return Utilities.base64Decode(std); },
+    function () { return Utilities.base64DecodeWebSafe(s); },
+    function () { return Utilities.base64DecodeWebSafe(s + '=='.slice(0, (4 - s.length % 4) % 4)); }
+  ];
+  for (var i = 0; i < attempts.length; i++) {
+    try { return Utilities.newBlob(attempts[i]()).getDataAsString('UTF-8'); } catch (e) { /* siguiente */ }
+  }
+  Logger.log('b64urlToString_: no se pudo decodificar una parte (%s chars)', s.length);
+  return '';
 }
 
 /** Recorre las partes MIME y devuelve { html, plain }. */
@@ -91,7 +106,14 @@ function scanGmail_(sheetId, config, opts) {
   var stats = { listed: ids.length, processed: 0, added: 0, skipped: 0, ignored: 0, unknown: 0 };
   for (var i = 0; i < pendientes.length && n < max; i++) {
     if (Date.now() - t0 > SCAN_BUDGET_MS_) break;
-    var email = gmailGetEmail_(pendientes[i]);
+    var email;
+    try { email = gmailGetEmail_(pendientes[i]); }
+    catch (err) {
+      n++;
+      procesados.push({ gmail_id: pendientes[i], resultado: 'error:' + String(err && err.message || err).slice(0, 80), tipo: '' });
+      stats.unknown++;
+      continue;
+    }
     n++;
     if (email.epoch > maxEpoch) maxEpoch = email.epoch;
     var r = parseEmail(email);

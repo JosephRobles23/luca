@@ -85,3 +85,20 @@ test('escanearAhora vía dispatch y menú', () => {
   assert.equal(h.alerts.length, 1);
   assert.match(h.alerts[0][1], /Nuevos: 0/);
 });
+
+test('b64urlToString_ tolera base64 estándar, sin padding y basura; un mensaje corrupto no aborta la pasada', () => {
+  const h = makeHarness();
+  const txt = 'Hola <b>Luca</b> ñ';
+  assert.equal(h.api.b64urlToString_(Buffer.from(txt).toString('base64url')), txt);
+  assert.equal(h.api.b64urlToString_(Buffer.from(txt).toString('base64')), txt);
+  assert.equal(h.api.b64urlToString_(''), '');
+  // Mensaje cuyo get lanza: se marca como error en _Procesados y el resto se importa.
+  const broken = { id: 'm-broken', threadId: 't', internalDate: '1791100000000', payload: null };
+  const h2 = makeHarness({ spreadsheets: { [SID]: {} }, gmailMessages: [toGmailApi(emails.bcp_card_purchase_pen), broken] });
+  const origGet = h2.gmail.Users.Messages.get;
+  h2.gmail.Users.Messages.get = (u, id) => { if (id === 'm-broken') throw new Error('No se ha podido descodificar la cadena.'); return origGet(u, id); };
+  const st = h2.api.scanGmail_(SID, configFor(h2, SID), {});
+  assert.equal(st.added, 1);
+  const proc = h2.tab(SID, '_Procesados').slice(1).map((r) => r[1]);
+  assert.ok(proc.some((r) => String(r).startsWith('error:')));
+});
