@@ -33,6 +33,9 @@ var EMAIL_TYPES_ = [
   { bank: 'bcp',  type: 'bcp_wardadito',         re: /retiro de tu wardadito/ },
   { bank: 'bcp',  type: 'bcp_qr_payment',        re: /constancia de pago con qr/ },
   { bank: 'bcp',  type: 'bcp_rejected',          re: /se rechazo tu compra/ },
+  // Avisos no transaccionales (se ignoran, no quedan como desconocidos)
+  { bank: 'yape', type: 'yape_notice',           re: /ingresaste a yape|cambio de clave|nuevo dispositivo|bienvenid/ },
+  { bank: 'bcp',  type: 'bcp_notice',            re: /ingresaste|clave|bienvenid|actualiza tus datos/ },
   // Yape
   { bank: 'yape', type: 'yape_p2p_sent',         re: /te notificaremos por cada yapeo/ },
   { bank: 'yape', type: 'yape_service',          re: /yapeo de servicio ha sido confirmado/ },
@@ -126,7 +129,12 @@ function extractFields(text) {
     var k4 = labelKey_(lines[i]);
     if (k4 && k4.length <= 40 && i + 1 < lines.length && out[k4] == null && !/\d/.test(k4)) {
       var next = lines[i + 1];
-      if (next && next.indexOf('\t') < 0 && next.length <= 80) out[k4] = next.trim();
+      if (next && next.indexOf('\t') < 0 && next.length <= 80) {
+        var val = next.trim();
+        // "S/" solo en una línea y el número en la siguiente (layout de Yape).
+        if (/^(S\/\.?|US\$|\$)$/.test(val) && lines[i + 2]) val = val + ' ' + lines[i + 2].trim();
+        out[k4] = val;
+      }
     }
   }
   return out;
@@ -280,6 +288,9 @@ var TX_BUILDERS_ = {
       operation_id: field_(f, ['numero de operacion'])
     });
     if (/^yape$/i.test(merchant)) tx.flags.push('possible_yape_duplicate');
+    // "PLIN-<NOMBRE>": transferencia P2P por Plin pagada con la tarjeta → contraparte, no comercio.
+    var plin = /^PLIN[\s-]+(.+)$/i.exec(merchant);
+    if (plin) { tx.channel = 'plin'; tx.counterparty_name = plin[1].trim(); tx.counterparty_key = counterpartyKey(plin[1], ''); tx.merchant = ''; }
     return tx;
   },
   bcp_internal_transfer: function (f, text, email, base) {
@@ -321,6 +332,8 @@ var TX_BUILDERS_ = {
       operation_id: field_(f, ['numero de operacion'])
     });
   },
+  yape_notice: function (f, text, email, base) { return { ignored: true, reason: 'notice', gmail_message_id: email.id || '', type: base.type }; },
+  bcp_notice:  function (f, text, email, base) { return { ignored: true, reason: 'notice', gmail_message_id: email.id || '', type: base.type }; },
   bcp_rejected: function (f, text, email, base) {
     return { ignored: true, reason: 'rejected_purchase', gmail_message_id: email.id || '', type: base.type };
   },

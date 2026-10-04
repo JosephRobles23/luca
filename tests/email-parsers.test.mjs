@@ -166,3 +166,33 @@ test('txFuzzyKey para cruzar push ↔ correo', () => {
   const tx = api.parseEmail(emails.yape_p2p_sent);
   assert.equal(api.txFuzzyKey(tx), 'PEN|10.00|2026-10-04T02:35');
 });
+
+test('[.eml real] Yape P2P con una celda por fila y monto partido "S/" + número', () => {
+  const tx = api.parseEmail(emails.yape_p2p_sent_real);
+  assert.equal(tx.amount, 10);
+  assert.equal(tx.currency, 'PEN');
+  assert.equal(tx.counterparty_name, 'Carlos Roj*');
+  assert.equal(tx.operation_id, '3316121');
+  assert.equal(tx.occurred_at, '2026-10-04T02:35:00-05:00');
+  eq(tx.flags, []);
+});
+
+test('[.eml real] consumo con tarjeta "PLIN-<nombre>" → P2P por Plin con contraparte', () => {
+  const tx = api.parseEmail(emails.bcp_card_plin);
+  assert.equal(tx.kind, 'expense');
+  assert.equal(tx.channel, 'plin');
+  assert.equal(tx.merchant, '');
+  assert.equal(tx.counterparty_name, 'MARIA LOPEZ');
+  assert.equal(tx.amount, 0.96);
+  assert.equal(tx.currency, 'USD');
+});
+
+test('[.eml real] avisos de seguridad se ignoran; wardadito sin nº de operación usa id de Gmail y fecha 24h', () => {
+  const n = api.parseEmail(emails.yape_login_notice);
+  assert.equal(n.ignored, true); assert.equal(n.reason, 'notice');
+  const w = api.parseEmail(emails.bcp_wardadito_real);
+  assert.equal(w.kind, 'internal_transfer');
+  assert.equal(w.amount, 10);
+  assert.equal(w.occurred_at, '2026-10-02T21:05:00-05:00');
+  assert.equal(w.id, 'gmail:m-bcp-ward-real');
+});
