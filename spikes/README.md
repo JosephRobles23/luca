@@ -129,7 +129,7 @@ Exportar 2–3 `.eml` por tipo (Gmail → ⋮ → "Descargar mensaje") a `spikes
 
 | Spike | Fecha | Resultado | Evidencia | Decisión |
 |---|---|---|---|---|
-| S1 | 2026-10-04 | `files.copy` directo → **404**; tras elegir la plantilla en el Picker (`setAppId`) → **200** | Resumen pegado en chat; copia `1Xyv…oGlM` creada por `petter…@gmail.com` con solo `drive.file` | Onboarding = Picker → copiar. Sin `/copy`, sin scopes sensibles. Pendiente: confirmar que la copia trae el script ligado (menú "Luca (spike)") |
+| S1 | 2026-10-04 | `files.copy` directo → **404**; tras elegir la plantilla en el Picker (`setAppId`) → **200** | Resumen pegado en chat; copia `1Xyv…oGlM` creada por `petter…@gmail.com` con solo `drive.file` | Onboarding = Picker → copiar. Sin `/copy`, sin scopes sensibles. Confirmado: la copia trae el script ligado (menú "Luca (spike)" visible) |
 | S2 | 2026-10-04 | `spreadsheets.get` **200**, `values.get` **200** sobre la copia, con `drive.file` | Resumen pegado en chat | Dashboard web lee la Sheet desde el navegador sin pasar por nuestro servidor ✅ |
 | S3 | | | | |
 | S4 | | | | |
