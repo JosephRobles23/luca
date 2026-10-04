@@ -57,6 +57,11 @@
   <button id="btnMcp" onclick="conectarIa()">Generar código de conexión</button>
   <button class="danger" id="btnMcpOff" onclick="desconectarIa()">Desconectar IA</button>
 
+  <h3>Diagnóstico</h3>
+  <div class="hint">Pega un <code>gmail_id</code> de la pestaña <code>_Procesados</code> o <code>Movimientos</code>. Devuelve la estructura del correo y qué pudo extraer, sin el contenido.</div>
+  <input id="diagId" placeholder="gmail_id">
+  <button class="sec" onclick="diagnosticar()">Diagnosticar correo</button>
+
   <pre id="out"></pre>
 <script>
   function run(method) {
@@ -169,6 +174,7 @@
     if (!confirm('¿Desconectar la IA? Tus conectores dejarán de funcionar hasta que generes un código nuevo.')) return;
     run('desconectarMcp').then(function () { cargarIa(); pintar(); show('IA desconectada.'); }).catch(function (e) { show('Error: ' + e.message); });
   }
+  function diagnosticar() { var id = document.getElementById('diagId').value.trim(); if (!id) return show('Pega un gmail_id.'); show('diagnosticando…'); run('diagnosticarCorreo', id).then(show).catch(function (e) { show('Error: ' + e.message); }); }
   function pintar() {
     cargarIa();
     run('estadoLuca').then(pintarEstado).catch(function (e) { show('Error: ' + e.message); });

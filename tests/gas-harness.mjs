@@ -26,6 +26,7 @@ export const RUNTIME_FILES = [
   'push-parsers-runtime.js',
   'categorize-runtime.js',
   'ledger-runtime.js',
+  'mime-runtime.js',
   'gmail-scan-runtime.js',
   'webapp-runtime.js',
   'ui-runtime.js',
@@ -110,10 +111,12 @@ function makeGmailMock(messages = []) {
           if (page + size < messages.length) res.nextPageToken = String(page + size);
           return res;
         },
-        get: (userId, id) => {
+        get: (userId, id, params = {}) => {
           calls.get.push(id);
           const m = messages.find((x) => x.id === id);
           if (!m) throw new Error('Gmail mock: mensaje no encontrado ' + id);
+          // format=raw: devuelve solo { id, internalDate, raw } como la API real.
+          if (params.format === 'raw') return { id: m.id, threadId: m.threadId, internalDate: m.internalDate, raw: m.raw || '' };
           return m;
         }
       }

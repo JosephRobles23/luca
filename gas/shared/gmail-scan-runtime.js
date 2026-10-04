@@ -85,7 +85,67 @@ function gmailMessageToEmail(msg) {
 }
 
 function gmailGetEmail_(id) {
-  return gmailMessageToEmail(Gmail.Users.Messages.get('me', id, { format: 'full' }));
+  var email = gmailMessageToEmail(Gmail.Users.Messages.get('me', id, { format: 'full' }));
+  if (!email.html && !email.plain) {
+    // Camino alternativo: mensaje RFC 822 completo y parser MIME propio (mime-runtime.js).
+    var rawEmail = gmailGetEmailRaw_(id);
+    if (rawEmail) { rawEmail.epoch = email.epoch; rawEmail.date = email.date || rawEmail.date; rawEmail.viaRaw = true; return rawEmail; }
+    email.emptyBody = true;
+  }
+  return email;
+}
+
+/** format=raw → { id, from, subject, date, html, plain } o null si falla. */
+function gmailGetEmailRaw_(id) {
+  try {
+    var msg = Gmail.Users.Messages.get('me', id, { format: 'raw' });
+    if (!msg || !msg.raw) return null;
+    var parsed = mimeParseMessage(b64urlToBinary_(msg.raw));
+    var epoch = Math.floor(parseInt(msg.internalDate || '0', 10) / 1000);
+    return { id: id, from: parsed.from, subject: parsed.subject, date: parsed.date || (epoch ? new Date(epoch * 1000) : null), epoch: epoch, html: parsed.html, plain: parsed.plain };
+  } catch (e) {
+    Logger.log('gmailGetEmailRaw_ falló: %s', e && e.message);
+    return null;
+  }
+}
+
+/**
+ * Diagnóstico de un correo sin exponer su contenido: estructura de partes, resultado de cada
+ * decodificador, camino raw, longitud del texto y campos detectados. Para pegar en soporte.
+ */
+function diagnosticarCorreo(sheetId, config, gmailId) {
+  var out = { id: gmailId, parts: [], raw: null, text: null, parse: null };
+  var msg;
+  try { msg = Gmail.Users.Messages.get('me', gmailId, { format: 'full' }); }
+  catch (e) { out.error = 'get(full): ' + (e && e.message); return out; }
+  (function walk(p, depth) {
+    if (!p) return;
+    var info = { depth: depth, mime: String(p.mimeType || ''), hasData: !!(p.body && p.body.data), dataLen: p.body && p.body.data ? String(p.body.data).length : 0, attachmentId: !!(p.body && p.body.attachmentId), size: p.body ? p.body.size : null, attempts: [] };
+    if (info.hasData) {
+      var s = String(p.body.data).replace(/\s+/g, ''); var std = s.replace(/-/g, '+').replace(/_/g, '/'); while (std.length % 4) std += '=';
+      [['base64Decode(std)', function () { return Utilities.base64Decode(std); }], ['base64DecodeWebSafe(s)', function () { return Utilities.base64DecodeWebSafe(s); }]].forEach(function (a) {
+        try { var b = a[1](); var t = Utilities.newBlob(b).getDataAsString('UTF-8'); info.attempts.push({ via: a[0], bytes: b.length, chars: t.length, startsWithTag: /^\s*</.test(t) }); }
+        catch (err) { info.attempts.push({ via: a[0], error: String(err && err.message || err).slice(0, 120) }); }
+      });
+    }
+    out.parts.push(info);
+    (p.parts || []).forEach(function (c) { walk(c, depth + 1); });
+  })(msg.payload, 0);
+  try {
+    var r = Gmail.Users.Messages.get('me', gmailId, { format: 'raw' });
+    var bin = b64urlToBinary_(r.raw || '');
+    var parsed = mimeParseMessage(bin);
+    out.raw = { rawLen: String(r.raw || '').length, binLen: bin.length, htmlLen: parsed.html.length, plainLen: parsed.plain.length, subjectOk: !!parsed.subject };
+  } catch (e2) { out.raw = { error: String(e2 && e2.message || e2).slice(0, 160) }; }
+  try {
+    var email = gmailGetEmail_(gmailId);
+    var text = emailText_(email);
+    var fields = extractFields(text);
+    out.text = { viaRaw: !!email.viaRaw, htmlLen: (email.html || '').length, plainLen: (email.plain || '').length, textLen: text.length, lines: text.split('\n').length, fieldKeys: Object.keys(fields).slice(0, 25) };
+    var res = parseEmail(email);
+    out.parse = res.ignored || res.unknown ? res : { type: res.type, kind: res.kind, amount: res.amount, currency: res.currency, hasMerchant: !!res.merchant, hasCounterparty: !!res.counterparty_name, operation_id: res.operation_id ? 'sí' : 'no', occurred_at: res.occurred_at, flags: res.flags };
+  } catch (e3) { out.text = { error: String(e3 && e3.message || e3).slice(0, 160) }; }
+  return out;
 }
 
 /**
@@ -104,7 +164,7 @@ function scanGmail_(sheetId, config, opts) {
   var pendientes = ids.filter(function (id) { return !yaVistos[id]; });
 
   var txs = [], procesados = [], maxEpoch = after || 0, n = 0;
-  var stats = { listed: ids.length, processed: 0, added: 0, skipped: 0, ignored: 0, unknown: 0 };
+  var stats = { listed: ids.length, processed: 0, added: 0, skipped: 0, ignored: 0, unknown: 0, emptyBody: 0, viaRaw: 0 };
   for (var i = 0; i < pendientes.length && n < max; i++) {
     if (Date.now() - t0 > SCAN_BUDGET_MS_) break;
     var email;
@@ -117,6 +177,8 @@ function scanGmail_(sheetId, config, opts) {
     }
     n++;
     if (email.epoch > maxEpoch) maxEpoch = email.epoch;
+    if (email.emptyBody) stats.emptyBody++;
+    if (email.viaRaw) stats.viaRaw++;
     var r = parseEmail(email);
     if (r.ignored) { stats.ignored++; procesados.push({ gmail_id: email.id, resultado: 'ignored:' + r.reason, tipo: r.type || '', asunto: email.subject, remitente: email.from }); continue; }
     if (r.unknown) { stats.unknown++; procesados.push({ gmail_id: email.id, resultado: 'unknown', tipo: r.type, asunto: email.subject, remitente: email.from }); continue; }
