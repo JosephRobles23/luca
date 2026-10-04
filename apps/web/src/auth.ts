@@ -1,5 +1,7 @@
-import NextAuth, { type DefaultSession } from "next-auth";
+import NextAuth, { type DefaultSession, type Session } from "next-auth";
 import Google from "next-auth/providers/google";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 /**
  * Auth.js con Google. Pedimos `drive.file` (no sensible) desde el login para que el navegador
@@ -7,7 +9,13 @@ import Google from "next-auth/providers/google";
  *
  * Decisión de privacidad: el access/refresh token viven SOLO en el JWT cifrado de la cookie del
  * usuario (sin base de datos). Nuestro servidor no persiste tokens ni datos; solo los refresca.
+ *
+ * `LUCA_MOCK=1`: sesión falsa guardada en una cookie (sin Google) para desarrollo y e2e.
+ * Los componentes no saben cuál de las dos está activa: reciben `mode` y usan `getGoogleClient()`.
  */
+
+export const IS_MOCK = process.env.LUCA_MOCK === "1";
+export const CLIENT_MODE: "google" | "mock" = IS_MOCK ? "mock" : "google";
 
 const SCOPES = [
   "openid",
@@ -55,7 +63,7 @@ async function refreshGoogleToken(token: GoogleToken): Promise<GoogleToken> {
   };
 }
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+const nextAuth = NextAuth({
   trustHost: true,
   session: { strategy: "jwt" },
   providers: [
@@ -89,3 +97,36 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
 });
+
+// --- Modo mock: sesión en cookie, sin Google ---
+
+const MOCK_COOKIE = "luca_mock_session";
+const MOCK_USER = { name: "Nombre Apellido", email: "nombre.apellido@example.com", image: "", sub: "mock-sub" };
+
+async function mockAuth(): Promise<Session | null> {
+  const jar = await cookies();
+  if (jar.get(MOCK_COOKIE)?.value !== "1") return null;
+  return { user: MOCK_USER, accessToken: "mock-token", expires: new Date(Date.now() + 86400000).toISOString() };
+}
+
+async function mockSignIn(_provider?: string, o?: { redirectTo?: string }): Promise<never> {
+  const jar = await cookies();
+  jar.set(MOCK_COOKIE, "1", { httpOnly: true, sameSite: "lax", path: "/" });
+  redirect(o?.redirectTo ?? "/app");
+}
+
+async function mockSignOut(o?: { redirectTo?: string }): Promise<never> {
+  const jar = await cookies();
+  jar.delete(MOCK_COOKIE);
+  redirect(o?.redirectTo ?? "/");
+}
+
+const mockHandlers = {
+  GET: async () => Response.json({ error: "auth deshabilitada en LUCA_MOCK" }, { status: 404 }),
+  POST: async () => Response.json({ error: "auth deshabilitada en LUCA_MOCK" }, { status: 404 }),
+};
+
+export const handlers = IS_MOCK ? mockHandlers : nextAuth.handlers;
+export const auth: () => Promise<Session | null> = IS_MOCK ? mockAuth : () => nextAuth.auth();
+export const signIn: (provider: "google", o: { redirectTo: string }) => Promise<void> = IS_MOCK ? mockSignIn : (p, o) => nextAuth.signIn(p, o);
+export const signOut: (o: { redirectTo: string }) => Promise<void> = IS_MOCK ? mockSignOut : (o) => nextAuth.signOut(o);
