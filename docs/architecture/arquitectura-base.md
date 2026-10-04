@@ -80,6 +80,17 @@ Insumos:
 `Trigger (15 min)` → `Gmail API: from:(BCP|Yape) after:<cursor>` → por mensaje: clasificar por remitente+asunto → extraer tabla etiqueta→valor → normalizar (fecha ≥4 formatos, S/ vs $, tipo de cambio) → descartar transferencias internas y rechazos → dedupe (`messageId`, `Nº operación`, monto+Δt≤5 min) → categorizar: reglas → caché `Comercios` → LLM (solo comercio+monto, JSON estructurado) → fila en `Movimientos` → (async) actualizar wiki `merchants/<slug>.md` y `months/<yyyy-mm>.md`.
 
 ### 5.2 Ingesta desde iPhone (validado en S7, 2026-10-04)
+
+Cobertura real por canal (verificada en dispositivo y en el buzón):
+
+| Movimiento | Canal que lo captura |
+|---|---|
+| Yapeo **recibido** (cualquier monto) | Push iOS ("<Nombre> te envió un pago por S/ x"). Sin correo. |
+| Yapeo **enviado** ≥ S/10 | Correo Yape. Sin push. |
+| Yapeo **enviado** a cuenta de otro banco (cualquier monto) | Correo BCP "Pago con QR". Sin push. |
+| Yapeo **enviado** < S/10 a cuenta BCP/Yape | **Nada automático** → carga manual rápida (atajo con Back Tap / web). |
+| Consumos con tarjeta, transferencias, servicios, recargas | Correo BCP / Yape. |
+
 `Atajo (Notificación Yape)` → `POST WORKER/events {deviceToken, id, title, body, ts}` → Worker valida token del dispositivo → reenvía al `/exec` del usuario (o encola si no responde) → mismo pipeline de normalización en GAS (parser de texto de push) → dedupe contra correos.
 
 ### 5.3 Consulta desde la IA (MCP, solo lectura)
