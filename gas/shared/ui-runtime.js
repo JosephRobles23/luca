@@ -58,7 +58,9 @@ var DISPATCH_ = {
   guardarAjustes:    function (sid, cfg, a) { setAjustes_(sid, cfg, a[0] || {}); return cargarConfig(sid, construirConfig(sid, cfg)); },
   escanearAhora:     function (sid, cfg, a) { return escanearAhora(sid, cfg); },
   iniciarImportacion: function (sid, cfg, a) { return iniciarImportacion(sid, cfg, parseInt(a[0], 10)); },
-  leerLedger:        function (sid, cfg, a) { return readLedger_(sid, cfg); }
+  leerLedger:        function (sid, cfg, a) { return readLedger_(sid, cfg); },
+  listarCategorias:  function (sid, cfg, a) { return listarCategorias(sid, cfg); },
+  recategorizar:     function (sid, cfg, a) { return recategorizar(sid, cfg, a[0] || {}); }
 };
 
 function dispatch(fnName, args, sheetId, config) {

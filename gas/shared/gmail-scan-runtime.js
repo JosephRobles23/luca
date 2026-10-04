@@ -99,6 +99,7 @@ function scanGmail_(sheetId, config, opts) {
   var max = opts.max || config.gmail.batch;
   var query = gmailQuery_(config.gmail.senders, after, opts.beforeEpoch);
   var ids = gmailListIds_(query, max * 3);         // se listan de más porque muchos ya estarán procesados
+  ensureCategorizacion_(sheetId, config);          // `Categorías` y `Comercios` nacen en el primer escaneo
   var yaVistos = processedSet_(sheetId, config);
   var pendientes = ids.filter(function (id) { return !yaVistos[id]; });
 

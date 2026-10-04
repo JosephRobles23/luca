@@ -105,6 +105,7 @@ function construirConfig(sheetId, staticConfig) {
   cfg.sheets.ledger = cfg.sheets.ledger || 'Movimientos';
   cfg.sheets.processed = cfg.sheets.processed || '_Procesados';
   cfg.sheets.merchants = cfg.sheets.merchants || 'Comercios';
+  cfg.sheets.categories = cfg.sheets.categories || 'Categorías';
   cfg.timezone = cfg.timezone || 'America/Lima';
   var a = getAjustes_(sheetId, cfg);
   cfg.ajustes = a;

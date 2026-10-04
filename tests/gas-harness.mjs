@@ -23,6 +23,7 @@ export const RUNTIME_FILES = [
   'secrets-runtime.js',
   'email-parsers-runtime.js',
   'push-parsers-runtime.js',
+  'categorize-runtime.js',
   'ledger-runtime.js',
   'gmail-scan-runtime.js',
   'webapp-runtime.js',
