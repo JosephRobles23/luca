@@ -25,3 +25,4 @@ coverage/
 
 # Correos reales para spikes (PII)
 spikes/eml-raw/
+docs/img/gcp-*.png

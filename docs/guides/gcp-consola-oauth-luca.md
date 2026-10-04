@@ -49,6 +49,10 @@ Desde 2025 la consola agrupa todo esto bajo **"Google Auth Platform"** (antes "P
 
     Si el diálogo pidiera verificación, es que algún alcance quedó como sensible: vuelve a 1.a y quítalo.
 
+    **Si el botón "Publicar app" está deshabilitado** con el texto *"debes completar la configuración en la página de desarrollo de la marca"* (ocurrió el 2026-10-04): faltan campos obligatorios en **Información de la marca** (correo de asistencia, contacto del desarrollador y, a veces, página principal + dominio autorizado, que exigen un dominio propio). Dos salidas:
+    - Completar la marca y volver a publicar, o
+    - **Quedarse en "Prueba"** y añadir en **Usuarios de prueba** las cuentas que usarán la app (`gavynenita@gmail.com`, `petter.chuquipiondo.r@gmail.com`). Es suficiente para los spikes S1/S2 (tokens de acceso de corta duración). Publicar en producción cuando exista el dominio de Luca, antes de que la web guarde sesiones.
+
 ### 1.c Marca (Branding) — qué NO tocar todavía
 
 12. Menú lateral → **Marca (Branding)**. Comprueba que el nombre sea `Luca` y el correo de asistencia el correcto. **No subas logo** ni rellenes dominios autorizados / enlaces de política de privacidad por ahora: subir logo dispara el proceso de verificación de marca y no lo necesitamos para los spikes.
