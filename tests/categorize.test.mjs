@@ -68,15 +68,18 @@ test('corrección del usuario en Comercios gana sobre las reglas', () => {
   assert.equal(data[1][col(data, 'categoria_origen')], 'user');
 });
 
-test('categorizeWithLlm_ devuelve null sin API key (modo sin key es completo)', () => {
+test('categorizeWithLlm_ devuelve null sin API key y no llama a la red (modo sin key es completo)', () => {
   const h = makeHarness({ spreadsheets: { [SID]: {} } });
   const ctx = h.api.categorizeContext_(SID, configFor(h, SID));
   assert.equal(h.api.categorizeWithLlm_({ merchant: 'X', amount: 1, currency: 'PEN' }, ctx), null);
+  assert.equal(h.fetchCalls.length, 0);
+  // Con key pero sin red (fetch falla): también null, sin lanzar.
   h.api.setSecret_('llmKey', 'una-key-de-prueba-suficientemente-larga');
   const ctx2 = h.api.categorizeContext_(SID, configFor(h, SID));
   assert.equal(ctx2.llmKey.length > 0, true);
   assert.equal(h.api.categorizeWithLlm_({ merchant: 'X', amount: 1, currency: 'PEN' }, ctx2), null);
-  assert.equal(h.fetchCalls.length, 0);
+  assert.equal(h.fetchCalls.length, 1);
+  assert.equal(ctx2.llmErrores, 1);
 });
 
 test('recategorizar: fija user, aprende en Comercios y arrastra los previos del mismo comercio salvo los corregidos a mano', () => {
