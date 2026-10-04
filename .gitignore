@@ -26,3 +26,7 @@ coverage/
 # Correos reales para spikes (PII)
 spikes/eml-raw/
 docs/img/gcp-*.png
+
+# Next.js
+apps/web/tsconfig.tsbuildinfo
+apps/web/next-env.d.ts
