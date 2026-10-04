@@ -31,23 +31,62 @@ function buildDialog(nombre) {
   return { html: html, titulo: d.titulo };
 }
 
-var MENU_ACTIONS_ = {
-  lucaMenu1: function (sheetId, config) {
+var AUTORIZAR_DIAS_ = 30;
+
+function resumenScan_(st) {
+  return 'Nuevos: ' + (st.added || 0) + ' · Ya existentes: ' + (st.skipped || 0) + ' · Ignorados: ' + (st.ignored || 0) + ' · Desconocidos: ' + (st.unknown || 0);
+}
+
+/**
+ * Autorizar (ADR-006 §3.2). Primera vez (sin cursor): (a) instala el trigger, (b) importa el último mes
+ * y corre la primera pasada, (c) muestra un resumen. Con cursor: escaneo normal.
+ *
+ * Triggers: en Apps Script un trigger solo puede apuntar a una función del PROYECTO CONTENEDOR (el stub),
+ * y `ScriptApp` dentro de la librería es el de la librería. Por eso el stub pasa su propia función
+ * `setupTriggers` como callback (`installTriggers`) y la librería solo la invoca: la creación del
+ * trigger ocurre en el contexto del stub y apunta a su `dispatcher`. Un stub antiguo que no pase el
+ * callback sigue funcionando (se avisa que falta el escaneo automático).
+ */
+function autorizar(sheetId, config, installTriggers) {
+  var ui = SpreadsheetApp.getUi();
+  if (config.gmail.cursor) {
     var st = escanearAhora(sheetId, config);
-    SpreadsheetApp.getUi().alert('Luca', 'Escaneo listo. Nuevos: ' + st.added + ' · Ya existentes: ' + st.skipped +
-      ' · Ignorados: ' + st.ignored + ' · Desconocidos: ' + st.unknown, SpreadsheetApp.getUi().ButtonSet.OK);
-    return st;
-  },
+    ui.alert('Luca', 'Escaneo listo. ' + resumenScan_(st), ui.ButtonSet.OK);
+    return { modo: 'scan', scan: st };
+  }
+  var trigger = { installed: false, error: '' };
+  if (typeof installTriggers === 'function') {
+    try { installTriggers(); trigger.installed = true; setAjustes_(sheetId, config, { 'triggers.installedAt': new Date().toISOString() }); }
+    catch (e) { trigger.error = String(e && e.message || e); Logger.log('autorizar: no se pudo instalar el trigger: ' + trigger.error); }
+  } else {
+    trigger.error = 'stub sin setupTriggers';
+  }
+  var since = Math.floor(Date.now() / 1000) - AUTORIZAR_DIAS_ * 86400;
+  // El cursor se fija en `since` antes de importar: así Autorizar es idempotente aunque el buzón esté
+  // vacío, y el escaneo incremental arranca donde termina la importación (pasadaImportacion_ lo avanza).
+  setAjustes_(sheetId, config, { 'gmail.cursor': String(since) });
+  var imp = iniciarImportacion(sheetId, config, since);
+  writeTelemetria_(sheetId, config, imp);
+  var msg = 'Luca quedó activado.\n' +
+    (trigger.installed ? 'Escaneo automático cada 15 min: instalado.\n' : 'Escaneo automático: NO se pudo instalar (' + trigger.error + ').\n') +
+    'Importación del último mes: ' + resumenScan_(imp) + (imp.done ? '.' : '. Continúa en segundo plano.');
+  ui.alert('Luca', msg, ui.ButtonSet.OK);
+  return { modo: 'autorizar', trigger: trigger, import: imp };
+}
+
+var MENU_ACTIONS_ = {
+  lucaMenu1: function (sheetId, config, extra) { return autorizar(sheetId, config, extra); },
   lucaMenu2: function (sheetId, config) {
     var d = buildDialog('dashboard');
     SpreadsheetApp.getUi().showModalDialog(d.html, d.titulo);
   }
 };
 
-function menuAction(slot, sheetId, config) {
+/** `extra`: para lucaMenu1, la función `setupTriggers` del stub (ver autorizar). */
+function menuAction(slot, sheetId, config, extra) {
   var fn = MENU_ACTIONS_[slot];
   if (!fn) throw new Error('Acción de menú no definida: ' + slot);
-  return fn(sheetId, config);
+  return fn(sheetId, config, extra);
 }
 
 var DISPATCH_ = {
@@ -58,8 +97,37 @@ var DISPATCH_ = {
   guardarAjustes:    function (sid, cfg, a) { setAjustes_(sid, cfg, a[0] || {}); return cargarConfig(sid, construirConfig(sid, cfg)); },
   escanearAhora:     function (sid, cfg, a) { return escanearAhora(sid, cfg); },
   iniciarImportacion: function (sid, cfg, a) { return iniciarImportacion(sid, cfg, parseInt(a[0], 10)); },
-  leerLedger:        function (sid, cfg, a) { return readLedger_(sid, cfg); }
+  leerLedger:        function (sid, cfg, a) { return readLedger_(sid, cfg); },
+  listarCategorias:  function (sid, cfg, a) { return listarCategorias(sid, cfg); },
+  recategorizar:     function (sid, cfg, a) { return recategorizar(sid, cfg, a[0] || {}); },
+  conectarIphone:    function (sid, cfg, a) { return conectarIphone(sid, cfg); },
+  regenerarTokenIphone: function (sid, cfg, a) { return regenerarTokenIphone(sid, cfg); },
+  desconectarIphone: function (sid, cfg, a) { return desconectarIphone(sid, cfg); },
+  estadoLuca:        function (sid, cfg, a) { return estadoLuca(sid, cfg); }
 };
+
+/** Estado completo para el sidebar en una sola llamada (versión, cursor, último escaneo, conexiones). */
+function estadoLuca(sheetId, config) {
+  var a = config.ajustes || {};
+  var ledger = estadoLedger(sheetId, config);
+  var stats = null;
+  try { stats = a['scan.lastStats'] ? JSON.parse(a['scan.lastStats']) : null; } catch (e) { stats = null; }
+  return {
+    version: LUCA_VERSION,
+    versionEnAjustes: a['luca.version'] || '',
+    autorizado: !!config.gmail.cursor,
+    cursor: config.gmail.cursor,
+    cursorIso: config.gmail.cursor ? new Date(config.gmail.cursor * 1000).toISOString() : '',
+    lastRunAt: a['scan.lastRunAt'] || '',
+    lastStats: stats,
+    triggerInstaladoEn: a['triggers.installedAt'] || '',
+    importacion: { status: a['import.status'] || '', since: int_(a['import.since'], 0) },
+    ledger: ledger,
+    secretos: estadoSecretos_(),
+    execUrl: a['conexiones.execUrl'] || execUrl_(config),
+    iphone: telemetriaIphone_(a)
+  };
+}
 
 function dispatch(fnName, args, sheetId, config) {
   // Módulos opcionales aportan su propia tabla (p. ej. MCP_DISPATCH_ en mcp-runtime.js).

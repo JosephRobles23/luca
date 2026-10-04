@@ -7,7 +7,14 @@
  * Sin import/export: runtime de Apps Script.
  */
 
-var SECRET_KEYS_ = { llmKey: 'luca.llm.apiKey', mcpSecret: 'luca.mcp.secret', tenantId: 'luca.mcp.tenantId', workerUrl: 'luca.worker.url' };
+var SECRET_KEYS_ = {
+  llmKey: 'luca.llm.apiKey',
+  mcpSecret: 'luca.mcp.secret',
+  tenantId: 'luca.mcp.tenantId',
+  workerUrl: 'luca.worker.url',
+  // Token del atajo del iPhone (ADR-003): lo genera conectarIphone y lo valida eventsAction_.
+  deviceToken: 'luca.iphone.deviceToken'
+};
 
 function userProps_() { return PropertiesService.getUserProperties(); }
 
@@ -29,6 +36,7 @@ function estadoSecretos_() {
   return {
     llmKey: !!getSecret_('llmKey'),
     mcp: !!getSecret_('tenantId'),
+    iphone: !!getSecret_('deviceToken'),
     workerUrl: getSecret_('workerUrl') || ''
   };
 }
@@ -39,4 +47,41 @@ function guardarLlmKey(sheetId, config, apiKey) {
   if (k.length < 20) throw new Error('La API key parece incompleta.');
   setSecret_('llmKey', k);
   return estadoSecretos_();
+}
+
+// --- iPhone (ADR-003) ---
+
+var SHORTCUT_URL_ = 'https://www.icloud.com/shortcuts/PENDIENTE';
+
+/**
+ * conectarIphone: genera el deviceToken si no existe (si ya hay uno lo devuelve, para volver a verlo)
+ * y entrega { execUrl, token, shortcutUrl }. El token vive solo en UserProperties del usuario.
+ */
+function conectarIphone(sheetId, config) {
+  if (!getSecret_('deviceToken')) setSecret_('deviceToken', Utilities.getUuid());
+  setAjustes_(sheetId, config, { 'conexiones.execUrl': execUrl_(config) });
+  return datosIphoneFor_(sheetId, config);
+}
+
+/** regenerarTokenIphone: invalida el token anterior (hay que reimportar/editar el atajo). */
+function regenerarTokenIphone(sheetId, config) {
+  setSecret_('deviceToken', Utilities.getUuid());
+  setAjustes_(sheetId, config, { 'conexiones.iphone.lastError': '', 'conexiones.execUrl': execUrl_(config) });
+  return datosIphoneFor_(sheetId, config);
+}
+
+/** desconectarIphone: borra el token y limpia la telemetría del dispositivo. */
+function desconectarIphone(sheetId, config) {
+  setSecret_('deviceToken', '');
+  setAjustes_(sheetId, config, {
+    'conexiones.iphone.device': '', 'conexiones.iphone.lastEventAt': '', 'conexiones.iphone.eventsCount': '0',
+    'conexiones.iphone.lastError': '', 'conexiones.iphone.lastTestAt': '', 'conexiones.iphone.schemaVersion': ''
+  });
+  return datosIphoneFor_(sheetId, config);
+}
+
+/** Datos que el usuario pega en el atajo. Sin despliegue del Web App, `execUrl` viene vacía. */
+function datosIphoneFor_(sheetId, config) {
+  var token = getSecret_('deviceToken');
+  return { execUrl: execUrl_(config), token: token, shortcutUrl: SHORTCUT_URL_, conectado: !!token };
 }
