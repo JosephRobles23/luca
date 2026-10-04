@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Luca spike S1/S2</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 760px; margin: 32px auto; padding: 0 16px; color: #1d1a17; }
+  label { display: block; margin: 10px 0 4px; font-size: 13px; color: #555; }
+  input { width: 100%; padding: 8px; font: inherit; box-sizing: border-box; }
+  button { font: inherit; padding: 8px 14px; margin: 12px 8px 0 0; cursor: pointer; }
+  pre { background: #f4efe8; padding: 12px; overflow: auto; font-size: 12px; white-space: pre-wrap; }
+  .step { border: 1px solid #ddd; border-radius: 8px; padding: 12px 16px; margin-top: 16px; }
+</style>
+</head>
+<body>
+<h1>Spike S1 / S2 — <code>drive.file</code></h1>
+<p>Sirve en <code>http://localhost:5173</code> (debe coincidir con el origen autorizado del cliente OAuth).</p>
+
+<div class="step">
+  <label>Client ID (Luca Web spikes)</label><input id="clientId" placeholder="xxxx.apps.googleusercontent.com">
+  <label>API key (Picker)</label><input id="apiKey">
+  <label>App ID (número de proyecto)</label><input id="appId" value="334287534871">
+  <button id="btnAuth">Autorizar (drive.file)</button>
+  <span id="authState"></span>
+</div>
+
+<div class="step">
+  <h3>S1 — copiar plantilla</h3>
+  <label>Template spreadsheet ID (compartido "cualquiera con el enlace")</label><input id="templateId">
+  <button id="btnCopy">S1: copiar plantilla</button>
+</div>
+
+<div class="step">
+  <h3>S2 — Picker + Sheets API</h3>
+  <button id="btnPick">Elegir Sheet (Picker)</button>
+  <label>Spreadsheet ID elegido</label><input id="sheetId">
+  <button id="btnRead">Leer A1:C5</button>
+</div>
+
+<pre id="out">(salida)</pre>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://apis.google.com/js/api.js" async defer onload="gapi.load('picker', () => {})"></script>
+<script>
+  const $ = id => document.getElementById(id);
+  const out = (label, data) => { $('out').textContent = `[${new Date().toISOString()}] ${label}\n` + (typeof data === 'string' ? data : JSON.stringify(data, null, 2)) + '\n\n' + $('out').textContent; };
+  const SCOPE = 'https://www.googleapis.com/auth/drive.file';
+  let accessToken = null;
+
+  // Persistir campos entre recargas (solo en este navegador).
+  ['clientId', 'apiKey', 'appId', 'templateId', 'sheetId'].forEach(id => {
+    try { $(id).value = localStorage.getItem('luca.' + id) || $(id).value; } catch {}
+    $(id).addEventListener('change', () => { try { localStorage.setItem('luca.' + id, $(id).value); } catch {} });
+  });
+
+  $('btnAuth').onclick = () => {
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: $('clientId').value.trim(),
+      scope: SCOPE,
+      callback: (resp) => {
+        if (resp.error) return out('auth error', resp);
+        accessToken = resp.access_token;
+        $('authState').textContent = '✓ token obtenido (scope: ' + resp.scope + ')';
+        out('auth ok', { scope: resp.scope, expires_in: resp.expires_in });
+      },
+    });
+    client.requestAccessToken({ prompt: 'consent' });
+  };
+
+  async function api(url, init = {}) {
+    const r = await fetch(url, { ...init, headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json', ...(init.headers || {}) } });
+    const text = await r.text();
+    let body; try { body = JSON.parse(text); } catch { body = text; }
+    return { status: r.status, body };
+  }
+
+  $('btnCopy').onclick = async () => {
+    if (!accessToken) return out('S1', 'Primero autoriza.');
+    const id = $('templateId').value.trim();
+    const res = await api(`https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}/copy?fields=id,name,webViewLink`, {
+      method: 'POST', body: JSON.stringify({ name: 'Luca Ledger (spike S1)' }),
+    });
+    out(`S1 files.copy → HTTP ${res.status}`, res.body);
+    if (res.status === 200 && res.body.id) $('sheetId').value = res.body.id;
+  };
+
+  $('btnPick').onclick = () => {
+    if (!accessToken) return out('S2', 'Primero autoriza.');
+    const view = new google.picker.DocsView(google.picker.ViewId.SPREADSHEETS).setIncludeFolders(false).setOwnedByMe(true);
+    const picker = new google.picker.PickerBuilder()
+      .setAppId($('appId').value.trim())          // imprescindible para que el archivo entre en alcance de drive.file
+      .setOAuthToken(accessToken)
+      .setDeveloperKey($('apiKey').value.trim())
+      .addView(view)
+      .setCallback((data) => {
+        if (data.action === google.picker.Action.PICKED) {
+          const doc = data.docs[0];
+          $('sheetId').value = doc.id;
+          out('S2 picked', { id: doc.id, name: doc.name });
+        }
+      })
+      .build();
+    picker.setVisible(true);
+  };
+
+  $('btnRead').onclick = async () => {
+    if (!accessToken) return out('S2', 'Primero autoriza.');
+    const id = $('sheetId').value.trim();
+    const meta = await api(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}?fields=properties.title,sheets.properties.title`);
+    out(`S2 spreadsheets.get → HTTP ${meta.status}`, meta.body);
+    const vals = await api(`https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(id)}/values/A1:C5`);
+    out(`S2 values.get A1:C5 → HTTP ${vals.status}`, vals.body);
+  };
+</script>
+</body>
+</html>

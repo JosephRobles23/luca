@@ -22,3 +22,6 @@ dist/
 coverage/
 
 .DS_Store
+
+# Correos reales para spikes (PII)
+spikes/eml-raw/
