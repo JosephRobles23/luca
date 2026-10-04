@@ -1,0 +1,80 @@
+import { test, expect } from "@playwright/test";
+import { SHOTS, login, waitForDashboard, money, toast } from "./helpers";
+
+test.describe("Landing → entrar → dashboard", () => {
+  test("la landing presenta propuesta, pasos, privacidad y legales", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Tus gastos de BCP y Yape");
+    await expect(page.getByRole("heading", { name: "Cómo funciona" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Política de privacidad" })).toHaveAttribute("href", "/privacidad");
+    await expect(page.getByRole("link", { name: "Términos de uso" })).toHaveAttribute("href", "/terminos");
+    await page.screenshot({ path: `${SHOTS}/01-landing.png`, fullPage: true });
+  });
+
+  test("entrar muestra el dashboard con KPIs coherentes", async ({ page }) => {
+    await login(page);
+    await waitForDashboard(page);
+    const income = money(await page.getByTestId("kpi-income").locator(".text-2xl").innerText());
+    const expense = money(await page.getByTestId("kpi-expense").locator(".text-2xl").innerText());
+    const net = money(await page.getByTestId("kpi-net").locator(".text-2xl").innerText());
+    const yape = money(await page.getByTestId("kpi-yape").locator(".text-2xl").innerText());
+    expect(income).toBeGreaterThan(0);
+    expect(expense).toBeGreaterThan(0);
+    expect(Math.abs(income - expense - net)).toBeLessThan(0.02);
+    expect(yape).toBeGreaterThan(0); // transfer_in aparte, no infla ingresos
+    await expect(page.getByTestId("kpi-yape")).toContainText("no cuenta como ingreso");
+    // Aviso de versión: la copia (v4) es anterior a la publicada (v5 en el webServer de Playwright).
+    await expect(page.getByTestId("version-notice")).toContainText("versión nueva");
+    await expect(page.getByTestId("dashboard-movements").locator("li").first()).toBeVisible();
+    await page.screenshot({ path: `${SHOTS}/02-dashboard.png`, fullPage: true });
+  });
+
+  test("el selector de mes cambia los KPIs y las barras son clicables", async ({ page }) => {
+    await login(page);
+    await waitForDashboard(page);
+    const before = await page.getByTestId("kpi-expense").locator(".text-2xl").innerText();
+    const select = page.getByTestId("month-select");
+    const options = await select.locator("option").allTextContents();
+    expect(options.length).toBeGreaterThanOrEqual(3);
+    await select.selectOption({ index: 1 });
+    await expect(page.getByTestId("kpi-expense").locator(".text-2xl")).not.toHaveText(before);
+    await expect(page.locator("h2", { hasText: /Movimientos · / })).toContainText(options[1]);
+  });
+
+  test("recategorizar desde 'Por categorizar' se refleja en el dashboard y en Movimientos", async ({ page }) => {
+    await login(page);
+    await waitForDashboard(page);
+    const pending = page.getByTestId("pending-card");
+    await expect(pending).toBeVisible();
+    const countBefore = Number((await pending.locator("h2").innerText()).replace(/\D/g, ""));
+    const firstSelect = pending.locator("select").first();
+    const testId = await firstSelect.getAttribute("data-testid");
+    const txId = testId!.replace(/^cat-/, "");
+    await firstSelect.selectOption("Comidas fuera");
+    await expect(toast(page)).toContainText("Categoría guardada: Comidas fuera");
+    await expect(pending.locator("h2")).toContainText(String(countBefore - 1));
+    await page.getByRole("link", { name: "Movimientos" }).click();
+    await expect(page.getByTestId(`cat-${txId}`)).toHaveValue("Comidas fuera");
+    // Y sobrevive a una recarga completa (el mock persiste en localStorage igual que la Sheet real).
+    await page.reload();
+    await expect(page.getByTestId(`cat-${txId}`)).toHaveValue("Comidas fuera");
+    await page.getByTestId(`mov-${txId}`).getByRole("button", { name: "Ver detalle" }).click();
+    await expect(page.getByTestId(`mov-${txId}`)).toContainText("origen: user");
+  });
+
+  test("tema claro/oscuro y cierre de sesión", async ({ page }) => {
+    await login(page);
+    await waitForDashboard(page);
+    await page.getByTestId("theme-toggle").click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
+    await page.screenshot({ path: `${SHOTS}/03-dashboard-light.png`, fullPage: true });
+    await page.getByTestId("theme-toggle").click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    await page.getByRole("button", { name: "Salir" }).click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByTestId("cta-entrar")).toBeVisible();
+    // Sin sesión, /app redirige a la landing.
+    await page.goto("/app");
+    await expect(page).toHaveURL(/\/$/);
+  });
+});
