@@ -22,6 +22,7 @@ export const RUNTIME_FILES = [
   'settings-runtime.js',
   'secrets-runtime.js',
   'email-parsers-runtime.js',
+  'push-parsers-runtime.js',
   'ledger-runtime.js',
   'gmail-scan-runtime.js',
   'ui-runtime.js'

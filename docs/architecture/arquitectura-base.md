@@ -79,7 +79,7 @@ Insumos:
 ### 5.1 Ingesta por correo (automática)
 `Trigger (15 min)` → `Gmail API: from:(BCP|Yape) after:<cursor>` → por mensaje: clasificar por remitente+asunto → extraer tabla etiqueta→valor → normalizar (fecha ≥4 formatos, S/ vs $, tipo de cambio) → descartar transferencias internas y rechazos → dedupe (`messageId`, `Nº operación`, monto+Δt≤5 min) → categorizar: reglas → caché `Comercios` → LLM (solo comercio+monto, JSON estructurado) → fila en `Movimientos` → (async) actualizar wiki `merchants/<slug>.md` y `months/<yyyy-mm>.md`.
 
-### 5.2 Ingesta desde iPhone (si las pruebas de iOS 27 pasan)
+### 5.2 Ingesta desde iPhone (validado en S7, 2026-10-04)
 `Atajo (Notificación Yape)` → `POST WORKER/events {deviceToken, id, title, body, ts}` → Worker valida token del dispositivo → reenvía al `/exec` del usuario (o encola si no responde) → mismo pipeline de normalización en GAS (parser de texto de push) → dedupe contra correos.
 
 ### 5.3 Consulta desde la IA (MCP, solo lectura)
@@ -133,7 +133,7 @@ luca/
 | S4 | ~~`getIdentityToken`~~ **Resuelto:** `aud` estable por copia y distinto entre copias; `sub` estable → anclar en pairing | — |
 | S5 | Escrituras KV por flujo OAuth del Worker (medir con `wrangler tail`) | Paid $5 o mover estado a D1/DO |
 | S6 | Parsers contra 2–3 `.eml` reales de cada tipo | — (es trabajo, no riesgo) |
-| S7 | iOS 27: Experimentos 1–3 de la guía | Solo correo + carga manual rápida |
+| S7 | ~~iOS 27~~ **Resuelto:** corre bloqueado sin confirmación y entrega title/body; push de yapeo recibido parseable. Canal iPhone en v0 | — |
 
 ## 9. Preguntas abiertas para /wayfinder
 
