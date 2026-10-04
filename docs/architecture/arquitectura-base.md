@@ -1,6 +1,6 @@
 # Luca — Arquitectura base (propuesta v0)
 
-Fecha: 2026-10-04. Estado: **propuesta para discutir en /wayfinder**, no decisión final.
+Fecha: 2026-10-04. Estado: **base aceptada** tras la sesión de grilling del 2026-10-04. Las decisiones finas están en ADR-001 … ADR-007 y el plan en `plan-implementacion.md`. Donde este documento y un ADR difieran, manda el ADR (p. ej. §5.2: el canal iPhone va directo al `/exec`, ADR-003).
 
 Insumos:
 - `docs/research/2026-10-hosting-y-provisioning-gas.md` (hosting free-tier, provisioning, scopes)
