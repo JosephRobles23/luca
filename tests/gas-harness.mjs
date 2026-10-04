@@ -26,7 +26,8 @@ export const RUNTIME_FILES = [
   'ledger-runtime.js',
   'gmail-scan-runtime.js',
   'webapp-runtime.js',
-  'ui-runtime.js'
+  'ui-runtime.js',
+  'mcp-runtime.js'
 ];
 
 let sheetIdSeq = 1;
