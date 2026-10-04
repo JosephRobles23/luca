@@ -131,8 +131,8 @@ Exportar 2–3 `.eml` por tipo (Gmail → ⋮ → "Descargar mensaje") a `spikes
 |---|---|---|---|---|
 | S1 | 2026-10-04 | `files.copy` directo → **404**; tras elegir la plantilla en el Picker (`setAppId`) → **200** | Resumen pegado en chat; copia `1Xyv…oGlM` creada por `petter…@gmail.com` con solo `drive.file` | Onboarding = Picker → copiar. Sin `/copy`, sin scopes sensibles. Confirmado: la copia trae el script ligado (menú "Luca (spike)" visible) |
 | S2 | 2026-10-04 | `spreadsheets.get` **200**, `values.get` **200** sobre la copia, con `drive.file` | Resumen pegado en chat | Dashboard web lee la Sheet desde el navegador sin pasar por nuestro servidor ✅ |
-| S3 | | | | |
-| S4 | | | | |
+| S3 | 2026-10-04 | Flujo exactamente como se describía: "Google no ha verificado esta app" → Avanzado → Ir a Luca (no seguro) → permisos → "OK: Gmail autorizado" | Grabación del usuario (local) | No bloquea. Guía visual del onboarding obligatoria |
+| S4 | 2026-10-04 | `iss` correcto; `aud` constante en 3 tokens de la misma copia y **distinto** en una segunda copia; `sub` igual en ambas; `email_verified=true`; 3600 s | 4 tokens decodificados en local con `s4-decode-jwt.mjs` | Pairing ancla `aud`+`sub`; después, auth GAS→Worker solo con la firma de Google (sin secreto compartido) |
 | S5 | | | | |
 | S6 | | | | |
 | S7 | | | | |

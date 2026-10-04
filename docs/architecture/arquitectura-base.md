@@ -129,8 +129,8 @@ luca/
 |---|---|---|
 | S1 | ~~`files.copy` con `drive.file`~~ **Resuelto:** directo 404; con Picker previo 200 | — |
 | S2 | ~~Picker + `drive.file` → Sheets API~~ **Resuelto:** 200/200 | — |
-| S3 | UX real de "app no verificada" en la propia copia (cuenta @gmail.com) | Video guía; evaluar add-on más adelante |
-| S4 | `getIdentityToken` desde GAS: ¿`aud` estable por copia? ¿se puede anclar en el pairing? | Volver a secreto compartido como Vera |
+| S3 | ~~UX "app no verificada"~~ **Resuelto:** Avanzado → Ir a Luca → OK. Requiere guía visual | — |
+| S4 | ~~`getIdentityToken`~~ **Resuelto:** `aud` estable por copia y distinto entre copias; `sub` estable → anclar en pairing | — |
 | S5 | Escrituras KV por flujo OAuth del Worker (medir con `wrangler tail`) | Paid $5 o mover estado a D1/DO |
 | S6 | Parsers contra 2–3 `.eml` reales de cada tipo | — (es trabajo, no riesgo) |
 | S7 | iOS 27: Experimentos 1–3 de la guía | Solo correo + carga manual rápida |
