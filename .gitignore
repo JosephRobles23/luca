@@ -1,0 +1,24 @@
+# Capturas reales de Gmail (contienen PII): se quedan en local
+docs/img/Screenshot_*.png
+
+# Correos reales exportados; solo se versionan fixtures anonimizados en tests/fixtures/
+*.eml
+!tests/fixtures/**/*.eml
+
+# Secretos y config local
+.env
+.env.*
+.clasp.json
+.clasprc.json
+.dev.vars
+*.local.json
+
+# Dependencias y builds
+node_modules/
+.next/
+.wrangler/
+.vercel/
+dist/
+coverage/
+
+.DS_Store

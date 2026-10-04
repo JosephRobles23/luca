@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luca Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Mockup estático — datos ficticios. Vanilla HTML/CSS/SVG para que corra igual
+     en HtmlService (modal GAS) y en la plataforma web. */
+  :root {
+    --bg: #0b0b0b;
+    --panel: #171717;
+    --panel-2: #1f1f1f;
+    --border: #272727;
+    --text: #ede7dd;
+    --muted: #8b857c;
+    --accent: #d9623b;
+    --accent-2: #f08a5d;
+    --accent-soft: #2e1710;
+    --ok: #6fbf8a;
+    --warn: #e2b25a;
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f4efe8; --panel: #fffdf9; --panel-2: #f6f1ea; --border: #e6ddd1;
+      --text: #1d1a17; --muted: #7a7268; --accent-soft: #fbe6dc;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #f4efe8; --panel: #fffdf9; --panel-2: #f6f1ea; --border: #e6ddd1;
+    --text: #1d1a17; --muted: #7a7268; --accent-soft: #fbe6dc;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: "Inter Tight", system-ui, sans-serif; font-size: 13px;
+  }
+  .app { max-width: 1320px; margin: 0 auto; padding: 20px 16px 40px; }
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+  .brand { font-weight: 800; font-size: 18px; letter-spacing: -.02em; }
+  .brand span { color: var(--accent); }
+  .status { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 999px; color: var(--muted); font-size: 11.5px; background: var(--panel); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ok); }
+  .dot.warn { background: var(--warn); }
+  select.period { background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font: inherit; }
+
+  .grid { display: grid; grid-template-columns: 260px minmax(0, 1fr) 320px; gap: 14px; align-items: start; }
+  .center { display: grid; gap: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+  .label { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 0 0 12px; }
+
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .kpi .value { font-size: 26px; font-weight: 800; letter-spacing: -.03em; }
+  .kpi .delta { color: var(--muted); font-size: 11.5px; margin-top: 4px; }
+  .kpi.hl { background: var(--accent-soft); border-color: var(--accent); }
+  .kpi.hl .value { color: var(--accent-2); }
+
+  .row2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 14px; }
+  .donut-wrap { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+  .legend { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px; flex: 1; min-width: 220px; }
+  .legend div { display: flex; align-items: center; gap: 7px; }
+  .legend i { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .legend b { margin-left: auto; color: var(--muted); font-weight: 500; }
+
+  .bars { display: flex; align-items: flex-end; gap: 12px; height: 150px; padding-top: 18px; }
+  .bar { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+  .bar .b { width: 100%; max-width: 28px; border-radius: 4px 4px 0 0; background: var(--accent); opacity: .55; }
+  .bar.cur .b { opacity: 1; }
+  .bar small { color: var(--muted); font-size: 10.5px; }
+  .bar .v { font-size: 10.5px; color: var(--muted); }
+
+  .budgets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px 16px; }
+  .budget .top { display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .track { height: 4px; background: var(--panel-2); border-radius: 4px; overflow: hidden; }
+  .fill { height: 100%; background: var(--accent); }
+  .fill.over { background: var(--warn); }
+  .budget small { display: block; color: var(--muted); margin-top: 6px; font-size: 10.5px; }
+
+  .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 14px; }
+  .seg button, .chip, .btn {
+    font: inherit; color: var(--text); background: transparent; border: 1px solid var(--border);
+    border-radius: 8px; padding: 7px 10px; cursor: pointer;
+  }
+  .seg button.on { border-color: var(--accent); color: var(--accent-2); }
+  .amount { font-size: 24px; color: var(--muted); padding: 6px 0 12px; border-bottom: 1px solid var(--border); margin-bottom: 12px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .chip { border-radius: 999px; padding: 4px 10px; font-size: 11.5px; color: var(--muted); }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .field { margin-bottom: 12px; }
+  .field span { display: block; color: var(--muted); font-size: 11.5px; margin-bottom: 5px; }
+  .field input { width: 100%; background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font: inherit; }
+  .btn.primary { width: 100%; border-color: var(--accent); color: var(--accent-2); }
+  .drop { margin-top: 14px; border: 1px dashed var(--border); border-radius: 10px; padding: 14px; text-align: center; color: var(--muted); font-size: 11.5px; }
+
+  .pending { margin-top: 14px; }
+  .pending .item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-top: 1px solid var(--border); }
+
+  .moves-head { display: flex; justify-content: space-between; align-items: center; }
+  .moves { list-style: none; margin: 0; padding: 0; max-height: 720px; overflow: auto; }
+  .moves li { display: grid; grid-template-columns: 8px 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--border); }
+  .moves li:first-child { border-top: 0; }
+  .moves .t { font-weight: 600; }
+  .moves .s { color: var(--muted); font-size: 11px; margin-top: 2px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .src { font-size: 9.5px; letter-spacing: .06em; text-transform: uppercase; padding: 1px 6px; border-radius: 4px; background: var(--panel-2); color: var(--muted); }
+  .moves .amt { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .moves .amt.in { color: var(--ok); }
+  .tag-pend { color: var(--warn); }
+
+  @media (max-width: 1100px) {
+    .grid { grid-template-columns: 1fr 1fr; }
+    .center { grid-column: 1 / -1; order: -1; }
+    .budgets { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 720px) {
+    .grid, .row2, .kpis { grid-template-columns: 1fr; }
+    .legend { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">luca<span>.</span></div>
+    <div class="status">
+      <span class="pill"><i class="dot"></i>Sheet conectada</span>
+      <span class="pill"><i class="dot"></i>MCP · Claude</span>
+      <span class="pill"><i class="dot"></i>iPhone · último evento hace 4 min</span>
+      <span class="pill"><i class="dot warn"></i>Gmail · 3 sin parsear</span>
+      <select class="period" aria-label="Periodo">
+        <option>Octubre 2026</option><option>Septiembre 2026</option><option>T3 2026</option>
+      </select>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- Columna izquierda: carga manual / boleta -->
+    <aside class="card">
+      <p class="label">Cargar movimiento</p>
+      <div class="seg"><button class="on">Gasto</button><button>Ingreso</button></div>
+      <div class="amount">S/ 0.00</div>
+      <div class="chips" id="chips"></div>
+      <label class="field"><span>Fecha</span><input type="date" value="2026-10-04"></label>
+      <label class="field"><span>Nota (opcional)</span><input placeholder="ej. menú del almuerzo"></label>
+      <button class="btn primary">Agregar</button>
+      <div class="drop">📷 Arrastra una foto de boleta<br>se extrae con visión del LLM</div>
+
+      <div class="pending">
+        <p class="label" style="margin-top:18px">Por categorizar · 3</p>
+        <div id="pending"></div>
+      </div>
+    </aside>
+
+    <!-- Centro -->
+    <main class="center">
+      <section class="kpis">
+        <div class="card kpi"><p class="label">Ingresos del mes</p><div class="value" id="kIn"></div><div class="delta">+4% vs septiembre</div></div>
+        <div class="card kpi"><p class="label">Gastos del mes</p><div class="value" id="kOut"></div><div class="delta">−7% vs septiembre</div></div>
+        <div class="card kpi hl"><p class="label">Te queda</p><div class="value" id="kLeft"></div><div class="delta">38% de tus ingresos</div></div>
+      </section>
+
+      <section class="row2">
+        <div class="card">
+          <p class="label">Gastos por categoría</p>
+          <div class="donut-wrap">
+            <svg id="donut" width="150" height="150" viewBox="0 0 150 150" role="img" aria-label="Gastos por categoría"></svg>
+            <div class="legend" id="legend"></div>
+          </div>
+        </div>
+        <div class="card">
+          <p class="label">Últimos 6 meses</p>
+          <div class="bars" id="bars"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <p class="label" style="display:flex;justify-content:space-between"><span>Presupuestos por categoría</span><span style="letter-spacing:0;text-transform:none;font-weight:400">se marca en ámbar si te pasas</span></p>
+        <div class="budgets" id="budgets"></div>
+      </section>
+    </main>
+
+    <!-- Columna derecha: movimientos -->
+    <aside class="card">
+      <div class="moves-head"><p class="label">Movimientos del mes</p><span class="pill">Todas las fuentes</span></div>
+      <ul class="moves" id="moves"></ul>
+    </aside>
+  </div>
+</div>
+
+<script>
+  // Datos ficticios. En producción vendrían del data layer (Sheets API en web /
+  // google.script.run en el modal) con la misma forma.
+  const DATA = {
+    income: 6850, expense: 4212.4,
+    categories: [
+      { name: 'Vivienda', amount: 1300 },
+      { name: 'Supermercado', amount: 982.5 },
+      { name: 'Comidas fuera', amount: 486.9 },
+      { name: 'Transporte', amount: 412 },
+      { name: 'Transferencias', amount: 380 },
+      { name: 'Suscripciones', amount: 259 },
+      { name: 'Salud', amount: 214 },
+      { name: 'Otros', amount: 178 },
+    ],
+    months: [['May', 4980], ['Jun', 5120], ['Jul', 4640], ['Ago', 4870], ['Sep', 4530], ['Oct', 4212.4]],
+    budgets: [
+      ['Supermercado', 982.5, 900], ['Comidas fuera', 486.9, 600], ['Transporte', 412, 450], ['Vivienda', 1300, 1300],
+      ['Suscripciones', 259, 200], ['Salud', 214, null], ['Transferencias', 380, null], ['Otros', 178, 300],
+    ],
+    moves: [
+      { t: 'Plaza Vea', c: 'Supermercado', d: '04 oct', src: 'BCP email', amt: -186.4 },
+      { t: 'Yapeo a María Q.', c: null, d: '04 oct', src: 'Yape push', amt: -3.5 },
+      { t: 'Rappi', c: 'Comidas fuera', d: '03 oct', src: 'BCP email', amt: -42.9 },
+      { t: 'Juan P. te yapeó', c: 'Ingreso', d: '03 oct', src: 'Yape push', amt: 25 },
+      { t: 'Cabify', c: 'Transporte', d: '03 oct', src: 'BCP email', amt: -18.6 },
+      { t: 'Inkafarma', c: 'Salud', d: '02 oct', src: 'Boleta', amt: -64.2 },
+      { t: 'Yapeo a Carlos R.', c: null, d: '02 oct', src: 'Yape push', amt: -8 },
+      { t: 'Netflix', c: 'Suscripciones', d: '01 oct', src: 'BCP email', amt: -44.9 },
+      { t: 'Sueldo', c: 'Ingreso', d: '01 oct', src: 'BCP email', amt: 6500 },
+      { t: 'Alquiler', c: 'Vivienda', d: '01 oct', src: 'BCP email', amt: -1300 },
+      { t: 'Menú El Rincón', c: 'Comidas fuera', d: '01 oct', src: 'Manual', amt: -15 },
+      { t: 'Yapeo a Bodega Don Lucho', c: null, d: '30 sep', src: 'Yape push', amt: -6.5 },
+    ],
+  };
+
+  const PALETTE = ['#d9623b', '#f08a5d', '#b54a2a', '#e8a07f', '#8f3a22', '#f3c2a9', '#6e2c1a', '#c9b8a8'];
+  const fmt = n => 'S/ ' + Math.abs(n).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const $ = id => document.getElementById(id);
+
+  $('kIn').textContent = fmt(DATA.income);
+  $('kOut').textContent = fmt(DATA.expense);
+  $('kLeft').textContent = fmt(DATA.income - DATA.expense);
+
+  // Donut
+  const total = DATA.categories.reduce((s, c) => s + c.amount, 0);
+  const r = 58, C = 2 * Math.PI * r;
+  let offset = 0, svg = '';
+  DATA.categories.forEach((c, i) => {
+    const len = (c.amount / total) * C;
+    svg += `<circle cx="75" cy="75" r="${r}" fill="none" stroke="${PALETTE[i]}" stroke-width="18"
+      stroke-dasharray="${len - 1.5} ${C - len + 1.5}" stroke-dashoffset="${-offset}" transform="rotate(-90 75 75)"/>`;
+    offset += len;
+  });
+  svg += `<text x="75" y="74" text-anchor="middle" fill="currentColor" font-size="15" font-weight="800">${fmt(total)}</text>
+          <text x="75" y="91" text-anchor="middle" fill="var(--muted)" font-size="10">gastado</text>`;
+  $('donut').innerHTML = svg;
+  $('legend').innerHTML = DATA.categories.map((c, i) =>
+    `<div><i style="background:${PALETTE[i]}"></i>${c.name}<b>${Math.round(c.amount / total * 100)}%</b></div>`).join('');
+
+  // Barras 6 meses
+  const max = Math.max(...DATA.months.map(m => m[1]));
+  $('bars').innerHTML = DATA.months.map(([m, v], i) => `
+    <div class="bar ${i === DATA.months.length - 1 ? 'cur' : ''}">
+      <span class="v">${(v / 1000).toFixed(1)}k</span>
+      <div class="b" style="height:${(v / max) * 100}%"></div><small>${m}</small>
+    </div>`).join('');
+
+  // Presupuestos
+  $('budgets').innerHTML = DATA.budgets.map(([name, spent, limit]) => {
+    const pct = limit ? Math.min(100, spent / limit * 100) : 100;
+    const over = limit && spent > limit;
+    const note = limit ? (over ? `superaste ${fmt(limit)}` : `de ${fmt(limit)}`) : 'sin límite';
+    return `<div class="budget">
+      <div class="top"><span>${name}</span><span>${fmt(spent)}</span></div>
+      <div class="track"><div class="fill ${over ? 'over' : ''}" style="width:${pct}%;${limit ? '' : 'opacity:.25'}"></div></div>
+      <small>${note}</small></div>`;
+  }).join('');
+
+  // Movimientos
+  $('moves').innerHTML = DATA.moves.map(m => `
+    <li><i class="dot" style="background:${m.amt > 0 ? 'var(--ok)' : 'var(--accent)'}"></i>
+      <div><div class="t">${m.t}</div>
+        <div class="s">${m.d} · ${m.c ? m.c : '<span class="tag-pend">Pendiente</span>'} <span class="src">${m.src}</span></div></div>
+      <div class="amt ${m.amt > 0 ? 'in' : ''}">${m.amt > 0 ? '+ ' : '− '}${fmt(m.amt)}</div></li>`).join('');
+
+  // Chips de categoría y pendientes
+  $('chips').innerHTML = DATA.categories.map((c, i) => `<button class="chip ${i === 1 ? 'on' : ''}">${c.name}</button>`).join('');
+  $('pending').innerHTML = DATA.moves.filter(m => !m.c).map(m => `
+    <div class="item"><span>${m.t.replace('Yapeo a ', '→ ')}<br><small style="color:var(--muted)">${fmt(m.amt)} · ${m.d}</small></span>
+    <button class="chip">Asignar</button></div>`).join('');
+</script>
+</body>
+</html>
