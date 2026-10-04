@@ -1,0 +1,35 @@
+# wrangler.toml — Worker luca-mcp (Cloudflare, misma cuenta que Vera-MCP; ADR-007 §3).
+# URL final: https://mcp.lucaa.lat  (custom domain; el DNS de lucaa.lat ya está en Cloudflare).
+#
+# Antes del primer deploy, crear los recursos y pegar los ids reales (ver README.md):
+#   wrangler d1 create luca-mcp              →  database_id
+#   wrangler kv namespace create OAUTH_KV    →  id
+# Los ids no son secretos, pero los placeholders de abajo DEBEN reemplazarse.
+
+name = "luca-mcp"
+main = "src/index.ts"
+compatibility_date = "2026-08-01"
+compatibility_flags = ["nodejs_compat"]
+
+routes = [
+  { pattern = "mcp.lucaa.lat", custom_domain = true }
+]
+
+[vars]
+# Versión de LucaLib fijada en el stub de la plantilla (gas/stub/appsscript.json → "version").
+# GET /meta la expone para que la web y el sidebar avisen "tu copia usa vN, hay vN+1".
+LUCA_LIB_VERSION = "3"
+# Versión mínima del payload del atajo iOS (ADR-003); también en GET /meta.
+MIN_SHORTCUT_SCHEMA = "1"
+
+# D1: tenants (tenantId → {execUrl, secreto}) + pairings pendientes.
+[[d1_databases]]
+binding = "DB"
+database_name = "luca-mcp"
+database_id = "00000000-0000-0000-0000-000000000000"   # ← reemplazar (wrangler d1 create luca-mcp)
+
+# KV: estado OAuth de @cloudflare/workers-oauth-provider.
+# Plan Free: 1k writes/día por CUENTA (compartido con Vera-MCP). Ver README §Cuotas.
+[[kv_namespaces]]
+binding = "OAUTH_KV"
+id = "00000000000000000000000000000000"   # ← reemplazar (wrangler kv namespace create OAUTH_KV)
