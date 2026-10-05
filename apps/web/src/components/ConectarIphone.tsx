@@ -17,7 +17,10 @@ import {
   tokenWrites, type TestBaseline, type TestResult, type WizardStep,
 } from "@/lib/iphone-wizard";
 import { buildShortcutPrompt, eventsUrl } from "@/lib/shortcut-prompt";
+import { CardHead, NumSteps, StatusPill, Telemetry, useReducedMotion } from "./conexiones/parts";
+import { IconCopiar, IconExterno, IconIphone } from "./icons";
 import { useLedger } from "./LedgerProvider";
+import { DrawCheck } from "./motion";
 import { useToast } from "./Toast";
 import { Notice, fmtDateTime, timeAgo } from "./ui";
 
@@ -83,137 +86,169 @@ export default function ConectarIphone({ requestedStep, shortcutUrl }: { request
     if (await saveAjustes(disconnectWrites(), "iPhone desconectado")) router.push("/app/conexiones");
   };
 
+  const iphonePill = !c.iphone.connected ? { tone: "off" as const, label: "sin eventos aún" } : c.iphone.silent ? { tone: "warn" as const, label: "sin señales" } : { tone: "ok" as const, label: "conectado" };
+
   return (
     <div className="mx-auto grid w-full max-w-xl min-w-0 gap-4 [&>*]:min-w-0" data-testid="iphone-wizard" data-step={step}>
       <Progress step={step} />
 
-      {step === 1 && (
-        <StepCard title="Tu hoja responde" lead="El atajo manda cada yapeo a tu propio script (Web App). Primero comprobamos que está publicado.">
-          {c.webAppReady ? (
-            <>
-              <Notice kind="ok">Tu Web App está publicada. El atajo enviará a:</Notice>
-              <p className="break-all rounded-lg bg-panel-2 p-3 text-xs" data-testid="wiz-execurl">{c.execUrl}</p>
-              <p className="text-xs text-muted">No la probamos desde aquí: la prueba real la hace tu iPhone en el paso 4.</p>
-              <Nav onNext={next} />
-            </>
-          ) : (
-            <>
-              <Notice kind="warn">Tu Sheet todavía no tiene la Web App publicada (<code>conexiones.execUrl</code> vacío).</Notice>
-              <ol className="grid gap-2 text-sm text-muted">
-                <li><b className="text-text">1.</b> Abre tu Sheet → <b className="text-text">Extensiones → Apps Script</b>.</li>
-                <li><b className="text-text">2.</b> Arriba a la derecha: <b className="text-text">Implementar → Nueva implementación</b>.</li>
-                <li><b className="text-text">3.</b> ⚙️ Tipo: <b className="text-text">Aplicación web</b> · Ejecutar como: <b className="text-text">Yo</b> · Acceso: <b className="text-text">Cualquier usuario</b> → Implementar.</li>
-                <li><b className="text-text">4.</b> Copia la URL que termina en <code>/exec</code> y pégala en tu Sheet → menú <b className="text-text">Luca → Activar conexiones</b>. Tu script la valida y la guarda.</li>
-              </ol>
-              <div className="flex flex-wrap gap-2">
-                <a className="btn primary" href={sheetUrl} target="_blank" rel="noreferrer">Abrir mi Sheet ↗</a>
-                <button className="btn" onClick={refresh} disabled={refreshing}>{refreshing ? "Comprobando…" : "Ya lo hice → Actualizar"}</button>
-              </div>
-              <Nav onNext={next} nextDisabled nextHint="Se activa cuando tu script guarde la URL." />
-            </>
-          )}
-        </StepCard>
-      )}
+      <StepTransition step={step}>
+        {step === 1 && (
+          <StepCard step={1} title="Tu hoja responde" lead="El atajo manda cada yapeo a tu propio script (Web App). Primero comprobamos que está publicado.">
+            {c.webAppReady ? (
+              <>
+                <Notice kind="ok">Tu Web App está publicada. El atajo enviará a:</Notice>
+                <p className="sunken break-all px-3.5 py-3 font-mono text-[12px] text-ink" data-testid="wiz-execurl">{c.execUrl}</p>
+                <p className="text-xs text-muted">No la probamos desde aquí: la prueba real la hace tu iPhone en el paso 4.</p>
+                <Nav onNext={next} />
+              </>
+            ) : (
+              <>
+                <Notice kind="warn">Tu Sheet todavía no tiene la Web App publicada (<code>conexiones.execUrl</code> vacío).</Notice>
+                <NumSteps>{[
+                  <>Abre tu Sheet → <b>Extensiones → Apps Script</b>.</>,
+                  <>Arriba a la derecha: <b>Implementar → Nueva implementación</b>.</>,
+                  <>⚙️ Tipo: <b>Aplicación web</b> · Ejecutar como: <b>Yo</b> · Acceso: <b>Cualquier usuario</b> → Implementar.</>,
+                  <>Copia la URL que termina en <code>/exec</code> y pégala en tu Sheet → menú <b>Luca → Activar conexiones</b>. Tu script la valida y la guarda.</>,
+                ]}</NumSteps>
+                <div className="flex flex-wrap gap-2">
+                  <a className="btn primary" href={sheetUrl} target="_blank" rel="noreferrer">Abrir mi Sheet <IconExterno size={15} /></a>
+                  <button className="btn" onClick={refresh} disabled={refreshing}>{refreshing ? "Comprobando…" : "Ya lo hice → Actualizar"}</button>
+                </div>
+                <Nav onNext={next} nextDisabled nextHint="Se activa cuando tu script guarde la URL." />
+              </>
+            )}
+          </StepCard>
+        )}
 
-      {step === 2 && (
-        <StepCard title="Ábrelo en tu iPhone" lead="Los siguientes pasos se hacen en el iPhone (copiar el token, importar el atajo).">
-          {onIOS ? (
-            <>
-              <Notice kind="ok">Ya estás en tu iPhone: puedes seguir directamente.</Notice>
-              <Nav onBack={back} onNext={next} />
-            </>
-          ) : (
-            <>
-              <QrForStep3 />
-              <p className="text-sm text-muted">Escanea el código con la cámara del iPhone (o cópiate el enlace y ábrelo allí). Entrarás con tu misma cuenta de Google y seguirás en el paso 3.</p>
-              <div className="flex flex-wrap gap-2">
-                <button className="btn" data-testid="copy-link" onClick={() => copy(`${window.location.origin}${WIZARD_PATH}?paso=3`, "Enlace")}>Copiar enlace</button>
-              </div>
-              <Nav onBack={back} onNext={next} nextLabel="Seguir aquí de todos modos" />
-            </>
-          )}
-        </StepCard>
-      )}
+        {step === 2 && (
+          <StepCard step={2} title="Ábrelo en tu iPhone" lead="Los siguientes pasos se hacen en el iPhone (copiar el token, importar el atajo).">
+            {onIOS ? (
+              <>
+                <Notice kind="ok">Ya estás en tu iPhone: puedes seguir directamente.</Notice>
+                <Nav onBack={back} onNext={next} />
+              </>
+            ) : (
+              <>
+                <QrForStep3 />
+                <p className="text-center text-sm text-body">Escanea el código con la cámara del iPhone (o cópiate el enlace y ábrelo allí). Entrarás con tu misma cuenta de Google y seguirás en el paso 3.</p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <button className="btn sm" data-testid="copy-link" onClick={() => copy(`${window.location.origin}${WIZARD_PATH}?paso=3`, "Enlace")}><IconCopiar size={15} />Copiar enlace</button>
+                </div>
+                <Nav onBack={back} onNext={next} nextLabel="Seguir aquí de todos modos" />
+              </>
+            )}
+          </StepCard>
+        )}
 
-      {step === 3 && (
-        <Step3Install token={token} execUrl={c.execUrl} shortcutUrl={shortcutUrl} onBack={back} onNext={next} copy={copy}
-          ensureToken={() => saveAjustes(tokenWrites(newToken(), c.execUrl), "Token del iPhone generado y guardado en tu Sheet")} />
-      )}
+        {step === 3 && (
+          <Step3Install token={token} execUrl={c.execUrl} shortcutUrl={shortcutUrl} onBack={back} onNext={next} copy={copy}
+            ensureToken={() => saveAjustes(tokenWrites(newToken(), c.execUrl), "Token del iPhone generado y guardado en tu Sheet")} />
+        )}
 
-      {step === 4 && (
-        <Step4Test ajustes={ajustes} refreshAjustes={refreshAjustes} onBack={back} onDone={() => go(5)} mock={mode === "mock"} />
-      )}
+        {step === 4 && (
+          <Step4Test ajustes={ajustes} refreshAjustes={refreshAjustes} onBack={back} onDone={() => go(5)} mock={mode === "mock"} />
+        )}
 
-      {step === 5 && (
-        <StepCard title="Activa la automatización" lead="Último paso, en la app Atajos del iPhone. Después, cada yapeo que recibas aparecerá solo en tu hoja.">
-          <ol className="grid gap-3 sm:grid-cols-3">
-            <Figure n={1} caption={<><b>Automatización</b> → <b>+</b> → <b>Notificación</b> → App: <b>Yape</b></>}><SvgBell /></Figure>
-            <Figure n={2} caption={<>Elige <b>Ejecutar inmediatamente</b> y el atajo <b>Luca – Captura Yape</b></>}><SvgBolt /></Figure>
-            <Figure n={3} caption={<>En el atajo: <b>ⓘ → Privacidad → Permitir con el equipo bloqueado</b></>}><SvgLock /></Figure>
-          </ol>
-          <Notice kind="ok">Listo. Pide un yapeo de S/ 1 para verlo llegar: aparecerá como <b>Recibido por Yape</b> en Movimientos.</Notice>
+        {step === 5 && (
+          <StepCard step={5} title="Activa la automatización" lead="Último paso, en la app Atajos del iPhone. Después, cada yapeo que recibas aparecerá solo en tu hoja.">
+            <ol className="grid gap-2.5 sm:grid-cols-3">
+              <Figure n={1} caption={<><b>Automatización</b> → <b>+</b> → <b>Notificación</b> → App: <b>Yape</b></>}><SvgBell /></Figure>
+              <Figure n={2} caption={<>Elige <b>Ejecutar inmediatamente</b> y el atajo <b>Luca – Captura Yape</b></>}><SvgBolt /></Figure>
+              <Figure n={3} caption={<>En el atajo: <b>ⓘ → Privacidad → Permitir con el equipo bloqueado</b></>}><SvgLock /></Figure>
+            </ol>
+            <Notice kind="ok">Listo. Pide un yapeo de S/ 1 para verlo llegar: aparecerá como <b>Recibido por Yape</b> en Movimientos.</Notice>
 
-          <section className="rounded-lg border border-border bg-panel-2 p-3" data-testid="iphone-final-status">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="label !mb-0">Estado del iPhone</h3>
-              <span className="pill"><i className={`dot ${!c.iphone.connected ? "off" : c.iphone.silent ? "warn" : ""}`} /> {!c.iphone.connected ? "sin eventos aún" : c.iphone.silent ? "sin señales" : "conectado"}</span>
-            </div>
-            <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-              <dt className="text-muted">Dispositivo</dt><dd>{c.iphone.device || "—"}</dd>
-              <dt className="text-muted">Eventos</dt><dd>{c.iphone.eventsCount}</dd>
-              <dt className="text-muted">Último yapeo</dt><dd>{c.iphone.lastEventAt ? `${fmtDateTime(c.iphone.lastEventAt)} (${timeAgo(c.iphone.lastEventAt)})` : "ninguno todavía"}</dd>
-              <dt className="text-muted">Última prueba</dt><dd>{c.iphone.lastTestAt ? `${fmtDateTime(c.iphone.lastTestAt)} (${timeAgo(c.iphone.lastTestAt)})` : "—"}</dd>
-              <dt className="text-muted">Token</dt><dd className="font-mono text-xs">{token ? maskToken(token) : "—"}</dd>
-              {c.iphone.lastError && <><dt className="text-muted">Último error</dt><dd className="text-warn">{c.iphone.lastError}</dd></>}
-            </dl>
-            {regenerated && (
-              <div className="mt-3">
-                <Notice kind="warn" action={<button className="btn" onClick={() => go(3)}>Ir al paso 3</button>}>
+            <section className="grid gap-3 rounded-[14px] border border-line p-4" data-testid="iphone-final-status" aria-labelledby="estado-h">
+              <CardHead id="estado-h" icon={<IconIphone />} title="Estado del iPhone" pill={<StatusPill pill={iphonePill} />} />
+              <Telemetry rows={[
+                ["Dispositivo", c.iphone.device || "—"],
+                ["Eventos", <span key="n" className="num">{c.iphone.eventsCount}</span>],
+                ["Último yapeo", c.iphone.lastEventAt ? `${fmtDateTime(c.iphone.lastEventAt)} (${timeAgo(c.iphone.lastEventAt)})` : "ninguno todavía"],
+                ["Última prueba", c.iphone.lastTestAt ? `${fmtDateTime(c.iphone.lastTestAt)} (${timeAgo(c.iphone.lastTestAt)})` : "—"],
+                ["Token", token ? maskToken(token) : "—", "font-mono text-xs"],
+                ...(c.iphone.lastError ? [["Último error", c.iphone.lastError, "text-warning"] as [string, string, string]] : []),
+              ]} />
+              {regenerated && (
+                <Notice kind="warn" action={<button className="btn sm" onClick={() => go(3)}>Ir al paso 3</button>}>
                   Token nuevo guardado. El atajo actual ya no es válido: vuelve al paso 3, copia el token nuevo y vuelve a importar el atajo.
                 </Notice>
+              )}
+              <div className="flex flex-wrap gap-2">
+                <Link className="btn primary" href="/app">Ver datos</Link>
+                <button className="btn" onClick={regenerate} disabled={!c.execUrl}>Regenerar token</button>
+                <button className="btn ghost" onClick={disconnect} disabled={!token && !c.iphone.connected}>Desconectar</button>
               </div>
-            )}
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Link className="btn primary" href="/app">Ver datos</Link>
-              <button className="btn" onClick={regenerate} disabled={!c.execUrl}>Regenerar token</button>
-              <button className="btn" onClick={disconnect} disabled={!token && !c.iphone.connected}>Desconectar</button>
-            </div>
-          </section>
-          <Nav onBack={back} />
-        </StepCard>
-      )}
+            </section>
+            <Nav onBack={back} />
+          </StepCard>
+        )}
+      </StepTransition>
 
-      <p className="text-center text-xs text-muted"><Link href="/app/conexiones" className="underline">Volver a Conexiones</Link></p>
+      <p className="text-center text-[13px] text-muted"><Link href="/app/conexiones" className="underline underline-offset-2 hover:text-ink">Volver a Conexiones</Link></p>
     </div>
   );
 }
 
+/** Entrada corta del paso nuevo: se desliza desde el lado hacia el que se avanza (Web Animations; quieto con movimiento reducido). */
+function StepTransition({ step, children }: { step: WizardStep; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const prev = useRef(step);
+  const reduced = useReducedMotion();
+  useEffect(() => {
+    const from = prev.current;
+    prev.current = step;
+    if (from === step || reduced || !ref.current?.animate) return;
+    const dx = step > from ? 18 : -18;
+    ref.current.animate([{ opacity: 0, transform: `translateX(${dx}px)` }, { opacity: 1, transform: "none" }], { duration: 220, easing: "cubic-bezier(.2,.7,.2,1)" });
+  }, [step, reduced]);
+  return <div ref={ref} className="min-w-0">{children}</div>;
+}
+
+/** Cabecera del asistente: anillo n/5 + título, y la fila de pasos numerados unidos por una línea de progreso. */
 function Progress({ step }: { step: WizardStep }) {
   const cur = WIZARD_STEPS[step - 1];
+  const pct = (step / 5) * 100;
   return (
-    <header className="grid gap-2" aria-label="Progreso del asistente">
-      <div className="flex items-baseline justify-between gap-2">
-        <h1 className="text-lg font-bold">Conectar iPhone</h1>
-        <span className="text-xs text-muted">Paso {step} de 5</span>
+    <header className="card grid gap-4" aria-label="Progreso del asistente">
+      <div className="flex items-center gap-3.5">
+        <svg className="size-12 flex-none" viewBox="0 0 48 48" role="progressbar" aria-valuemin={1} aria-valuemax={5} aria-valuenow={step} aria-label={cur.title}>
+          <circle cx="24" cy="24" r="19" fill="none" stroke="var(--strong)" strokeWidth="5" />
+          <circle cx="24" cy="24" r="19" fill="none" stroke="var(--primary)" strokeWidth="5" strokeLinecap="round" pathLength={100}
+            strokeDasharray={`${pct} 100`} transform="rotate(-90 24 24)" style={{ transition: "stroke-dasharray .6s var(--ease-out)" }} />
+          <text x="24" y="28" textAnchor="middle" className="num" fontSize="12" fill="var(--ink)">{step}/5</text>
+        </svg>
+        <div className="min-w-0">
+          <h1 className="page-title !text-[22px]">Conectar iPhone</h1>
+          <p className="text-[13px] text-muted">Paso {step} de 5 · <span className="text-body">{cur.title}</span></p>
+        </div>
       </div>
-      <div className="track" role="progressbar" aria-valuemin={1} aria-valuemax={5} aria-valuenow={step} aria-label={cur.title}><div className="fill" style={{ width: `${(step / 5) * 100}%` }} /></div>
-      <ol className="flex justify-between gap-1 text-[10.5px] text-muted">
-        {WIZARD_STEPS.map((s) => (
-          <li key={s.n} aria-current={s.n === step ? "step" : undefined} className={`flex items-center gap-1 ${s.n === step ? "font-semibold text-text" : ""}`}>
-            <i className={`dot ${s.n < step ? "" : s.n === step ? "warn" : "off"}`} /> {s.short}
-          </li>
-        ))}
+      <ol className="relative grid grid-cols-5">
+        <span className="absolute left-[10%] right-[10%] top-[13px] h-0.5 rounded-full bg-strong" aria-hidden />
+        <span className="absolute left-[10%] top-[13px] h-0.5 rounded-full bg-success" style={{ width: `${((step - 1) / 4) * 80}%`, transition: "width .4s var(--ease-out)" }} aria-hidden />
+        {WIZARD_STEPS.map((s) => {
+          const done = s.n < step, now = s.n === step;
+          return (
+            <li key={s.n} aria-current={now ? "step" : undefined} className="relative grid justify-items-center gap-1.5 text-center">
+              <span className={`num grid size-7 place-items-center rounded-full border text-[12px] transition-colors ${done ? "border-success bg-success text-card" : now ? "border-primary bg-primary-soft text-primary ring-4 ring-primary/15" : "border-line-strong bg-card text-muted"}`}>
+                {done ? <svg width="12" height="12" viewBox="0 0 24 24" aria-hidden><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg> : s.n}
+              </span>
+              <span className={`text-[11px] leading-tight ${now ? "font-medium text-ink" : "text-muted"}`}>{s.short}</span>
+            </li>
+          );
+        })}
       </ol>
     </header>
   );
 }
 
-function StepCard({ title, lead, children }: { title: string; lead: string; children: ReactNode }) {
+function StepCard({ step, title, lead, children }: { step: WizardStep; title: string; lead: string; children: ReactNode }) {
   return (
-    <section className="card grid min-w-0 gap-3 [&>*]:min-w-0">
+    <section className="card grid min-w-0 gap-4 [&>*]:min-w-0" aria-labelledby={`paso-${step}-h`}>
       <div>
-        <h2 className="text-xl font-bold">{title}</h2>
-        <p className="mt-1 text-sm text-muted">{lead}</p>
+        <span className="eyebrow">Paso {step}</span>
+        <h2 className="mt-1 text-[20px] font-medium tracking-[-0.02em] text-ink" id={`paso-${step}-h`}>{title}</h2>
+        <p className="mt-1 text-sm text-body">{lead}</p>
       </div>
       {children}
     </section>
@@ -222,9 +257,9 @@ function StepCard({ title, lead, children }: { title: string; lead: string; chil
 
 function Nav({ onBack, onNext, nextLabel = "Siguiente", nextDisabled, nextHint }: { onBack?: () => void; onNext?: () => void; nextLabel?: string; nextDisabled?: boolean; nextHint?: string }) {
   return (
-    <div className="mt-1 grid gap-1">
+    <div className="mt-1 grid gap-1.5 border-t border-line-soft pt-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        {onBack ? <button className="btn" onClick={onBack}>← Atrás</button> : <span />}
+        {onBack ? <button className="btn ghost" onClick={onBack}>← Atrás</button> : <span />}
         {onNext && <button className="btn primary" data-testid="wiz-next" onClick={onNext} disabled={nextDisabled}>{nextLabel} →</button>}
       </div>
       {nextHint && <p className="text-right text-xs text-muted">{nextHint}</p>}
@@ -245,9 +280,12 @@ function QrForStep3() {
     return () => { alive = false; };
   }, [href]);
   return (
-    <figure className="grid justify-items-center gap-2">
-      <div className="w-[min(70vw,220px)] rounded-xl bg-white p-2 [&_svg]:block [&_svg]:h-auto [&_svg]:w-full" data-testid="wiz-qr" aria-label="Código QR con el enlace a este asistente" role="img" dangerouslySetInnerHTML={{ __html: svg }} />
-      <figcaption className="break-all text-center text-[11px] text-muted">{href}</figcaption>
+    <figure className="sunken grid justify-items-center gap-3 px-4 py-5">
+      <div className="relative">
+        <div className={`w-[min(64vw,208px)] rounded-xl border border-line bg-white p-2.5 [&_svg]:block [&_svg]:h-auto [&_svg]:w-full ${svg ? "pop" : "skeleton aspect-square"}`} data-testid="wiz-qr" aria-label="Código QR con el enlace a este asistente" role="img" dangerouslySetInnerHTML={{ __html: svg }} />
+        <span className="absolute -right-2 -top-2 grid size-8 place-items-center rounded-full border border-line bg-card text-primary" aria-hidden><IconIphone size={16} /></span>
+      </div>
+      <figcaption className="break-all text-center font-mono text-[11px] text-muted">{href}</figcaption>
     </figure>
   );
 }
@@ -269,31 +307,36 @@ function Step3Install({ token, execUrl, shortcutUrl, ensureToken, copy, onBack, 
   const ready = !!token && !!execUrl;
 
   return (
-    <StepCard title="Instala el atajo" lead="El atajo necesita dos datos: la URL de tu hoja y tu token. Cópialos desde aquí cuando el atajo los pida.">
+    <StepCard step={3} title="Instala el atajo" lead="El atajo necesita dos datos: la URL de tu hoja y tu token. Cópialos desde aquí cuando el atajo los pida.">
       {!execUrl && <Notice kind="warn">Falta la URL de tu Web App: vuelve al paso 1.</Notice>}
-      {execUrl && !token && <p className="text-sm text-muted" role="status">Generando tu token y guardándolo en tu Sheet…</p>}
+      {execUrl && !token && <p className="flex items-center gap-2 text-sm text-muted" role="status"><span className="skeleton inline-block size-3 rounded-full" aria-hidden />Generando tu token y guardándolo en tu Sheet…</p>}
       <div className="grid gap-2">
-        <Chip label="URL de tu Luca" value={url} display={url} onCopy={() => copy(url, "URL")} testId="copy-url" disabled={!url} />
-        <Chip label="Token de tu iPhone" value={token} display={show ? token : maskToken(token)} onCopy={() => copy(token, "Token")} testId="copy-token" disabled={!token}
-          extra={<button className="text-xs text-muted underline" type="button" onClick={() => setShow((v) => !v)} data-testid="toggle-token">{show ? "ocultar" : "mostrar"}</button>} />
+        <Chip n={1} label="URL de tu Luca" value={url} display={url} onCopy={() => copy(url, "URL")} testId="copy-url" disabled={!url} />
+        <Chip n={2} label="Token de tu iPhone" value={token} display={show ? token : maskToken(token)} onCopy={() => copy(token, "Token")} testId="copy-token" disabled={!token}
+          extra={<button className="rounded px-1 text-[11px] font-medium normal-case tracking-normal text-primary underline-offset-2 hover:underline" type="button" onClick={() => setShow((v) => !v)} data-testid="toggle-token">{show ? "ocultar" : "mostrar"}</button>} />
       </div>
       <p className="text-xs text-muted">El token solo sirve para escribir en <i>tu</i> hoja. Puedes regenerarlo o desconectar el iPhone cuando quieras.</p>
 
       {shortcutUrl ? (
-        <div className="grid gap-1">
-          <a className="btn primary text-center" href={shortcutUrl} target="_blank" rel="noreferrer" data-testid="install-shortcut" aria-disabled={!ready}>Instalar atajo (iCloud) ↗</a>
-          <p className="text-xs text-muted">Al importarlo, pega la URL y el token cuando los pida. Incluye el mini-atajo <b>Luca – Probar iPhone</b>.</p>
+        <div className="grid gap-1.5">
+          <a className="btn primary lg" href={shortcutUrl} target="_blank" rel="noreferrer" data-testid="install-shortcut" aria-disabled={!ready}>Instalar atajo (iCloud) <IconExterno size={16} /></a>
+          <p className="text-xs text-muted">Al importarlo, pega la URL y el token cuando los pida. Incluye el mini-atajo <b className="font-medium text-ink">Luca – Probar iPhone</b>.</p>
         </div>
       ) : (
         <Notice kind="info">El enlace de iCloud del atajo aún no está disponible: genera el atajo con una IA (abajo) en un minuto.</Notice>
       )}
 
-      <details className="rounded-lg border border-border bg-panel-2 p-3" open={!shortcutUrl} data-testid="ai-prompt">
-        <summary className="cursor-pointer text-sm font-semibold">Generarlo con IA</summary>
-        <p className="mt-2 text-xs text-muted">Pega este prompt en ChatGPT, Claude o Gemini (en el iPhone) y sigue sus instrucciones. Ya lleva tu URL y tu token.</p>
-        <textarea className="mt-2 h-48 w-full rounded-lg border border-border bg-panel p-2 font-mono text-[11px] leading-snug text-text" readOnly value={prompt} data-testid="prompt-text" aria-label="Prompt para generar el atajo" />
-        <div className="mt-2 flex flex-wrap gap-2">
-          <button className="btn" data-testid="copy-prompt" onClick={() => copy(prompt, "Prompt")} disabled={!prompt}>Copiar prompt</button>
+      <details className="group overflow-hidden rounded-[14px] border border-line" open={!shortcutUrl} data-testid="ai-prompt">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-ink [&::-webkit-details-marker]:hidden">
+          Generarlo con IA
+          <span className="size-2 rotate-45 border-b-[1.5px] border-r-[1.5px] border-muted transition-transform group-open:rotate-[225deg]" aria-hidden />
+        </summary>
+        <div className="grid gap-2 border-t border-line-soft px-4 pb-4 pt-3">
+          <p className="text-xs text-muted">Pega este prompt en ChatGPT, Claude o Gemini (en el iPhone) y sigue sus instrucciones. Ya lleva tu URL y tu token.</p>
+          <textarea className="input h-48 resize-y font-mono !text-[11px] leading-snug" readOnly value={prompt} data-testid="prompt-text" aria-label="Prompt para generar el atajo" />
+          <div className="flex flex-wrap gap-2">
+            <button className="btn sm" data-testid="copy-prompt" onClick={() => copy(prompt, "Prompt")} disabled={!prompt}><IconCopiar size={15} />Copiar prompt</button>
+          </div>
         </div>
       </details>
       <Nav onBack={onBack} onNext={onNext} nextLabel="Ya lo instalé" nextDisabled={!ready} />
@@ -301,14 +344,15 @@ function Step3Install({ token, execUrl, shortcutUrl, ensureToken, copy, onBack, 
   );
 }
 
-function Chip({ label, value, display, onCopy, testId, disabled, extra }: { label: string; value: string; display: string; onCopy: () => void; testId: string; disabled?: boolean; extra?: ReactNode }) {
+function Chip({ n, label, value, display, onCopy, testId, disabled, extra }: { n: number; label: string; value: string; display: string; onCopy: () => void; testId: string; disabled?: boolean; extra?: ReactNode }) {
   return (
-    <div className="flex min-w-0 items-center gap-2 overflow-hidden rounded-lg border border-border bg-panel-2 px-3 py-2">
+    <div className="sunken flex min-w-0 items-center gap-3 overflow-hidden px-3.5 py-2.5">
+      <span className="num grid size-6 flex-none place-items-center rounded-full border border-line-strong bg-card text-[11px] text-muted" aria-hidden>{n}</span>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2 text-[10.5px] uppercase tracking-wider text-muted">{label}{extra}</div>
-        <div className="truncate font-mono text-xs" title={value} data-testid={`${testId}-value`}>{display || "—"}</div>
+        <div className="eyebrow flex flex-wrap items-center gap-x-1.5"><span className="whitespace-nowrap">{label}</span>{extra}</div>
+        <div className="mt-0.5 truncate font-mono text-[12.5px] text-ink" title={value} data-testid={`${testId}-value`}>{display || "—"}</div>
       </div>
-      <button className="btn !px-3 !py-1.5 text-xs" type="button" onClick={onCopy} disabled={disabled} data-testid={testId}>Copiar</button>
+      <button className="btn sm flex-none" type="button" onClick={onCopy} disabled={disabled} data-testid={testId} aria-label={`Copiar ${label}`}><IconCopiar size={14} /><span className="max-[400px]:hidden">Copiar</span></button>
     </div>
   );
 }
@@ -334,33 +378,38 @@ function Step4Test({ ajustes, refreshAjustes, onBack, onDone, mock }: {
   useEffect(() => { if (!done) return; const t = setTimeout(finish, 1800); return () => clearTimeout(t); }, [done]);
   // En modo mock, `?mock=iphone-test` ya programó la prueba al cargar la página.
 
+  const wait = Math.min(1, (elapsed * 1000) / TIMEOUT_MS);
   return (
-    <StepCard title="Prueba la conexión" lead="En el iPhone, ejecuta a mano el atajo «Luca – Captura Yape» (botón ▶ en Atajos; sin notificación manda una prueba». Tu script anota la prueba en tu hoja y aquí la verás llegar.">
+    <StepCard step={4} title="Prueba la conexión" lead="En el iPhone, ejecuta a mano el atajo «Luca – Captura Yape» (botón ▶ en Atajos; sin notificación manda una prueba». Tu script anota la prueba en tu hoja y aquí la verás llegar.">
       {result ? (
-        <div className="rounded-lg border border-ok bg-panel-2 p-4 text-center" role="status" data-testid="test-ok">
-          <div className="text-2xl">✓</div>
-          <p className="mt-1 font-semibold">{result.kind === "test" ? "Prueba recibida" : "¡Llegó un yapeo!"} hace {secondsSince(result.at)} s{result.device ? ` desde ${result.device}` : ""}</p>
-          <p className="mt-1 text-xs text-muted">Pasando al último paso…</p>
+        <div className="fade-in grid justify-items-center gap-2 rounded-[14px] border border-success/40 bg-success-soft px-4 py-6 text-center" role="status" data-testid="test-ok">
+          <DrawCheck size={44} />
+          <p className="font-medium text-ink">{result.kind === "test" ? "Prueba recibida" : "¡Llegó un yapeo!"} hace {secondsSince(result.at)} s{result.device ? ` desde ${result.device}` : ""}</p>
+          <p className="text-xs text-muted">Pasando al último paso…</p>
         </div>
       ) : (
-        <div className="rounded-lg border border-border bg-panel-2 p-4 text-center" role="status" aria-live="polite" data-testid="test-waiting">
-          <div className="mx-auto flex h-10 w-10 items-center justify-center"><span className="relative flex h-4 w-4"><span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-60" /><span className="relative inline-flex h-4 w-4 rounded-full bg-accent" /></span></div>
-          <p className="mt-2 font-semibold">Esperando tu prueba…</p>
-          <p className="mt-1 text-xs text-muted">Revisamos tu hoja cada 5 s · {elapsed} s</p>
+        <div className="sunken grid justify-items-center gap-2 px-4 py-6 text-center" role="status" aria-live="polite" data-testid="test-waiting">
+          <span className="relative flex size-11 items-center justify-center" aria-hidden>
+            <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-25" />
+            <span className="relative grid size-9 place-items-center rounded-full bg-primary-soft text-primary"><IconIphone size={18} /></span>
+          </span>
+          <p className="mt-1 font-medium text-ink">Esperando tu prueba…</p>
+          <p className="text-xs text-muted">Revisamos tu hoja cada 5 s · <span className="num">{elapsed} s</span></p>
+          <div className="track mt-1 w-full max-w-[220px]" aria-hidden><div className="fill" style={{ width: `${wait * 100}%`, transition: "width 1s linear" }} /></div>
         </div>
       )}
       {!result && elapsed * 1000 >= TIMEOUT_MS && (
-        <div data-testid="test-timeout">
+        <div className="fade-in grid gap-2" data-testid="test-timeout">
           <Notice kind="warn">Todavía nada. Revisa en el iPhone:</Notice>
-          <ul className="mt-2 grid gap-1 text-sm text-muted">
-            <li>· ¿Ejecutaste a mano <b className="text-text">Luca – Captura Yape</b> (▶)? Debe mostrar <code>{"{\"ok\":true,\"test\":true}"}</code>.</li>
-            <li>· Si muestra <code>unauthorized</code>: el <b className="text-text">token</b> no coincide; vuelve al paso 3 y cópialo de nuevo.</li>
-            <li>· Si da error de red: la <b className="text-text">URL</b> debe terminar en <code>/exec?events=1</code> y la Web App debe estar publicada para «Cualquier usuario».</li>
-            <li>· También vale un yapeo real: si te llega uno, lo detectamos igual.</li>
+          <ul className="grid gap-1.5 text-sm text-body [&_b]:font-medium [&_b]:text-ink">
+            <li className="sunken px-3.5 py-2.5">¿Ejecutaste a mano <b>Luca – Captura Yape</b> (▶)? Debe mostrar <code>{"{\"ok\":true,\"test\":true}"}</code>.</li>
+            <li className="sunken px-3.5 py-2.5">Si muestra <code>unauthorized</code>: el <b>token</b> no coincide; vuelve al paso 3 y cópialo de nuevo.</li>
+            <li className="sunken px-3.5 py-2.5">Si da error de red: la <b>URL</b> debe terminar en <code>/exec?events=1</code> y la Web App debe estar publicada para «Cualquier usuario».</li>
+            <li className="sunken px-3.5 py-2.5">También vale un yapeo real: si te llega uno, lo detectamos igual.</li>
           </ul>
         </div>
       )}
-      {mock && !result && <button className="btn text-xs" data-testid="mock-simulate-test" onClick={() => scheduleMockIphoneTest(1000)}>Simular prueba (modo mock)</button>}
+      {mock && !result && <div><button className="btn sm" data-testid="mock-simulate-test" onClick={() => scheduleMockIphoneTest(1000)}>Simular prueba (modo mock)</button></div>}
       <Nav onBack={onBack} onNext={result ? onDone : undefined} nextLabel="Continuar" />
     </StepCard>
   );
@@ -368,12 +417,15 @@ function Step4Test({ ajustes, refreshAjustes, onBack, onDone, mock }: {
 
 function Figure({ n, caption, children }: { n: number; caption: ReactNode; children: ReactNode }) {
   return (
-    <li className="grid gap-2 rounded-lg border border-dashed border-border bg-panel-2 p-3 text-center text-xs text-muted">
-      <div className="mx-auto flex h-24 w-full max-w-[160px] items-center justify-center rounded-lg border border-border bg-panel text-accent" aria-hidden>{children}</div>
-      <p><span className="font-semibold text-text">{n}.</span> {caption}</p>
+    <li className="sunken grid grid-cols-[auto_1fr] items-center gap-3 p-3 text-[13px] text-body sm:grid-cols-1 sm:content-start sm:justify-items-center sm:text-center [&_b]:font-medium [&_b]:text-ink">
+      <div className="relative grid size-14 place-items-center rounded-xl border border-line bg-card text-primary sm:size-20" aria-hidden>
+        {children}
+        <span className="num absolute -left-1.5 -top-1.5 grid size-5 place-items-center rounded-full bg-ink text-[10.5px] text-card">{n}</span>
+      </div>
+      <p>{caption}</p>
     </li>
   );
 }
-const SvgBell = () => <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10 21a2 2 0 0 0 4 0" /></svg>;
-const SvgBolt = () => <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" /></svg>;
-const SvgLock = () => <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /><path d="M12 15v2" /></svg>;
+const SvgBell = () => <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10 21a2 2 0 0 0 4 0" /></svg>;
+const SvgBolt = () => <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" /></svg>;
+const SvgLock = () => <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /><path d="M12 15v2" /></svg>;
