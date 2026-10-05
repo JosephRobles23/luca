@@ -2,28 +2,46 @@
 <html>
 <head>
 <base target="_top">
+<meta charset="utf-8">
+<!-- @incluir _Estilos -->
 <style>
-  body { font: 13px system-ui, sans-serif; margin: 16px; color: #1d1a17; }
-  table { border-collapse: collapse; width: 100%; font-size: 12px; }
-  td, th { padding: 6px 8px; border-bottom: 1px solid #eee; text-align: left; }
-  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+  body { padding: 20px 24px; }
+  h1 { margin: 0 0 4px; font: 500 26px/1.1 var(--sans); letter-spacing: -0.03em; color: var(--ink); }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th { text-align: left; padding: 8px 10px; font: 600 11px/1.2 var(--sans); letter-spacing: .88px; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--line-soft); color: var(--ink); }
+  tr:last-child td { border-bottom: 0; }
+  td.n, th.n { text-align: right; }
+  td.n { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 500; white-space: nowrap; }
+  td.n .mon { color: var(--muted); margin-right: 4px; }
+  td.fecha { color: var(--muted); font-family: var(--mono); font-size: 12px; white-space: nowrap; }
+  tr.propia td { color: var(--muted); }
+  .tag { font: 500 10px/1 var(--mono); letter-spacing: .4px; text-transform: uppercase; background: var(--strong); color: var(--muted); border-radius: var(--r-xs); padding: 3px 5px; }
+  .box { padding: 6px 10px; margin-top: 16px; }
 </style>
 </head>
 <body>
-  <!-- Placeholder: el dashboard real reutilizará docs/html/dashboard-mock.html con un adaptador GasSource. -->
-  <h2>Luca — últimos movimientos</h2>
-  <div id="out">cargando…</div>
+  <!-- Placeholder: el dashboard con pestañas y gráficos reutilizará docs/html/preview-diseno-moderno.html. -->
+  <h1>Últimos movimientos</h1>
+  <div class="hint">Los 50 más recientes de tu pestaña Movimientos.</div>
+  <div id="out" class="box"><div class="esq"></div><div class="esq media"></div><div class="esq"></div><div class="esq corta"></div></div>
+<!-- @incluir _Ui -->
 <script>
-  google.script.run.withSuccessHandler(function (rows) {
+  var TIPOS = { expense: 'Gasto', income: 'Ingreso', transfer_in: 'Recibido', internal_transfer: 'Entre mis cuentas', rejected: 'Rechazado' };
+  run('leerLedger').then(function (rows) {
     rows = (rows || []).slice(-50).reverse();
-    var html = '<table><tr><th>Fecha</th><th>Tipo</th><th>Comercio / contraparte</th><th class="n">Monto</th><th>Categoría</th></tr>';
+    if (!rows.length) { document.getElementById('out').innerHTML = '<p class="hint">Aún no hay movimientos. Usa Luca → Autorizar / Escanear ahora.</p>'; return; }
+    var html = '<table><tr><th>Fecha</th><th>Tipo</th><th>Comercio / contraparte</th><th>Categoría</th><th class="n">Monto</th></tr>';
     rows.forEach(function (r) {
-      html += '<tr><td>' + String(r.fecha).slice(0, 16).replace('T', ' ') + '</td><td>' + r.tipo + '</td><td>' +
-        (r.comercio || r.contraparte || '') + '</td><td class="n">' + r.moneda + ' ' + r.monto + '</td><td>' + (r.categoria || '—') + '</td></tr>';
+      html += '<tr' + (r.tipo === 'internal_transfer' ? ' class="propia"' : '') + '>' +
+        '<td class="fecha">' + esc(String(r.fecha).slice(0, 16).replace('T', ' ')) + '</td>' +
+        '<td><span class="tag">' + esc(TIPOS[r.tipo] || r.tipo) + '</span></td>' +
+        '<td>' + esc(r.comercio || r.contraparte || '—') + '</td>' +
+        '<td>' + esc(r.categoria || 'Sin categoría') + '</td>' +
+        '<td class="n"><span class="mon">' + esc(r.moneda) + '</span>' + esc(Number(r.monto).toFixed(2)) + '</td></tr>';
     });
     document.getElementById('out').innerHTML = html + '</table>';
-  }).withFailureHandler(function (e) { document.getElementById('out').textContent = 'Error: ' + e.message; })
-    .lucaRun('leerLedger', '[]');
+  }).catch(function (e) { document.getElementById('out').innerHTML = ''; fallo(e); });
 </script>
 </body>
 </html>

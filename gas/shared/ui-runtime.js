@@ -13,11 +13,25 @@ function construirMenu(ui) {
     .addItem('✅ Autorizar / Escanear ahora', 'lucaMenu1')
     .addItem('📊 Dashboard', 'lucaMenu2')
     .addItem('⚙️ Configuración', 'abrirSidebar')
+    .addSeparator()
+    .addItem('🎨 Aplicar estilo a las hojas', 'lucaMenu3')
     .addToUi();
 }
 
+/**
+ * Parciales comunes (_Estilos, _Ui): el HTML marca `<!-- @incluir _Nombre -->` y aquí se sustituye por el
+ * contenido del archivo. Se hace en el servidor, sin scriptlets de plantilla, porque estos HTML viven en la
+ * librería y así no dependemos del ámbito en que HtmlService evalúa una plantilla.
+ */
+var PARCIAL_RE_ = /<!--\s*@incluir\s+(_[A-Za-z]+)\s*-->/g;
+
+function htmlConParciales_(archivo) {
+  var html = HtmlService.createHtmlOutputFromFile(archivo).getContent();
+  return html.replace(PARCIAL_RE_, function (m, nombre) { return HtmlService.createHtmlOutputFromFile(nombre).getContent(); });
+}
+
 function buildSidebar() {
-  return HtmlService.createHtmlOutputFromFile('Sidebar').setTitle('Luca — Configuración');
+  return HtmlService.createHtmlOutput(htmlConParciales_('Sidebar')).setTitle('Luca — Configuración');
 }
 
 var DIALOGOS_ = {
@@ -27,7 +41,7 @@ var DIALOGOS_ = {
 function buildDialog(nombre) {
   var d = DIALOGOS_[nombre];
   if (!d) throw new Error('Diálogo desconocido: ' + nombre);
-  var html = HtmlService.createHtmlOutputFromFile(d.archivo).setWidth(d.ancho).setHeight(d.alto);
+  var html = HtmlService.createHtmlOutput(htmlConParciales_(d.archivo)).setWidth(d.ancho).setHeight(d.alto);
   return { html: html, titulo: d.titulo };
 }
 
@@ -79,6 +93,11 @@ var MENU_ACTIONS_ = {
   lucaMenu2: function (sheetId, config) {
     var d = buildDialog('dashboard');
     SpreadsheetApp.getUi().showModalDialog(d.html, d.titulo);
+  },
+  lucaMenu3: function (sheetId, config) {
+    var r = aplicarEstiloHojas(sheetId, config);
+    SpreadsheetApp.getActiveSpreadsheet().toast('Estilo aplicado a: ' + r.hojas.join(', ') + '.', 'Luca', 4);
+    return r;
   }
 };
 
@@ -109,7 +128,8 @@ var DISPATCH_ = {
   regenerarTokenIphone: function (sid, cfg, a) { return regenerarTokenIphone(sid, cfg); },
   desconectarIphone: function (sid, cfg, a) { return desconectarIphone(sid, cfg); },
   generarPromptIphone: function (sid, cfg, a) { return generarPromptIphone(sid, cfg); },
-  estadoLuca:        function (sid, cfg, a) { return estadoLuca(sid, cfg); }
+  estadoLuca:        function (sid, cfg, a) { return estadoLuca(sid, cfg); },
+  aplicarEstiloHojas: function (sid, cfg, a) { return aplicarEstiloHojas(sid, cfg); }
 };
 
 /** Estado completo para el sidebar en una sola llamada (versión, cursor, último escaneo, conexiones). */

@@ -27,6 +27,7 @@ function ensureSheet_(sheetId, name, headers) {
     if (headers && headers.length) {
       sh.getRange(1, 1, 1, headers.length).setValues([headers]);
       try { sh.setFrozenRows(1); } catch (e) {}
+      estilizarNueva_(sh);
     }
   } else if (headers && headers.length) {
     headers.forEach(function (h) { ensureColumn_(sh, h); });

@@ -64,3 +64,42 @@ test('Sidebar: el enlace del atajo placeholder lo entrega el servidor (conectarI
   assert.equal(d.shortcutUrl, 'https://www.icloud.com/shortcuts/PENDIENTE');
   assert.equal(d.shortcutDisponible, false);
 });
+
+test('Parciales: buildSidebar y buildDialog insertan _Estilos y _Ui en el servidor (sin marcadores sueltos)', () => {
+  const h = makeHarness();
+  const sb = h.api.buildSidebar();
+  const dash = h.api.buildDialog('dashboard').html;
+  for (const out of [sb, dash]) {
+    const c = out.getContent();
+    assert.doesNotMatch(c, /<!--\s*@incluir/);
+    assert.match(c, /--primary-strong: #bf5230/, 'tokens de DESIGN.md');
+    assert.match(c, /family=Geist/);
+    assert.match(c, /<div id="toasts" role="status" aria-live="polite">/);
+    assert.match(c, /\.lucaRun\(method, JSON\.stringify\(args\)\)/, 'puente único lucaRun');
+    // _Ui va antes del script propio de la página (que usa run/toast/esc).
+    assert.ok(c.indexOf('function toast(') < c.lastIndexOf('<script>'));
+  }
+  assert.equal(sb._title, 'Luca — Configuración');
+  assert.equal(dash._width, 1100);
+});
+
+test('UI común: toasts arriba y breves, botones con estado de carga, sin spinners ni pesos 700', () => {
+  const ui = fs.readFileSync(path.join(HERE, '..', 'gas', 'shared', '_Ui.html'), 'utf8');
+  const css = fs.readFileSync(path.join(HERE, '..', 'gas', 'shared', '_Estilos.html'), 'utf8');
+  assert.match(css, /#toasts \{ position: fixed; top: 10px;/);
+  assert.match(ui, /setTimeout\(cerrar, tipo === 'error' \? 7000 : 2800\)/);
+  assert.match(ui, /cargando\(btn, true\)/);
+  assert.match(ui, /data-cargando/);
+  assert.match(css, /prefers-reduced-motion: reduce/);
+  assert.doesNotMatch(css + html, /font-weight:\s*700|@keyframes (spin|girar)|rotate\(360deg\)/);
+  // El sidebar ya no escribe mensajes en <pre>: usa toast/fallo; el <pre> queda solo para detalle técnico.
+  assert.doesNotMatch(html, /function show\(/);
+  assert.match(html, /function salida\(/);
+  assert.match(html, /id="btnEscanear" data-cargando="Escaneando…"/);
+});
+
+test('Dashboard: escapa lo que viene de la Sheet (comercio, categoría…)', () => {
+  const dash = fs.readFileSync(path.join(HERE, '..', 'gas', 'shared', 'DialogDashboard.html'), 'utf8');
+  assert.match(dash, /esc\(r\.comercio \|\| r\.contraparte/);
+  assert.match(dash, /esc\(r\.categoria/);
+});

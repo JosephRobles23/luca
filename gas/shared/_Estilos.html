@@ -1,0 +1,111 @@
+<!-- _Estilos — tokens y componentes de DESIGN.md para el sidebar y los diálogos de la Sheet.
+     Se inserta en el servidor (ui-runtime.js · htmlConParciales_) donde aparezca el marcador @incluir.
+     Tema claro fijo: el panel vive junto a la Sheet, que se usa en claro (el oscuro es de la web). -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #d9623b; --primary-strong: #bf5230; --primary-active: #a8472a; --primary-soft: #fbe6dc; --on-primary: #fff;
+    --ink: #1d1a17; --body: #57524b; --muted: #716a60;
+    --line: #e6ddd1; --line-soft: #efe8de; --line-strong: #d3c8b8;
+    --canvas: #f4efe8; --card: #fffdf9; --raised: #fff; --strong: #ebe4d9; --sunken: #efe9e0;
+    --success: #1a7a59; --success-soft: #dcefe5; --warning: #92600f; --warning-soft: #f6ead3; --error: #cf2d56; --error-soft: #fbe3ea;
+    --r-xs: 4px; --r-sm: 8px; --r-md: 10px; --r-input: 12px; --r-lg: 16px; --r-pill: 9999px;
+    --fast: 150ms; --base: 220ms; --slow: 600ms; --ease-out: cubic-bezier(.2, .7, .2, 1);
+    --halo: 0 8px 28px -10px rgba(29, 26, 23, .28), 0 1px 3px rgba(29, 26, 23, .08);
+    --sans: Geist, system-ui, -apple-system, sans-serif; --mono: 'Geist Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { background: var(--canvas); }
+  body { font: 400 13.5px/1.5 var(--sans); color: var(--body); margin: 0; padding: 14px; -webkit-font-smoothing: antialiased; }
+  b, strong { color: var(--ink); font-weight: 600; }
+  a { color: var(--primary-strong); }
+
+  /* eyebrow: etiquetas de sección */
+  h3 { margin: 22px 0 8px; font: 600 11px/1.2 var(--sans); letter-spacing: .88px; text-transform: uppercase; color: var(--muted); }
+  h3:first-child { margin-top: 2px; }
+
+  /* tarjetas (DESIGN.md · card): sin sombra, línea fina */
+  .box, .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 12px 14px; margin-top: 8px; }
+  .row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 5px 0; border-bottom: 1px solid var(--line-soft); }
+  .row:last-child { border-bottom: 0; }
+  .row > :first-child { color: var(--muted); }
+  .row > :last-child { color: var(--ink); text-align: right; min-width: 0; overflow-wrap: anywhere; }
+  .hint { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+  .paso { font-size: 13px; color: var(--ink); margin-bottom: 4px; }
+  .ok { color: var(--success); } .warn { color: var(--warning); } .err { color: var(--error); } .muted { color: var(--muted); }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+  /* pastillas de estado */
+  .pill { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: var(--r-pill);
+    font-size: 12px; font-weight: 500; background: var(--strong); color: var(--body); white-space: nowrap; }
+  .pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: .8; }
+  .pill.ok { background: var(--success-soft); color: var(--success); }
+  .pill.warn { background: var(--warning-soft); color: var(--warning); }
+  .pill.err { background: var(--error-soft); color: var(--error); }
+
+  /* aviso (DESIGN.md · notice) */
+  .notice { background: var(--primary-soft); border: 1px solid rgba(217, 98, 59, .3); border-radius: 14px; padding: 10px 12px;
+    color: var(--ink); font-size: 12.5px; margin: 8px 0; }
+
+  /* formularios */
+  input, select, textarea, button { font: inherit; }
+  input, select, textarea { width: 100%; margin-top: 8px; padding: 9px 11px; color: var(--ink); background: var(--card);
+    border: 1px solid var(--line); border-radius: var(--r-input); outline: none;
+    transition: border-color var(--fast), box-shadow var(--fast); }
+  input::placeholder, textarea::placeholder { color: var(--muted); opacity: .8; }
+  input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(217, 98, 59, .18); }
+  label.chk { display: flex; gap: 8px; align-items: flex-start; margin-top: 10px; font-size: 12.5px; color: var(--ink); cursor: pointer; }
+  label.chk input { width: auto; margin: 2px 0 0; flex: none; accent-color: var(--primary-strong); }
+
+  /* botones: principal = primary-strong (blanco 4.7:1); .sec = secundario; .danger = fantasma de error */
+  button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; width: 100%; min-height: 40px;
+    margin-top: 8px; padding: 0 14px; border: 1px solid transparent; border-radius: var(--r-md); cursor: pointer;
+    font: 500 14px/1 var(--sans); background: var(--primary-strong); color: var(--on-primary);
+    transition: background var(--fast), border-color var(--fast), color var(--fast), transform var(--fast); }
+  button:hover:not(:disabled) { background: var(--primary-active); }
+  button:active:not(:disabled) { transform: translateY(1px); }
+  button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+  button.sec { background: var(--raised); color: var(--ink); border-color: var(--line-strong); }
+  button.sec:hover:not(:disabled) { background: var(--strong); }
+  button.danger { background: transparent; color: var(--error); border-color: transparent; }
+  button.danger:hover:not(:disabled) { background: var(--error-soft); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  button.cargando { opacity: 1; cursor: progress; }
+  button svg, .ico svg { width: 16px; height: 16px; flex: none; }
+  .copiar { display: flex; gap: 8px; } .copiar button { flex: 1; }
+
+  /* carga dentro del botón: tres puntos que respiran (no spinner) */
+  .puntos { display: inline-flex; gap: 3px; }
+  .puntos i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; animation: respirar 1s var(--ease-out) infinite; }
+  .puntos i:nth-child(2) { animation-delay: .15s; } .puntos i:nth-child(3) { animation-delay: .3s; }
+  @keyframes respirar { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+
+  /* esqueletos (carga de tarjetas) */
+  .esq { height: 12px; margin: 8px 0; border-radius: var(--r-xs); background: var(--strong); animation: respirar 1.4s ease-in-out infinite; }
+  .esq.corta { width: 55%; } .esq.media { width: 78%; }
+
+  code, pre { font-family: var(--mono); font-size: 11.5px; background: var(--sunken); color: var(--ink); }
+  code { padding: 1px 5px; border-radius: var(--r-xs); overflow-wrap: anywhere; }
+  pre { padding: 10px; border-radius: var(--r-sm); white-space: pre-wrap; margin-top: 10px; }
+  pre:empty { display: none; }
+
+  /* toasts arriba, breves (_Ui · toast) */
+  #toasts { position: fixed; top: 10px; left: 10px; right: 10px; z-index: 50; display: flex; flex-direction: column; gap: 6px; pointer-events: none; }
+  .toast { pointer-events: auto; display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px; border-radius: var(--r-input);
+    background: var(--ink); color: var(--canvas); box-shadow: var(--halo); font-size: 13px; line-height: 1.4;
+    animation: bajar var(--base) var(--ease-out); }
+  .toast.sale { opacity: 0; transform: translateY(-8px); transition: opacity var(--base), transform var(--base); }
+  .toast .ico { flex: none; margin-top: 1px; }
+  .toast.ok .ico { color: #6fbf8a; } .toast.error .ico { color: #ef6b8a; } .toast.info .ico { color: #f08a5d; }
+  .toast span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .toast button { width: auto; min-height: 0; margin: 0; padding: 0 2px; background: none; border: 0; color: inherit; opacity: .7; font-size: 15px; }
+  .toast button:hover:not(:disabled) { background: none; opacity: 1; }
+  @keyframes bajar { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
