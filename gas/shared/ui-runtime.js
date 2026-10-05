@@ -19,15 +19,20 @@ function construirMenu(ui) {
 }
 
 /**
- * Parciales comunes (_Estilos, _Ui): el HTML marca `<!-- @incluir _Nombre -->` y aquí se sustituye por el
- * contenido del archivo. Se hace en el servidor, sin scriptlets de plantilla, porque estos HTML viven en la
- * librería y así no dependemos del ámbito en que HtmlService evalúa una plantilla.
+ * Parciales comunes (_Estilos, _Ui, _Logo): el HTML marca `<luca-parcial nombre="_Nombre"></luca-parcial>` y aquí
+ * se sustituye por el contenido del archivo, en el servidor y sin scriptlets de plantilla (estos HTML viven en la
+ * librería). OJO: el marcador NO puede ser un comentario HTML: createHtmlOutputFromFile elimina los comentarios
+ * (eso rompió el sidebar en v18: llegaba sin estilos ni _Ui).
  */
-var PARCIAL_RE_ = /<!--\s*@incluir\s+(_[A-Za-z]+)\s*-->/g;
+var PARCIAL_RE_ = /<luca-parcial\s+nombre="(_[A-Za-z]+)"\s*><\/luca-parcial>/g;
+
+/** Texto del archivo SIN procesar (getRawContent): getContent() devuelve el HTML ya saneado por HtmlService. */
+function leerHtml_(nombre) {
+  return HtmlService.createTemplateFromFile(nombre).getRawContent();
+}
 
 function htmlConParciales_(archivo) {
-  var html = HtmlService.createHtmlOutputFromFile(archivo).getContent();
-  return html.replace(PARCIAL_RE_, function (m, nombre) { return HtmlService.createHtmlOutputFromFile(nombre).getContent(); });
+  return leerHtml_(archivo).replace(PARCIAL_RE_, function (m, nombre) { return leerHtml_(nombre); });
 }
 
 var PESTANAS_SIDEBAR_ = ['estado', 'ia', 'iphone', 'mcp'];

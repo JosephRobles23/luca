@@ -7,7 +7,7 @@
 <!-- Vista previa del panel "Luca — Configuración" REAL: scripts/build-previews.mjs incrusta gas/shared/Sidebar.html,
      DialogGuia.html y DialogDashboard.html (con sus parciales) y aquí se montan en iframes; sus lucaRun(...) los
      responde un servidor simulado. No editar docs/html/preview-sidebar.html: se regenera. -->
-<!-- @incluir _Estilos -->
+<luca-parcial nombre="_Estilos"></luca-parcial>
 <style>
   html, body { background: #e9e4dc; }
   body { padding: 24px 16px; display: flex; gap: 28px; justify-content: center; align-items: flex-start; flex-wrap: wrap; min-height: 100vh; }
@@ -99,7 +99,7 @@
 
   var SERVIDOR = {
     estadoLuca: function () {
-      return { version: '18', stubVersion: st.stub ? '1' : '2', stubUpdate: st.stub ? 'Tu script necesita actualizarse (stub v1 < v2): haz una copia nueva de la plantilla o reemplaza los archivos del stub (Extensiones → Apps Script).' : '',
+      return { version: '19', stubVersion: st.stub ? '1' : '2', stubUpdate: st.stub ? 'Tu script necesita actualizarse (stub v1 < v2): haz una copia nueva de la plantilla o reemplaza los archivos del stub (Extensiones → Apps Script).' : '',
         autorizado: st.autorizado, cursorIso: st.autorizado ? iso(st.minScan) : '', lastRunAt: st.autorizado ? iso(st.minScan) : '', lastStats: st.autorizado ? { added: 0 } : null,
         triggerInstaladoEn: st.trigger ? '2026-09-05T00:24:00Z' : '', importacion: { status: st.autorizado ? 'done' : '' },
         ledger: { total: st.total, sinCategoria: st.sinCat, recibidoYape: st.yape }, secretos: { llmKey: st.key, mcp: st.mcp, iphone: st.iphone },

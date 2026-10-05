@@ -259,11 +259,16 @@ export function makeHarness(opts = {}) {
           setTitle(t) { out._title = t; return out; }, setWidth(w) { out._width = w; return out; }, setHeight(h) { out._height = h; return out; } };
         return out;
       },
-      // Lee el .html real de gas/shared (como HtmlService en la librería).
+      // Lee el .html real de gas/shared como HtmlService en la librería, que ELIMINA los comentarios HTML
+      // (por eso los marcadores de parciales no pueden ser comentarios: bug del sidebar en v18).
       createHtmlOutputFromFile: (name) => {
-        const html = fs.readFileSync(path.join(SHARED, name + '.html'), 'utf8');
+        const html = fs.readFileSync(path.join(SHARED, name + '.html'), 'utf8').replace(/<!--[\s\S]*?-->/g, '');
         const out = { _file: name, getContent: () => html, setTitle() { return out; }, setWidth() { return out; }, setHeight() { return out; } };
         return out;
+      },
+      createTemplateFromFile: (name) => {
+        const raw = fs.readFileSync(path.join(SHARED, name + '.html'), 'utf8');
+        return { getRawContent: () => raw };
       }
     }
   };

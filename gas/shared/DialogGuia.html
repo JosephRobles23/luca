@@ -3,7 +3,7 @@
 <head>
 <base target="_top">
 <meta charset="utf-8">
-<!-- @incluir _Estilos -->
+<luca-parcial nombre="_Estilos"></luca-parcial>
 <style>
   /* Guía de Luca: diálogo MODELESS (460×640) que se abre desde el botón Guía del panel. */
   html, body { height: 100%; }
@@ -31,8 +31,9 @@
   <div class="guia-f">Ciérrala cuando quieras: vuelve desde el botón <b>Guía</b> del panel (<b>Luca → ⚙️ Configuración</b>). Tu avance se detecta solo.</div>
 </div>
 
-<!-- @incluir _Ui -->
+<luca-parcial nombre="_Ui"></luca-parcial>
 <script>
+  if (typeof run !== 'function') { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:14px;color:#cf2d56">No se cargó la interfaz de Luca (_Ui). Actualiza LucaLib o avísanos.</p>'); throw new Error('Luca: falta _Ui'); }
   function $(id) { return document.getElementById(id); }
   function anillo(frac, texto) {
     var r = 18, c = 2 * Math.PI * r;

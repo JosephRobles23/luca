@@ -72,7 +72,7 @@ test('Guía: pasos detectados con estadoLuca y acciones que abren el panel en su
   for (const t of ['Autorizar Luca', 'Revisar tus movimientos', 'IA para categorizar', 'Conectar el iPhone', 'Claude o ChatGPT']) assert.ok(guia.includes(t), t);
   const h = makeHarness();
   for (const fn of [...guia.matchAll(/run\('([A-Za-z_]+)'/g)].map((m) => m[1])) assert.ok(h.api.DISPATCH_[fn], 'falta en DISPATCH_: ' + fn);
-  assert.doesNotMatch(h.api.buildDialog('guia').html.getContent(), /<!--\s*@incluir/);
+  assert.doesNotMatch(h.api.buildDialog('guia').html.getContent(), /luca-parcial/);
 });
 
 test('Sidebar: Conectar iPhone son tres pasos (Web App → URL/token con Copiar → prompt) y estado', () => {
@@ -107,9 +107,9 @@ test('Parciales: buildSidebar y buildDialog insertan _Estilos y _Ui en el servid
   const h = makeHarness();
   const sb = h.api.buildSidebar();
   const dash = h.api.buildDialog('dashboard').html;
-  for (const out of [sb, dash]) {
+  for (const out of [sb, dash, h.api.buildDialog('guia').html]) {
     const c = out.getContent();
-    assert.doesNotMatch(c, /<!--\s*@incluir/);
+    assert.doesNotMatch(c, /luca-parcial/);
     assert.match(c, /--primary-strong: #bf5230/, 'tokens de DESIGN.md');
     assert.match(c, /family=Geist/);
     assert.match(c, /<div id="toasts" role="status" aria-live="polite">/);
@@ -117,6 +117,7 @@ test('Parciales: buildSidebar y buildDialog insertan _Estilos y _Ui en el servid
     // _Ui va antes del script propio de la página (que usa run/toast/esc).
     assert.ok(c.indexOf('function toast(') < c.lastIndexOf('<script>'));
   }
+  assert.match(sb.getContent(), /<img class="logo" alt="" src="data:image\/png;base64,/, 'logo (_Logo)');
   assert.equal(sb._title, 'Luca — Configuración');
   assert.equal(dash._width, 1100);
 });

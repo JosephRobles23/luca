@@ -5,6 +5,10 @@ Skill de release: `.claude/skills/deploy-luca/SKILL.md`
 Actualizado: 2026-10-05. Fuente de verdad de qué está hecho, en curso y pendiente. Commits en `main`.
 
 ## Hecho y publicado
+- LucaLib **v19** — fix: en v18 el sidebar llegaba sin estilos ni `_Ui` (se quedaba en "cargando…"). Los
+  marcadores de parciales eran comentarios HTML y HtmlService los elimina; ahora son `<luca-parcial nombre="_X">`
+  y los archivos se leen sin procesar (`createTemplateFromFile(...).getRawContent()`). El harness ya elimina los
+  comentarios como HtmlService, así que el test de parciales reproduce el bug.
 - LucaLib **v18** — UI de la Sheet con la identidad de DESIGN.md (210 tests):
   - Parciales `_Estilos`/`_Ui`/`_Logo` insertados en el servidor (`htmlConParciales_`): tokens, Geist, botones con
     estado de carga, toasts arriba, esqueletos.

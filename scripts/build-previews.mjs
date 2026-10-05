@@ -1,5 +1,5 @@
 // Genera docs/html/preview-*.html a partir de docs/html/src/*.src.html:
-//  - <!-- @incluir _X -->  → el parcial gas/shared/_X.html (igual que htmlConParciales_ en ui-runtime.js);
+//  - <luca-parcial nombre="_X"></luca-parcial> → el parcial gas/shared/_X.html (igual que htmlConParciales_ en ui-runtime.js);
 //  - /*@html Pagina*/      → gas/shared/Pagina.html ya compuesta, como literal JS (para montarla en un iframe).
 // Uso: node scripts/build-previews.mjs
 import fs from 'node:fs';
@@ -11,7 +11,7 @@ const SHARED = path.join(ROOT, 'gas', 'shared');
 const SRC = path.join(ROOT, 'docs', 'html', 'src');
 
 const leer = (nombre) => fs.readFileSync(path.join(SHARED, nombre + '.html'), 'utf8');
-const conParciales = (html) => html.replace(/<!--\s*@incluir\s+(_[A-Za-z]+)\s*-->/g, (m, n) => leer(n));
+const conParciales = (html) => html.replace(/<luca-parcial\s+nombre="(_[A-Za-z]+)"\s*><\/luca-parcial>/g, (m, n) => leer(n));
 // `</` escapado para que el literal no cierre el <script> que lo contiene.
 const literal = (html) => JSON.stringify(html).replace(/<\//g, '<\\/');
 

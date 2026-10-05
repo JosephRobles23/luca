@@ -3,7 +3,7 @@
 <head>
 <base target="_top">
 <meta charset="utf-8">
-<!-- @incluir _Estilos -->
+<luca-parcial nombre="_Estilos"></luca-parcial>
 <style>
   /* Estructura del panel (300px). Los componentes viven en _Estilos; maqueta: docs/html/preview-sidebar.html. */
   html, body { height: 100%; }
@@ -43,7 +43,7 @@
 <body>
 <div class="sb" id="sb">
   <header class="sb-head">
-    <!-- @incluir _Logo -->
+    <luca-parcial nombre="_Logo"></luca-parcial>
     <div class="t"><b>luca<i>.</i></b><small id="subtitulo">cargando…</small></div>
     <button class="sec guia" id="btnGuia" data-cargando="Abriendo…" onclick="abrirGuia()" title="Guía paso a paso (no bloquea la hoja)"><i data-icon="brujula"></i>Guía</button>
   </header>
@@ -181,8 +181,9 @@
   </footer>
 </div>
 
-<!-- @incluir _Ui -->
+<luca-parcial nombre="_Ui"></luca-parcial>
 <script>
+  if (typeof run !== 'function') { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:14px;color:#cf2d56">No se cargó la interfaz de Luca (_Ui). Actualiza LucaLib o avísanos.</p>'); throw new Error('Luca: falta _Ui'); }
   function $(id) { return document.getElementById(id); }
   function fecha(iso) { return iso ? String(iso).slice(0, 16).replace('T', ' ') : '—'; }
   function hace(iso) {

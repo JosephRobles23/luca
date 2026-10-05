@@ -3,7 +3,7 @@
 <head>
 <base target="_top">
 <meta charset="utf-8">
-<!-- @incluir _Estilos -->
+<luca-parcial nombre="_Estilos"></luca-parcial>
 <style>
   body { padding: 20px 24px; }
   h1 { margin: 0 0 4px; font: 500 26px/1.1 var(--sans); letter-spacing: -0.03em; color: var(--ink); }
@@ -25,7 +25,7 @@
   <h1>Últimos movimientos</h1>
   <div class="hint">Los 50 más recientes de tu pestaña Movimientos.</div>
   <div id="out" class="box"><div class="esq"></div><div class="esq media"></div><div class="esq"></div><div class="esq corta"></div></div>
-<!-- @incluir _Ui -->
+<luca-parcial nombre="_Ui"></luca-parcial>
 <script>
   var TIPOS = { expense: 'Gasto', income: 'Ingreso', transfer_in: 'Recibido', internal_transfer: 'Entre mis cuentas', rejected: 'Rechazado' };
   run('leerLedger').then(function (rows) {
