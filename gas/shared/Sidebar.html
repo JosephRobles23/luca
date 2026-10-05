@@ -58,6 +58,7 @@
   <h3>Conectar con tu IA (Claude / ChatGPT)</h3>
   <div class="hint">Genera un código de un solo uso (10 min). En tu IA añade el conector con la URL que aparece y pega el código cuando te lo pida. Requiere el Web App desplegado.</div>
   <div id="mcp" class="box">cargando…</div>
+  <button class="sec" id="btnProbarWebApp" onclick="probarWebApp()">Probar Web App</button>
   <button id="btnMcp" onclick="conectarIa()">Generar código de conexión</button>
   <button class="danger" id="btnMcpOff" onclick="desconectarIa()">Desconectar IA</button>
 
@@ -187,6 +188,7 @@
     document.getElementById('btnMcp').disabled = !!(st.webApp && !st.webApp.ready);
     document.getElementById('btnMcpOff').disabled = !st.connected;
   }
+  function probarWebApp() { show('probando el Web App…'); run('probarWebApp').then(function (r) { show(r.veredicto + '\n\n' + JSON.stringify(r, null, 2)); }).catch(function (e) { show('Error: ' + e.message); }); }
   function cargarIa() { run('cargarMcp').then(pintarMcp).catch(function (e) { document.getElementById('mcp').textContent = 'Error: ' + e.message; }); }
   function conectarIa() {
     show('generando código…');

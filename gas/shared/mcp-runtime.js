@@ -424,6 +424,44 @@ function cargarMcp(sheetId, config) {
 }
 
 /**
+ * Autodiagnóstico del Web App: hace lo mismo que el Worker (GET /exec y POST challenge) y explica el
+ * resultado. No expone el secreto: usa un secreto temporal solo si no hay uno.
+ */
+function probarWebApp(sheetId, config) {
+  var st = mcpWebAppStatus_(config);
+  var out = { webApp: st, get: null, challenge: null, veredicto: '' };
+  if (!st.ready) { out.veredicto = st.message; return out; }
+  var opts = { muteHttpExceptions: true, followRedirects: true };
+  try {
+    var g = UrlFetchApp.fetch(st.url, opts);
+    var gt = g.getContentText();
+    out.get = { code: g.getResponseCode(), json: /^\s*\{/.test(gt), snippet: gt.slice(0, 80) };
+  } catch (e) { out.get = { error: String(e && e.message || e).slice(0, 160) }; }
+  var hadSecret = !!mcpSecret_();
+  var secret = hadSecret ? mcpSecret_() : Utilities.getUuid();
+  if (!hadSecret) setSecret_('mcpSecret', secret);
+  try {
+    var nonce = Utilities.getUuid();
+    var r = UrlFetchApp.fetch(st.url + (st.url.indexOf('?') > -1 ? '&' : '?') + 'mcp=1', {
+      method: 'post', contentType: 'application/json', payload: JSON.stringify({ op: 'challenge', nonce: nonce }),
+      muteHttpExceptions: true, followRedirects: true
+    });
+    var t = r.getContentText(); var j = null; try { j = JSON.parse(t); } catch (e2) { j = null; }
+    var expected = Utilities.base64Encode(Utilities.computeHmacSha256Signature(nonce, secret));
+    out.challenge = { code: r.getResponseCode(), json: !!j, ok: j ? j.ok : null, error: j ? (j.error || null) : null, sigOk: !!(j && j.sig === expected), snippet: j ? '' : t.slice(0, 80) };
+  } catch (e3) { out.challenge = { exception: String(e3 && e3.message || e3).slice(0, 160) }; }
+  finally { if (!hadSecret) setSecret_('mcpSecret', ''); }
+  var c = out.challenge || {};
+  if (c.exception) out.veredicto = 'No se pudo llamar al /exec: ' + c.exception;
+  else if (!c.json) out.veredicto = 'El /exec no devuelve JSON (devuelve HTML): la implementación no es "Acceso: Cualquiera" o es una implementación de prueba (/dev). Edita la implementación: Ejecutar como "Yo", Acceso "Cualquiera", versión Nueva.';
+  else if (c.error === 'mcp-not-available') out.veredicto = 'La implementación usa una versión vieja de la librería. Administrar implementaciones → Editar → Versión: Nueva → Implementar.';
+  else if (c.error === 'not-enrolled') out.veredicto = 'El /exec no ve el secreto (contexto de usuario distinto). Repórtalo con este JSON.';
+  else if (c.sigOk) out.veredicto = 'OK: el Web App responde el challenge correctamente. Ya puedes Generar código.';
+  else out.veredicto = 'El /exec responde pero la firma no coincide (' + (c.error || 'sin error') + '). Repórtalo con este JSON.';
+  return out;
+}
+
+/**
  * Arranca la conexión: asegura el secreto por usuario y lo registra en el Worker (/enroll) junto a
  * la URL /exec. El Worker verifica por challenge HMAC y devuelve un código que el usuario pega en
  * /authorize. El secreto NUNCA llega al navegador (solo viaja en este UrlFetch).
@@ -476,6 +514,7 @@ function desconectarMcp(sheetId, config) {
 /** Entradas para `DISPATCH_` (ui-runtime.js). El integrador las fusiona; convención fn(sid, cfg, args). */
 var MCP_DISPATCH_ = {
   cargarMcp:          function (sid, cfg, a) { return cargarMcp(sid, cfg); },
+  probarWebApp:       function (sid, cfg, a) { return probarWebApp(sid, cfg); },
   iniciarConexionMcp: function (sid, cfg, a) { return iniciarConexionMcp(sid, cfg); },
   desconectarMcp:     function (sid, cfg, a) { return desconectarMcp(sid, cfg); }
 };

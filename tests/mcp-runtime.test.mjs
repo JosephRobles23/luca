@@ -272,7 +272,33 @@ test('iniciarConexionMcp traduce el rechazo del Worker', () => {
 
 test('MCP_DISPATCH_ tiene la forma de DISPATCH_ (fn(sid, cfg, args))', () => {
   const h = harness({ noSecret: true });
-  assert.deepEqual(Object.keys(h.api.MCP_DISPATCH_).sort(), ['cargarMcp', 'desconectarMcp', 'iniciarConexionMcp']);
+  assert.deepEqual(Object.keys(h.api.MCP_DISPATCH_).sort(), ['cargarMcp', 'desconectarMcp', 'iniciarConexionMcp', 'probarWebApp']);
   Object.values(h.api.MCP_DISPATCH_).forEach((fn) => assert.equal(typeof fn, 'function'));
   assert.equal(h.api.MCP_DISPATCH_.cargarMcp(SID, configFor(h, SID), []).connected, false);
+});
+
+test('probarWebApp: diagnostica HTML (acceso incorrecto), versión vieja y OK', () => {
+  const exec = 'https://script.google.com/macros/s/TEST/exec';
+  const mk = (fetch) => { const h = makeHarness({ execUrl: exec, spreadsheets: { [SID]: {} }, fetch }); return h; };
+  const resp = (code, body) => ({ getResponseCode: () => code, getContentText: () => (typeof body === 'string' ? body : JSON.stringify(body)) });
+  // HTML de login → no JSON
+  let h = mk(() => resp(200, '<html>Google Accounts</html>'));
+  let r = h.api.probarWebApp(SID, configFor(h, SID));
+  assert.match(r.veredicto, /Cualquiera/);
+  // versión vieja
+  h = mk((url) => url.indexOf('mcp=1') > -1 ? resp(200, { ok: false, error: 'mcp-not-available' }) : resp(200, { ok: true }));
+  r = h.api.probarWebApp(SID, configFor(h, SID));
+  assert.match(r.veredicto, /versión vieja/);
+  // OK: el mock firma con el secreto guardado (lo generamos antes para conocerlo)
+  h = mk(() => resp(200, { ok: true }));
+  h.api.setSecret_('mcpSecret', 'secreto-fijo');
+  h.setFetch?.(() => {});
+  const h2 = makeHarness({ execUrl: exec, spreadsheets: { [SID]: {} }, userProperties: { 'luca.mcp.secret': 'secreto-fijo' }, fetch: (url, o) => {
+    if (url.indexOf('mcp=1') < 0) return resp(200, { ok: true, app: 'luca' });
+    const body = JSON.parse(o.payload); const sig = Buffer.from(Uint8Array.from(h2.api.Utilities.computeHmacSha256Signature(body.nonce, 'secreto-fijo'))).toString('base64');
+    return resp(200, { ok: true, sig });
+  } });
+  r = h2.api.probarWebApp(SID, configFor(h2, SID));
+  assert.match(r.veredicto, /^OK/);
+  assert.equal(h2.userProps.get('luca.mcp.secret'), 'secreto-fijo');
 });
