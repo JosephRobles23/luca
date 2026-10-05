@@ -18,7 +18,7 @@ desde el navegador; Worker Cloudflare (`services/luca-mcp`) expone MCP. Vocabula
 
 ## Comandos
 ```bash
-npm test                 # 148 tests Node (harness vm con mocks de Apps Script, stub, lógica web y Worker)
+npm test                 # 154 tests Node (harness vm con mocks de Apps Script, stub, lógica web y Worker)
 npm run release:check    # LUCA_VERSION, stub, wrangler.toml y .env.example en la misma versión
 npm run lib:push         # clasp push de LucaLib (gas/shared)
 npm run lib:version      # nueva versión de LucaLib → luego subir "version" en gas/stub/appsscript.json

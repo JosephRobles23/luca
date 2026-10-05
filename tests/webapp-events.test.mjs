@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { makeHarness, configFor } from './gas-harness.mjs';
 import { emails } from './fixtures/emails.mjs';
 
@@ -20,25 +21,112 @@ test('GET /exec responde ok con la versión de la librería', () => {
   assert.deepEqual(JSON.parse(JSON.stringify(r)), { ok: true, app: 'luca', version: h.api.LUCA_VERSION });
 });
 
-test('conectarIphone genera un deviceToken en UserProperties y devuelve execUrl + token + enlace del atajo', () => {
+test('conectarIphone genera el token en Ajustes (conexiones.iphone.token), no en UserProperties, y devuelve execUrl + eventsUrl + token', () => {
   const h = makeHarness({ execUrl: 'https://script.google.com/macros/s/TEST/exec', spreadsheets: { [SID]: {} } });
   const cfg = configFor(h, SID);
-  assert.equal(h.api.estadoSecretos_().iphone, false);
+  assert.equal(h.api.estadoSecretos_(cfg).iphone, false);
   const r = h.api.dispatch('conectarIphone', [], SID, cfg);
   assert.equal(r.execUrl, 'https://script.google.com/macros/s/TEST/exec');
+  assert.equal(r.eventsUrl, 'https://script.google.com/macros/s/TEST/exec?events=1');
   assert.equal(r.token, 'uuid-1');
   assert.equal(r.shortcutUrl, 'https://www.icloud.com/shortcuts/PENDIENTE');
-  assert.equal(r.conectado, true);
-  assert.equal(h.userProps.get('luca.iphone.deviceToken'), 'uuid-1');
+  assert.deepEqual([r.shortcutDisponible, r.conectado], [false, true]);
+  const a = configFor(h, SID).ajustes;
+  assert.equal(a['conexiones.iphone.token'], 'uuid-1');
+  assert.equal(a['conexiones.execUrl'], 'https://script.google.com/macros/s/TEST/exec');
+  assert.equal(a['conexiones.iphone.execUrl'], 'https://script.google.com/macros/s/TEST/exec');
+  assert.equal(h.userProps.has('luca.iphone.deviceToken'), false);
   assert.equal(h.api.PropertiesService.getScriptProperties().getProperty('luca.iphone.deviceToken'), null);
-  assert.equal(configFor(h, SID).ajustes['conexiones.execUrl'], 'https://script.google.com/macros/s/TEST/exec');
+  assert.equal(h.api.estadoSecretos_(configFor(h, SID)).iphone, true);
   // Volver a llamar no rota el token (sirve para volver a ver los datos).
   assert.equal(h.api.conectarIphone(SID, cfg).token, 'uuid-1');
-  // Regenerar sí lo cambia; desconectar lo borra y limpia la telemetría.
+  // Regenerar sí lo cambia (en Ajustes); desconectar lo borra y limpia la telemetría.
   assert.equal(h.api.dispatch('regenerarTokenIphone', [], SID, cfg).token, 'uuid-2');
+  assert.equal(configFor(h, SID).ajustes['conexiones.iphone.token'], 'uuid-2');
   const d = h.api.dispatch('desconectarIphone', [], SID, cfg);
   assert.deepEqual([d.token, d.conectado], ['', false]);
-  assert.equal(h.api.estadoSecretos_().iphone, false);
+  const a2 = configFor(h, SID).ajustes;
+  assert.deepEqual([a2['conexiones.iphone.token'], a2['conexiones.iphone.execUrl'], a2['conexiones.iphone.eventsCount']], ['', '', '0']);
+  assert.equal(h.api.estadoSecretos_(configFor(h, SID)).iphone, false);
+});
+
+test('migración: el deviceToken de UserProperties pasa a Ajustes una sola vez y sigue valiendo para eventos mientras tanto', () => {
+  const h = makeHarness({ execUrl: 'https://script.google.com/macros/s/TEST/exec', spreadsheets: { [SID]: {} }, userProperties: { 'luca.iphone.deviceToken': 'viejo-token' } });
+  const cfg = configFor(h, SID);
+  // Copia vieja sin token en Ajustes: eventsAction_ acepta el de UserProperties (respaldo).
+  assert.deepEqual(post(h, cfg, { schema_version: '1', id: 't-0', source: 'test', token: 'viejo-token', device: 'iPhone' }), { ok: true, test: true });
+  assert.equal(h.api.estadoSecretos_(cfg).iphone, true);
+  // conectarIphone migra: mismo token, ahora en Ajustes; la UserProperty se limpia.
+  const r = h.api.conectarIphone(SID, cfg);
+  assert.equal(r.token, 'viejo-token');
+  assert.equal(configFor(h, SID).ajustes['conexiones.iphone.token'], 'viejo-token');
+  assert.equal(h.userProps.has('luca.iphone.deviceToken'), false);
+  assert.deepEqual(post(h, cfg, { schema_version: '1', id: 't-1', source: 'test', token: 'viejo-token', device: 'iPhone' }), { ok: true, test: true });
+  // Regenerar invalida el viejo aunque alguien lo vuelva a poner en UserProperties (Ajustes manda).
+  h.api.regenerarTokenIphone(SID, cfg);
+  h.userProps.set('luca.iphone.deviceToken', 'viejo-token');
+  assert.deepEqual(post(h, cfg, { schema_version: '1', id: 't-2', source: 'test', token: 'viejo-token', device: 'iPhone' }), { ok: false, error: 'unauthorized' });
+  // Tras desconectar no queda token en ningún sitio.
+  h.api.desconectarIphone(SID, cfg);
+  assert.equal(h.userProps.has('luca.iphone.deviceToken'), false);
+  assert.deepEqual(post(h, cfg, { schema_version: '1', id: 't-3', source: 'test', token: 'viejo-token', device: 'iPhone' }), { ok: false, error: 'unauthorized' });
+});
+
+test('eventos: valida el token contra Ajustes (editar la celda cambia el token aceptado)', () => {
+  const h = makeHarness({ spreadsheets: { [SID]: { Ajustes: [['key', 'value'], ['conexiones.iphone.token', 'token-en-hoja']] } } });
+  const cfg = configFor(h, SID);
+  assert.deepEqual(post(h, cfg, { schema_version: '1', id: 't-1', source: 'test', token: 'token-en-hoja' }), { ok: true, test: true });
+  assert.deepEqual(post(h, cfg, { schema_version: '1', id: 't-2', source: 'test', token: 'otro' }), { ok: false, error: 'unauthorized' });
+});
+
+test('generarPromptIphone: prompt con la URL ?events=1 y el token literales, sin preguntas de importación', () => {
+  const h = makeHarness({ execUrl: 'https://script.google.com/macros/s/TEST/exec', spreadsheets: { [SID]: {} } });
+  const cfg = configFor(h, SID);
+  const r = h.api.dispatch('generarPromptIphone', [], SID, cfg);
+  assert.equal(r.execUrl, 'https://script.google.com/macros/s/TEST/exec');
+  assert.equal(r.eventsUrl, 'https://script.google.com/macros/s/TEST/exec?events=1');
+  assert.equal(r.token, 'uuid-1');
+  assert.equal(r.shortcutUrl, 'https://www.icloud.com/shortcuts/PENDIENTE');
+  assert.ok(r.prompt.includes('https://script.google.com/macros/s/TEST/exec?events=1'));
+  assert.ok(r.prompt.includes('"token": "uuid-1"'));
+  assert.ok(r.prompt.includes('Luca – Captura Yape'));
+  assert.ok(r.prompt.includes('Luca – Probar iPhone'));
+  assert.ok(r.prompt.includes('luca_pendientes'));
+  assert.doesNotMatch(r.prompt, /preguntas de configuración|Al importarse/);
+  assert.equal(r.prompt, h.api.promptIphone_(r.execUrl, r.token));
+  // Es idempotente respecto al token (no lo rota) y deja el token en Ajustes.
+  assert.equal(h.api.generarPromptIphone(SID, cfg).token, 'uuid-1');
+  assert.equal(configFor(h, SID).ajustes['conexiones.iphone.token'], 'uuid-1');
+  // Sin Web App desplegado no hay prompt útil: error claro.
+  const h2 = makeHarness({ spreadsheets: { [SID]: {} } });
+  assert.throws(() => h2.api.generarPromptIphone(SID, configFor(h2, SID)), /Web App/);
+});
+
+test('generarPromptIphone: la guía docs/guides contiene exactamente la plantilla con placeholders', () => {
+  const h = makeHarness({ spreadsheets: { [SID]: {} } });
+  const guia = fs.readFileSync(new URL('../docs/guides/prompt-atajo-ios27-yape.md', import.meta.url), 'utf8');
+  assert.ok(guia.includes('## Prompt 1 (generado por Luca)'));
+  assert.ok(guia.includes(h.api.promptIphone_('<EXEC_URL>', '<TOKEN>')), 'la guía debe contener promptIphone_(\'<EXEC_URL>\', \'<TOKEN>\') tal cual');
+});
+
+test('execUrl: la URL viva gana sobre la guardada y Ajustes se refresca (conectarIphone, estadoLuca, mcpWebAppStatus_)', () => {
+  const OLD = 'https://script.google.com/macros/s/VIEJA/exec', NEW = 'https://script.google.com/macros/s/NUEVA/exec';
+  const h = makeHarness({ execUrl: NEW, spreadsheets: { [SID]: { Ajustes: [['key', 'value'], ['conexiones.execUrl', OLD]] } } });
+  const cfg = configFor(h, SID);
+  assert.equal(h.api.execUrl_(cfg), NEW);
+  const st = h.api.mcpWebAppStatus_(cfg, SID);
+  assert.deepEqual([st.ready, st.url], [true, NEW]);
+  assert.equal(configFor(h, SID).ajustes['conexiones.execUrl'], NEW);
+  const r = h.api.conectarIphone(SID, cfg);
+  assert.deepEqual([r.execUrl, r.eventsUrl], [NEW, NEW + '?events=1']);
+  assert.equal(h.api.estadoLuca(SID, configFor(h, SID)).execUrl, NEW);
+  assert.equal(h.api.cargarMcp(SID, configFor(h, SID)).webApp.url, NEW);
+  // Sin URL viva (stub viejo / sin servicio) la guardada sigue sirviendo de respaldo y no se borra.
+  const h2 = makeHarness({ execUrl: null, spreadsheets: { [SID]: { Ajustes: [['key', 'value'], ['conexiones.execUrl', OLD]] } } });
+  const cfg2 = configFor(h2, SID);
+  assert.equal(h2.api.mcpWebAppStatus_(cfg2, SID).url, OLD);
+  assert.equal(h2.api.estadoLuca(SID, cfg2).execUrl, OLD);
+  assert.equal(configFor(h2, SID).ajustes['conexiones.execUrl'], OLD);
 });
 
 test('eventos: sin token o token incorrecto → unauthorized y nada en el ledger', () => {

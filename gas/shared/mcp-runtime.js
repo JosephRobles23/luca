@@ -398,15 +398,16 @@ function mcpWorkerUrl_(config) {
   return u.replace(/\/+$/, '');
 }
 
-/** URL /exec de esta copia: la guardada en "Activar conexiones" (ADR-003) o la que reporta ScriptApp. */
-function mcpWebAppUrl_(config) {
-  var saved = mcpStr_(mcpAjustes_(config)['conexiones.execUrl']).trim();
-  if (saved) return saved;
-  try { return mcpStr_(ScriptApp.getService().getUrl()).trim(); } catch (e) { return ''; }
+/**
+ * URL /exec de esta copia: la VIVA (`config.execUrl` del stub / ScriptApp) gana; la guardada en Ajustes solo
+ * es respaldo. Con `sheetId` además refresca `Ajustes.conexiones.execUrl` si quedó obsoleta (syncExecUrl_).
+ */
+function mcpWebAppUrl_(config, sheetId) {
+  return sheetId ? syncExecUrl_(sheetId, config) : execUrl_(config);
 }
 
-function mcpWebAppStatus_(config) {
-  var url = mcpWebAppUrl_(config);
+function mcpWebAppStatus_(config, sheetId) {
+  var url = mcpWebAppUrl_(config, sheetId);
   if (!url) return { ready: false, url: '', message: 'Primero activa las conexiones: despliega la Web App ("Ejecutar como: yo", "Acceso: cualquiera") y guarda su URL /exec.' };
   if (!/^https:\/\/script\.google\.com\/[^?#]*\/exec$/i.test(url)) return { ready: false, url: url, message: 'La URL guardada no parece una Web App de Apps Script (debe terminar en /exec).' };
   return { ready: true, url: url, message: '' };
@@ -416,7 +417,7 @@ function mcpWebAppStatus_(config) {
 function cargarMcp(sheetId, config) {
   var workerUrl = mcpWorkerUrl_(config);
   return {
-    webApp: mcpWebAppStatus_(config),
+    webApp: mcpWebAppStatus_(config, sheetId),
     workerUrl: workerUrl,
     connectorUrl: workerUrl + '/mcp',       // lo que el usuario pega en Claude/ChatGPT
     connected: !!mcpSecret_()
@@ -428,7 +429,7 @@ function cargarMcp(sheetId, config) {
  * resultado. No expone el secreto: usa un secreto temporal solo si no hay uno.
  */
 function probarWebApp(sheetId, config) {
-  var st = mcpWebAppStatus_(config);
+  var st = mcpWebAppStatus_(config, sheetId);
   var out = { webApp: st, get: null, challenge: null, veredicto: '' };
   if (!st.ready) { out.veredicto = st.message; return out; }
   var opts = { muteHttpExceptions: true, followRedirects: true };

@@ -53,6 +53,10 @@ var AJUSTES_DEFAULTS_ = {
   'scan.lastStats': '',
   'triggers.installedAt': '',
   'conexiones.execUrl': '',
+  // iPhone (ADR-003, addendum 2026-10-05): el token del atajo vive AQUÍ (la web solo lee la hoja y el token
+  // solo permite insertar filas en esta misma hoja). `iphone.execUrl` = URL con la que se generó el atajo.
+  'conexiones.iphone.token': '',
+  'conexiones.iphone.execUrl': '',
   'conexiones.iphone.device': '',
   'conexiones.iphone.lastEventAt': '',
   'conexiones.iphone.eventsCount': '0',
@@ -157,14 +161,41 @@ function cargarConfig(sheetId, config) {
 // --- Telemetría ---
 
 /**
- * URL `/exec` del Web App de la copia del usuario, o '' si no hay despliegue.
+ * URL `/exec` VIVA del Web App de la copia del usuario, o '' si no hay despliegue.
  * El stub la resuelve en su propio contexto (`config.execUrl`, ver gas/stub/config.js): `ScriptApp`
  * dentro de la librería apunta al proyecto de la librería, no al contenedor. Si el stub no la trae
  * (stub antiguo), se intenta igual y se tolera el fallo.
  */
+function execUrlLive_(config) {
+  if (config && config.execUrl) return String(config.execUrl).trim();
+  try { return String(ScriptApp.getService().getUrl() || '').trim(); } catch (e) { return ''; }
+}
+
+/** URL guardada en `Ajustes.conexiones.execUrl` (la que vio la última pasada / "Activar conexiones"). */
+function execUrlGuardada_(config) {
+  return str_(config && config.ajustes && config.ajustes['conexiones.execUrl']).trim();
+}
+
+/**
+ * URL `/exec` efectiva: la viva gana (si el usuario recrea la implementación, cambia y la guardada queda
+ * obsoleta); la guardada solo sirve de respaldo cuando la viva no está disponible (stub antiguo, contexto
+ * sin servicio). Para además refrescar la guardada usar syncExecUrl_.
+ */
 function execUrl_(config) {
-  if (config && config.execUrl) return String(config.execUrl);
-  try { return String(ScriptApp.getService().getUrl() || ''); } catch (e) { return ''; }
+  return execUrlLive_(config) || execUrlGuardada_(config);
+}
+
+/**
+ * Como execUrl_, pero si la viva difiere de la guardada actualiza `Ajustes.conexiones.execUrl` (y el
+ * snapshot `config.ajustes`) para que la web y el sidebar vean la URL actual.
+ */
+function syncExecUrl_(sheetId, config) {
+  var live = execUrlLive_(config), saved = execUrlGuardada_(config);
+  if (live && live !== saved) {
+    setAjustes_(sheetId, config, { 'conexiones.execUrl': live });
+    if (config && config.ajustes) config.ajustes['conexiones.execUrl'] = live;
+  }
+  return live || saved;
 }
 
 /** Resumen de telemetría del iPhone leído de Ajustes (para sidebar/web). */
@@ -172,6 +203,8 @@ function telemetriaIphone_(ajustes) {
   var a = ajustes || {};
   return {
     device: a['conexiones.iphone.device'] || '',
+    // URL con la que se generó el atajo: si difiere de la viva, hay que regenerar el atajo.
+    execUrl: a['conexiones.iphone.execUrl'] || '',
     lastEventAt: a['conexiones.iphone.lastEventAt'] || '',
     eventsCount: int_(a['conexiones.iphone.eventsCount'], 0),
     lastError: a['conexiones.iphone.lastError'] || '',

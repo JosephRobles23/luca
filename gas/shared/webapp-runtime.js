@@ -28,7 +28,7 @@ function webAction(metodo, e, sheetId, config) {
 /**
  * Evento push del iPhone. Contrato (ADR-003):
  *   { schema_version:'1', id, source:'yape'|'test', channel, token, title, subtitle, body, raw, notified_at, received_at, device }
- * - `token` se compara con el deviceToken del usuario (UserProperties). Sin token válido → unauthorized.
+ * - `token` se compara con `Ajustes.conexiones.iphone.token` (respaldo: UserProperties de copias viejas). Sin token válido → unauthorized.
  * - `schema_version` desconocida → { ok:false, error:'update-shortcut' } (el atajo debe actualizarse).
  * - `source:'test'` (botón Probar) solo escribe `conexiones.iphone.lastTestAt`; no toca el ledger.
  * - Ráfagas: LockService.getUserLock() serializa las escrituras.
@@ -36,7 +36,7 @@ function webAction(metodo, e, sheetId, config) {
  */
 function eventsAction_(body, sheetId, config) {
   body = body || {};
-  var token = getSecret_('deviceToken');
+  var token = iphoneToken_(sheetId, config);
   if (!token || String(body.token || '') !== token) return webJson_({ ok: false, error: 'unauthorized' });
 
   var lock = LockService.getUserLock();
