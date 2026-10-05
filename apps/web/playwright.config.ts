@@ -20,6 +20,8 @@ export default defineConfig({
     baseURL: `http://localhost:${PORT}`,
     trace: "retain-on-failure",
     colorScheme: "dark",
+    // Sin animaciones: las cifras que cuentan (useCountUp) y las entradas quedan en su estado final al instante.
+    reducedMotion: "reduce",
     locale: "es-PE",
     timezoneId: "America/Lima",
   },

@@ -1,7 +1,8 @@
 import Conexiones from "@/components/Conexiones";
+import PageTransition from "@/components/PageTransition";
 
-export const metadata = { title: "Conexiones · Luca" };
+export const metadata = { title: "Conexiones" };
 
 export default function ConexionesPage() {
-  return <Conexiones />;
+  return <PageTransition><Conexiones /></PageTransition>;
 }

@@ -1,0 +1,156 @@
+<!-- _Ui — utilidades de cliente comunes (sidebar y diálogos). Se inserta en el servidor con el marcador @incluir,
+     antes del script propio de cada página. Expone: run, esc, toast, fallo, icono, iconos, esqueleto. -->
+<div id="toasts" role="status" aria-live="polite"></div>
+<script>
+  /* Iconos Lucide en línea (sin dependencias). <i data-icon="nombre"></i> + iconos(); o icono('nombre') como HTML. */
+  var ICONOS_ = {
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    alerta: '<circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
+    info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+    actividad: '<path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/>',
+    chispas: '<path d="M9.94 15.5A2 2 0 0 0 8.5 14.06l-6.14-1.58a.5.5 0 0 1 0-.96L8.5 9.94A2 2 0 0 0 9.94 8.5l1.58-6.14a.5.5 0 0 1 .96 0L14.06 8.5A2 2 0 0 0 15.5 9.94l6.14 1.58a.5.5 0 0 1 0 .96L15.5 14.06a2 2 0 0 0-1.44 1.44l-1.58 6.14a.5.5 0 0 1-.96 0z"/>',
+    iphone: '<rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/>',
+    enchufe: '<path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/>',
+    brujula: '<circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-1.8 5.4a2 2 0 0 1-1.28 1.28l-5.4 1.8 1.8-5.4a2 2 0 0 1 1.28-1.28z"/>',
+    refrescar: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+    copiar: '<rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+    ajustes: '<path d="M20 7h-9"/><path d="M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>',
+    correo: '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+    grafico: '<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+    externo: '<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+    chevron: '<path d="m9 18 6-6-6-6"/>',
+    escudo: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>',
+    terminal: '<path d="m4 17 6-6-6-6"/><path d="M12 19h8"/>'
+  };
+  /* Iconos de categoría (avatares del Dashboard). Fijos para la taxonomía por defecto (CATEGORIAS_INICIALES_);
+     las categorías propias se reconocen por palabras clave del nombre y, si no, llevan una etiqueta. */
+  var ICONOS_CAT_ = {
+    casa: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    carrito: '<circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/>',
+    cubiertos: '<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>',
+    bus: '<path d="M8 6v6"/><path d="M15 6v6"/><path d="M2 12h19.6"/><path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3"/><circle cx="7" cy="18" r="2"/><path d="M9 18h5"/><circle cx="16" cy="18" r="2"/>',
+    rayo: '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/>',
+    repetir: '<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',
+    salud: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/>',
+    birrete: '<path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M22 10v6"/><path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>',
+    camisa: '<path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/>',
+    ticket: '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/>',
+    flechas: '<path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>',
+    etiqueta: '<path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/>',
+    billetera: '<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1"/><path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4"/>',
+    recibir: '<path d="M17 7 7 17"/><path d="M17 17H7V7"/>',
+    duda: '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+    huella: '<circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="20" cy="16" r="2"/><path d="M9 10a5 5 0 0 1 5 5v3.5a3.5 3.5 0 0 1-6.84 1.045Q6.52 17.48 4.46 16.84A3.5 3.5 0 0 1 5.5 10Z"/>',
+    avion: '<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/>',
+    regalo: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/>',
+    pesa: '<path d="M14.4 14.4 9.6 9.6"/><path d="M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l-1.768 1.767a2 2 0 1 1 2.828 2.829z"/><path d="m21.5 21.5-1.4-1.4"/><path d="M3.9 3.9 2.5 2.5"/><path d="M6.404 12.768a2 2 0 1 1-2.829-2.829l1.768-1.767a2 2 0 1 1-2.828-2.829l2.828-2.828a2 2 0 1 1 2.829 2.828l1.767-1.768a2 2 0 1 1 2.829 2.829z"/>',
+    cafe: '<path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/>',
+    auto: '<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>',
+    banco: '<path d="M10 18v-7"/><path d="M11.12 2.198a2 2 0 0 1 1.76.006l7.866 3.847c.476.233.31.949-.22.949H3.474c-.53 0-.695-.716-.22-.949z"/><path d="M14 18v-7"/><path d="M18 18v-7"/><path d="M3 22h18"/><path d="M6 18v-7"/>',
+    bebe: '<path d="M9 12h.01"/><path d="M15 12h.01"/><path d="M10 16c.5.3 1.2.5 2 .5s1.5-.2 2-.5"/><path d="M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 12 3c2 0 3.5 1.1 3.5 2.5s-.9 2.5-2 2.5c-.8 0-1.5-.4-1.5-1"/>',
+    laptop: '<path d="M18 5a2 2 0 0 1 2 2v8.526a2 2 0 0 0 .212.897l1.068 2.127a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45l1.068-2.127A2 2 0 0 0 4 15.526V7a2 2 0 0 1 2-2z"/><path d="M20.054 15.987H3.946"/>',
+    hucha: '<path d="M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z"/><path d="M16 10h.01"/><path d="M2 8v1a2 2 0 0 0 2 2h1"/>',
+    recibo: '<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 17.5v-11"/>',
+    tijeras: '<circle cx="6" cy="6" r="3"/><path d="M8.12 8.12 12 12"/><path d="M20 4 8.12 15.88"/><circle cx="6" cy="18" r="3"/><path d="M14.8 14.8 20 20"/>'
+  };
+  var ICONO_CATEGORIA_ = {
+    'Vivienda': 'casa', 'Supermercado': 'carrito', 'Comidas fuera': 'cubiertos', 'Transporte': 'bus', 'Servicios': 'rayo',
+    'Suscripciones': 'repetir', 'Salud': 'salud', 'Educación': 'birrete', 'Ropa': 'camisa', 'Ocio': 'ticket',
+    'Transferencias': 'flechas', 'Otros': 'etiqueta', 'Ingreso': 'billetera', 'Sin categoría': 'duda'
+  };
+  // Palabras clave (sin acentos, minúsculas) → icono, para categorías propias. La primera que coincide gana.
+  var ICONO_PALABRAS_ = [
+    [/mascota|perro|gato|veterin/, 'huella'], [/viaje|vuelo|hotel|vacacion/, 'avion'], [/regalo|cumple/, 'regalo'],
+    [/gym|gimnasio|deporte|fitness/, 'pesa'], [/cafe/, 'cafe'], [/auto|carro|gasolina|combustible|grifo|peaje|estacionamiento/, 'auto'],
+    [/banco|comision|interes|prestamo|deuda|tarjeta/, 'banco'], [/bebe|hijo|nino|colegio/, 'bebe'], [/tecnolog|electron|gadget/, 'laptop'],
+    [/ahorro|inversion/, 'hucha'], [/impuesto|sunat|tramite|multa/, 'recibo'], [/seguro/, 'escudo'], [/belleza|peluquer|barber|spa/, 'tijeras'],
+    [/casa|hogar|alquiler|depa/, 'casa'], [/comida|restaurant|delivery|almuerzo/, 'cubiertos'], [/mercado|bodega|abarrote/, 'carrito'],
+    [/taxi|uber|movilidad|bus/, 'bus'], [/luz|agua|internet|celular|telefon|gas/, 'rayo'], [/suscrip|streaming|netflix|spotify/, 'repetir'],
+    [/salud|farmacia|medic|clinica|doctor/, 'salud'], [/curso|estudio|libro|universidad|educa/, 'birrete'], [/ropa|zapat|calzado/, 'camisa'],
+    [/ocio|cine|salida|fiesta|concierto/, 'ticket'], [/transfer/, 'flechas'], [/sueldo|ingreso|salario/, 'billetera']
+  ];
+  function claveIconoCategoria(nombre) {
+    if (!nombre) return 'duda';
+    if (ICONO_CATEGORIA_.hasOwnProperty(nombre)) return ICONO_CATEGORIA_[nombre];
+    var n = String(nombre).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    for (var i = 0; i < ICONO_PALABRAS_.length; i++) if (ICONO_PALABRAS_[i][0].test(n)) return ICONO_PALABRAS_[i][1];
+    return 'etiqueta';
+  }
+  /* SVG del icono de una categoría (o de un movimiento: transferencia propia, yapeo recibido, ingreso sin categoría). */
+  function iconoCategoria(nombre, tipo) {
+    var clave = tipo === 'internal_transfer' ? 'flechas'
+      : tipo === 'transfer_in' && !nombre ? 'recibir'
+      : tipo === 'income' && !nombre ? 'billetera'
+      : claveIconoCategoria(nombre);
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONOS_CAT_[clave] || ICONOS_[clave] || '') + '</svg>';
+  }
+
+  function icono(nombre) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (ICONOS_[nombre] || '') + '</svg>';
+  }
+  function iconos(raiz) {
+    (raiz || document).querySelectorAll('[data-icon]').forEach(function (el) { el.innerHTML = icono(el.getAttribute('data-icon')); });
+  }
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+
+  /* Toast arriba, breve. tipo: 'ok' | 'error' | 'info'. Los errores duran más y se pueden cerrar. */
+  function toast(msg, tipo) {
+    tipo = tipo || 'ok';
+    var t = document.createElement('div');
+    t.className = 'toast ' + tipo;
+    t.innerHTML = '<span class="ico">' + icono(tipo === 'error' ? 'alerta' : tipo === 'info' ? 'info' : 'check') + '</span><span></span>' +
+      '<button type="button" aria-label="Cerrar">×</button>';
+    t.querySelector('span:nth-child(2)').textContent = msg;
+    function cerrar() { if (t._cerrado) return; t._cerrado = true; t.classList.add('sale'); setTimeout(function () { t.remove(); }, 240); }
+    t.querySelector('button').onclick = cerrar;
+    var cont = document.getElementById('toasts');
+    cont.appendChild(t);
+    while (cont.children.length > 3) cont.removeChild(cont.firstChild);
+    setTimeout(cerrar, tipo === 'error' ? 7000 : 2800);
+    return t;
+  }
+  function fallo(e) { toast((e && e.message) || String(e), 'error'); }
+
+  /* Esqueleto de carga para una tarjeta (n líneas). */
+  function esqueleto(n) {
+    var h = '', anchos = ['', 'media', 'corta'];
+    for (var i = 0; i < (n || 3); i++) h += '<div class="esq ' + anchos[i % 3] + '"></div>';
+    return h;
+  }
+
+  /* Estado de carga automático: el botón pulsado queda deshabilitado con su texto de carga
+     (data-cargando="Escaneando…") hasta que termina la llamada que lanzó su onclick. Patrón cosRun de CoS-Agent. */
+  var btnActivo_ = null;
+  document.addEventListener('click', function (e) {
+    btnActivo_ = (e.target && e.target.closest) ? e.target.closest('button') : null;
+    setTimeout(function () { btnActivo_ = null; }, 0);
+  }, true);
+  function cargando(btn, on) {
+    if (!btn) return;
+    if (on) {
+      if (btn._cargando) return;
+      btn._cargando = true; btn._html = btn.innerHTML;
+      btn.classList.add('cargando'); btn.disabled = true; btn.setAttribute('aria-busy', 'true');
+      btn.innerHTML = '<span class="puntos"><i></i><i></i><i></i></span><span>' + esc(btn.getAttribute('data-cargando') || 'Un momento…') + '</span>';
+    } else {
+      if (!btn._cargando) return;
+      btn._cargando = false; btn.innerHTML = btn._html;
+      btn.classList.remove('cargando'); btn.disabled = false; btn.removeAttribute('aria-busy');
+    }
+  }
+
+  /* Puente único a la librería: lucaRun(método, argsJson) → dispatch (lista blanca). */
+  function run(method) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    var btn = btnActivo_; btnActivo_ = null;
+    cargando(btn, true);
+    return new Promise(function (resolve, reject) {
+      google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).lucaRun(method, JSON.stringify(args));
+    }).then(function (v) { cargando(btn, false); return v; },
+      function (e) { cargando(btn, false); throw e; });
+  }
+
+  iconos();
+</script>

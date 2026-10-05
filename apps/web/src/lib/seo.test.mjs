@@ -25,3 +25,13 @@ test("SITE y rutas públicas: sin barra final y sin /app", () => {
   assert.ok(!SITE.url.endsWith("/"));
   assert.ok(!PUBLIC_PATHS.some((p) => p.startsWith("/app")));
 });
+
+test("FAQ: preguntas únicas, sin promesas que la app no cumple", () => {
+  const qs = FAQ.map(([q]) => q);
+  assert.equal(new Set(qs).size, qs.length);
+  assert.ok(qs.includes("¿Qué bancos funcionan?"));
+  const stop = FAQ.find(([q]) => q === "¿Puedo dejar de usarlo?");
+  assert.ok(stop && /borra la sheet/i.test(stop[1]));
+  // El menú Luca no tiene una opción para desactivar el script.
+  assert.ok(!FAQ.some(([, a]) => /desactiv\w* el script/i.test(a)));
+});

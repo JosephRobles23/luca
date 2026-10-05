@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luca con diseño Cursor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: barra de vista previa fija arriba; debajo, una de dos vistas (portada pública / panel) a ancho real.
+   Tokens = DESIGN.md (estructura Cursor + naranja Luca; oscuro cálido). */
+:root {
+  --primary: #d9623b; --primary-strong: #bf5230; --primary-active: #a8472a; --primary-soft: #fbe6dc; --on-primary: #ffffff;
+  --ink: #1d1a17; --body: #57524b; --muted: #716a60;
+  --hairline: #e6ddd1; --hairline-soft: #efe8de; --hairline-strong: #d3c8b8;
+  --canvas: #f4efe8; --card: #fffdf9; --strong: #ebe4d9;
+  --cat-peach: #dfa88f; --cat-mint: #9fc9a2; --cat-blue: #9fbbe0; --cat-lavender: #c0a8dd; --cat-gold: #c08532; --cat-none: #cfc6b8;
+  --success: #1a7a59; --warning: #92600f; --error: #cf2d56;
+  --chrome: #1d1a17; --chrome-fg: #f4efe8; --chrome-muted: #b5ada2; --chrome-line: #3a3530;
+  --sans: "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]):not(:has(#t-light:checked)) {
+  --primary: #e8774f; --primary-soft: #2e1a12; --ink: #f0ebe3; --body: #c9c2b8; --muted: #9a938a;
+  --hairline: #2f2c28; --hairline-soft: #262420; --hairline-strong: #3d3934;
+  --canvas: #141413; --card: #1f1e1b; --strong: #2a2824; --cat-none: #4a453f;
+  --success: #5db88a; --warning: #e2b25a; --error: #ef6b8a;
+  --chrome: #0b0b0a; --chrome-line: #2f2c28; color-scheme: dark; } }
+:root:has(#t-dark:checked), :root[data-theme="dark"] {
+  --primary: #e8774f; --primary-soft: #2e1a12; --ink: #f0ebe3; --body: #c9c2b8; --muted: #9a938a;
+  --hairline: #2f2c28; --hairline-soft: #262420; --hairline-strong: #3d3934;
+  --canvas: #141413; --card: #1f1e1b; --strong: #2a2824; --cat-none: #4a453f;
+  --success: #5db88a; --warning: #e2b25a; --error: #ef6b8a;
+  --chrome: #0b0b0a; --chrome-line: #2f2c28; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+.sr { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+body:has(#v-panel:checked) #view-portada, body:has(#v-portada:checked) #view-panel { display: none; }
+body:has(#v-portada:checked) label[for="v-portada"].tab, body:has(#v-panel:checked) label[for="v-panel"].tab,
+body:has(#t-system:checked) label[for="t-system"], body:has(#t-light:checked) label[for="t-light"], body:has(#t-dark:checked) label[for="t-dark"] { background: var(--chrome-fg); color: var(--chrome); }
+body:has(#v-portada:focus-visible) label[for="v-portada"], body:has(#v-panel:focus-visible) label[for="v-panel"],
+body:has(#t-system:focus-visible) label[for="t-system"], body:has(#t-light:focus-visible) label[for="t-light"], body:has(#t-dark:focus-visible) label[for="t-dark"] { outline: 2px solid var(--primary); outline-offset: 1px; }
+body { background: var(--canvas); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+button, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+p { margin: 0; }
+
+/* ---------- barra de vista previa (no es parte del diseño) ---------- */
+.chrome { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: var(--chrome); color: var(--chrome-fg);
+  border-bottom: 1px solid var(--chrome-line); }
+.chrome-in { max-width: 1168px; margin: 0 auto; padding: 10px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.chrome-title { font-size: 13px; font-weight: 600; }
+.chrome-title span { color: var(--chrome-muted); font-weight: 400; }
+.seg { display: inline-flex; border: 1px solid var(--chrome-line); border-radius: 8px; padding: 2px; gap: 2px; }
+.seg label { background: transparent; border: 0; color: var(--chrome-muted); padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; }
+.chrome .spacer { flex: 1; }
+.sample { font-family: var(--mono); font-size: 10.5px; letter-spacing: .4px; text-transform: uppercase; color: var(--chrome-muted); }
+
+/* ---------- piezas comunes ---------- */
+.wrap { max-width: 1168px; margin: 0 auto; padding-inline: 16px; }
+@media (min-width: 640px) { .wrap { padding-inline: 24px; } }
+.brand { display: inline-flex; align-items: center; gap: 9px; font-weight: 600; font-size: 17px; letter-spacing: -.3px; color: var(--ink); text-decoration: none; }
+.brand img { width: 28px; height: 28px; border-radius: 7px; border: 1px solid var(--hairline); }
+.brand b { color: var(--primary); font-weight: 600; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 8px;
+  font-size: 14px; font-weight: 500; border: 1px solid var(--hairline-strong); background: var(--card); color: var(--ink); cursor: pointer; text-decoration: none; white-space: nowrap; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--primary-strong); border-color: var(--primary-strong); color: var(--on-primary); }
+.btn.primary:hover { background: var(--primary-active); border-color: var(--primary-active); }
+.btn.ghost { background: transparent; border-color: transparent; color: var(--body); }
+.btn.lg { height: 46px; padding: 0 20px; font-size: 15px; }
+.card { background: var(--card); border: 1px solid var(--hairline); border-radius: 12px; padding: 20px; min-width: 0; }
+.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .88px; text-transform: uppercase; color: var(--muted); }
+.pill { display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 11px; border-radius: 999px; background: var(--strong);
+  color: var(--body); font-size: 12.5px; white-space: nowrap; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
+.dot.ok { background: var(--success); } .dot.warn { background: var(--warning); }
+.tag { font-family: var(--mono); font-size: 10px; font-weight: 500; letter-spacing: .4px; text-transform: uppercase; color: var(--muted);
+  background: var(--strong); border-radius: 4px; padding: 1px 6px; white-space: nowrap; }
+.cur { color: var(--muted); }
+
+/* ---------- portada ---------- */
+.l-nav { display: flex; align-items: center; justify-content: space-between; padding-block: 18px; border-bottom: 1px solid var(--hairline); }
+.l-nav nav { display: flex; align-items: center; gap: 6px; }
+.l-nav nav a.link { color: var(--body); text-decoration: none; font-size: 14px; font-weight: 500; padding: 8px 10px; }
+@media (max-width: 560px) { .l-nav nav a.link { display: none; } }
+.hero { display: grid; gap: 40px; padding-block: 72px 80px; align-items: center; }
+@media (min-width: 960px) { .hero { grid-template-columns: 1.15fr 1fr; gap: 56px; } }
+.hero h1 { font-size: clamp(38px, 6vw, 58px); line-height: 1.04; font-weight: 500; letter-spacing: -0.035em; max-width: 13ch; }
+.hero h1 em { font-style: normal; color: var(--primary); }
+.hero .lede { margin-top: 20px; font-size: 17px; line-height: 1.6; color: var(--body); max-width: 56ch; }
+.hero .cta { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 10px; }
+.hero .fine { margin-top: 14px; font-size: 13px; color: var(--muted); max-width: 58ch; }
+.peek { padding: 0; overflow: hidden; }
+.peek-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--hairline); }
+.peek-top .crumb { font-size: 13px; color: var(--muted); }
+.peek-body { padding: 18px; display: grid; gap: 16px; }
+.peek-kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.kpi-mini { border: 1px solid var(--hairline); border-radius: 10px; padding: 12px 14px; }
+.kpi-mini .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 22px; font-weight: 500; letter-spacing: -.4px; margin-top: 4px; }
+.section { padding-block: 80px 0; }
+.section h2 { font-size: clamp(26px, 3.4vw, 34px); font-weight: 500; letter-spacing: -0.025em; line-height: 1.15; max-width: 22ch; }
+.section .intro { margin-top: 12px; color: var(--body); max-width: 60ch; }
+.steps { margin-top: 32px; display: grid; gap: 1px; background: var(--hairline); border: 1px solid var(--hairline); border-radius: 12px; overflow: hidden; }
+@media (min-width: 820px) { .steps { grid-template-columns: repeat(3, 1fr); } }
+.step { background: var(--card); padding: 24px; display: grid; gap: 10px; align-content: start; }
+.step .n { font-family: var(--mono); font-size: 12px; color: var(--primary); }
+.step h3 { font-size: 18px; font-weight: 600; letter-spacing: -.2px; }
+.step p { font-size: 14.5px; color: var(--body); }
+.priv { margin-top: 32px; display: grid; gap: 0; border-top: 1px solid var(--hairline); }
+@media (min-width: 820px) { .priv { grid-template-columns: 1fr 1fr; column-gap: 40px; } }
+.priv li { list-style: none; display: grid; grid-template-columns: 22px 1fr; gap: 8px; padding-block: 14px; border-bottom: 1px solid var(--hairline); font-size: 14.5px; color: var(--body); }
+.priv li::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--success); margin-top: 8px; }
+.priv { padding: 0; }
+.faq { margin-top: 32px; display: grid; gap: 12px; }
+@media (min-width: 820px) { .faq { grid-template-columns: 1fr 1fr; } }
+.faq details { background: var(--card); border: 1px solid var(--hairline); border-radius: 12px; padding: 16px 20px; }
+.faq summary { cursor: pointer; font-weight: 600; font-size: 15.5px; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: "+"; font-family: var(--mono); color: var(--muted); }
+.faq details[open] summary::after { content: "−"; }
+.faq details p { margin-top: 10px; font-size: 14.5px; color: var(--body); }
+.l-foot { margin-top: 80px; padding-block: 28px 40px; border-top: 1px solid var(--hairline); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--muted); }
+.l-foot a { color: var(--body); }
+
+/* ---------- panel ---------- */
+.a-top { border-bottom: 1px solid var(--hairline); background: var(--canvas); }
+.a-top-in { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; min-height: 60px; padding-block: 10px; }
+.a-nav { display: flex; gap: 2px; overflow-x: auto; order: 3; width: 100%; scrollbar-width: none; }
+@media (min-width: 900px) { .a-nav { order: 0; width: auto; flex: 1; } }
+.a-nav a { color: var(--body); text-decoration: none; font-size: 14px; font-weight: 500; padding: 8px 10px; border-radius: 6px; white-space: nowrap; position: relative; }
+.a-nav a:hover { background: var(--strong); }
+.a-nav a[aria-current="page"] { color: var(--ink); }
+.a-nav a[aria-current="page"]::after { content: ""; position: absolute; left: 10px; right: 10px; bottom: -11px; height: 2px; background: var(--primary); border-radius: 2px; }
+@media (max-width: 899px) { .a-nav a[aria-current="page"]::after { bottom: 0; } }
+.a-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.a-actions .user { max-width: 230px; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 640px) { .a-actions .user, .a-actions .refresh { display: none; } }
+.icon-btn { width: 40px; padding: 0; }
+.a-main { padding-block: 24px 64px; display: grid; gap: 16px; }
+.onb { display: grid; gap: 14px; }
+.onb-steps { display: flex; flex-wrap: wrap; gap: 8px; }
+.onb h2 { font-size: 22px; font-weight: 500; letter-spacing: -.3px; }
+.onb p { color: var(--body); max-width: 78ch; font-size: 14.5px; }
+.onb-status { display: flex; flex-wrap: wrap; gap: 8px; }
+.onb-cta { display: flex; flex-wrap: wrap; gap: 8px; }
+.notice { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; justify-content: space-between; background: var(--primary-soft);
+  border: 1px solid var(--hairline); border-radius: 12px; padding: 14px 18px; font-size: 14px; }
+.notice b { font-weight: 600; }
+.notice .ver { font-family: var(--mono); font-size: 12.5px; }
+.sum-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 8px; }
+.month { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.month select { height: 36px; padding: 0 30px 0 12px; border: 1px solid var(--hairline-strong); border-radius: 8px; background: var(--card); font-weight: 500; }
+.kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (min-width: 900px) { .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.kpi .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: clamp(22px, 3vw, 30px); font-weight: 500; letter-spacing: -.6px; margin-top: 10px; white-space: nowrap; }
+.kpi .v.neg { color: var(--primary); }
+.kpi .note { margin-top: 4px; font-size: 13px; color: var(--muted); }
+.grid { display: grid; gap: 16px; }
+@media (min-width: 1024px) { .grid { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); align-items: start; } }
+.col { display: grid; gap: 16px; min-width: 0; }
+.charts { display: grid; gap: 16px; }
+@media (min-width: 720px) { .charts { grid-template-columns: 1fr 1fr; } }
+.card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 16px; }
+.card-head a { font-size: 13px; color: var(--body); }
+.donut-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 20px; }
+.donut { width: 148px; height: 148px; flex: none; }
+.legend { display: grid; gap: 10px; flex: 1; min-width: 150px; font-size: 14px; }
+.legend .num { white-space: nowrap; }
+.legend div { display: grid; grid-template-columns: 10px 1fr auto; align-items: center; gap: 10px; }
+.legend i { width: 10px; height: 10px; border-radius: 3px; }
+.bars { width: 100%; height: auto; display: block; }
+.merchants { display: grid; gap: 14px; }
+@media (min-width: 720px) { .merchants { grid-template-columns: 1fr 1fr; column-gap: 28px; } }
+.mer-row { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 500; }
+.mer-row span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.track { height: 4px; border-radius: 4px; background: var(--strong); margin-top: 8px; overflow: hidden; }
+.track i { display: block; height: 100%; background: var(--primary); border-radius: 4px; }
+.mer small { display: block; margin-top: 4px; font-size: 12px; color: var(--muted); }
+.pending { display: grid; gap: 10px; }
+.pending .row { display: flex; justify-content: space-between; gap: 12px; font-weight: 600; font-size: 14.5px; }
+.pending select { height: 38px; width: 100%; padding: 0 10px; border: 1px solid var(--hairline-strong); border-radius: 8px; background: var(--card); }
+.txs { list-style: none; margin: 0; padding: 0; }
+.tx { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding-block: 12px; border-top: 1px solid var(--hairline-soft); }
+.tx:first-child { border-top: 0; padding-top: 0; }
+.tx .cd { width: 8px; height: 8px; border-radius: 50%; margin-top: 7px; }
+.tx .who { font-weight: 600; font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tx .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 3px; font-size: 12.5px; color: var(--muted); }
+.tx .amt { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 500; white-space: nowrap; padding-top: 1px; }
+.tx.own .who, .tx.own .amt { color: var(--muted); font-weight: 500; }
+@media (prefers-reduced-motion: no-preference) { .view { animation: fade .25s ease-out; } @keyframes fade { from { opacity: .4; } to { opacity: 1; } } }
+</style>
+</head>
+<body>
+<!-- Estado de la vista previa sin JavaScript: radios + :has() -->
+<input class="sr" type="radio" name="view" id="v-portada" checked>
+<input class="sr" type="radio" name="view" id="v-panel">
+<input class="sr" type="radio" name="theme" id="t-system" checked>
+<input class="sr" type="radio" name="theme" id="t-light">
+<input class="sr" type="radio" name="theme" id="t-dark">
+
+<div class="chrome" role="region" aria-label="Controles de la vista previa">
+  <div class="chrome-in">
+    <div class="chrome-title">Luca · diseño Cursor <span>· DESIGN.md</span></div>
+    <div class="seg" role="group" aria-label="Vista">
+      <label class="tab" for="v-portada">Portada pública</label>
+      <label class="tab" for="v-panel">Panel tras el login</label>
+    </div>
+    <div class="spacer"></div>
+    <div class="seg" role="group" aria-label="Tema">
+      <label for="t-system">Sistema</label>
+      <label for="t-light">Claro</label>
+      <label for="t-dark">Oscuro</label>
+    </div>
+    <span class="sample">Datos de ejemplo</span>
+  </div>
+</div>
+
+<!-- ===================== PORTADA ===================== -->
+<div class="view" id="view-portada">
+  <div class="wrap">
+    <header class="l-nav">
+      <a class="brand" href="#portada"><img alt="" src="data:image/png;base64,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"><span>luca<b>.</b></span></a>
+      <nav>
+        <a class="link" href="#como">Cómo funciona</a>
+        <a class="link" href="#privacidad">Privacidad</a>
+        <a class="link" href="#faq">Preguntas</a>
+        <label class="btn" for="v-panel">Entrar</label>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div>
+        <h1>Tus gastos de BCP y Yape, ordenados. En <em>tu</em> Google.</h1>
+        <p class="lede">Luca lee las notificaciones que ya te llegan al correo y las convierte en movimientos categorizados dentro de una hoja de cálculo de tu propiedad. No guardamos ninguna transacción: tu navegador la lee de tu Drive para mostrártela.</p>
+        <div class="cta">
+          <label class="btn primary lg" for="v-panel">Entrar con Google</label>
+          <a class="btn lg" href="#como">Cómo funciona</a>
+        </div>
+        <p class="fine">Gratis, sin anuncios ni rastreadores. Permisos: tu correo (para identificarte) y solo los archivos de Drive que crees o elijas con Luca. Nunca pedimos tu Gmail desde esta web.</p>
+      </div>
+
+      <div class="card peek" aria-label="Vista del panel">
+        <div class="peek-top"><span class="eyebrow">Resumen · Oct 2026</span><span class="crumb">lucaa.lat/app</span></div>
+        <div class="peek-body">
+          <div class="peek-kpis">
+            <div class="kpi-mini"><div class="eyebrow">Gastos del mes</div><div class="v"><span class="cur">S/</span> 104.56</div></div>
+            <div class="kpi-mini"><div class="eyebrow">Por categorizar</div><div class="v">1</div></div>
+          </div>
+          <ul class="txs">
+            <li class="tx"><span class="cd" style="background:var(--cat-peach)"></span><div style="min-width:0"><div class="who">SPACESHIP.COM</div><div class="meta">04/10 · Suscripciones <span class="tag">BCP email</span></div></div><span class="amt">−<span class="cur">$</span> 1.24</span></li>
+            <li class="tx"><span class="cd" style="background:var(--cat-blue)"></span><div style="min-width:0"><div class="who">Yape a María Q*</div><div class="meta">04/10 · Transferencias <span class="tag">Yape email</span></div></div><span class="amt">−<span class="cur">S/</span> 10.00</span></li>
+            <li class="tx"><span class="cd" style="background:var(--cat-peach)"></span><div style="min-width:0"><div class="who">APPLE.COM/BILL</div><div class="meta">03/10 · Suscripciones <span class="tag">BCP email</span></div></div><span class="amt">−<span class="cur">$</span> 3.86</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="como" aria-labelledby="como-h">
+      <div class="eyebrow">Cómo funciona</div>
+      <h2 id="como-h" style="margin-top:10px">Tres pasos, y después sigue solo cada 15 minutos.</h2>
+      <div class="steps">
+        <div class="step"><span class="n">01</span><h3>Tu Sheet</h3><p>Creas una copia de la plantilla de Luca en tu Drive. Ahí viven tus movimientos, categorías y ajustes. Es tuya: la abres, la editas y la borras cuando quieras.</p></div>
+        <div class="step"><span class="n">02</span><h3>Autorizas tu script</h3><p>Dentro de la Sheet, el menú Luca te pide permiso para leer los correos de BCP y Yape. Ese permiso se lo das a tu propio script de Google, no a nosotros. Importa tu último mes.</p></div>
+        <div class="step"><span class="n">03</span><h3>Miras y corriges</h3><p>Dashboard por mes, categoría y comercio. Recategorizas, marcas transferencias y agregas lo que no llegó por correo. Opcional: yapeos del iPhone y preguntas desde tu IA.</p></div>
+      </div>
+    </section>
+
+    <section class="section" id="privacidad" aria-labelledby="priv-h">
+      <div class="eyebrow">Privacidad, literal</div>
+      <h2 id="priv-h" style="margin-top:10px">Luca no tiene base de datos.</h2>
+      <ul class="priv">
+        <li>Tus datos viven y se procesan en tu cuenta de Google.</li>
+        <li>El script que lee tu correo es una copia tuya, en tu Drive, con tus permisos.</li>
+        <li>La web lee tu Sheet desde tu navegador con tu sesión; nuestro servidor solo refresca el token.</li>
+        <li>Si conectas una IA, el servidor MCP transita las respuestas a petición tuya y no las retiene.</li>
+        <li>Los yapeos del iPhone van de tu teléfono a tu script: nunca pasan por Luca.</li>
+        <li>Con la categorización por IA solo viaja el nombre del comercio y el monto.</li>
+      </ul>
+    </section>
+
+    <section class="section" id="faq" aria-labelledby="faq-h">
+      <div class="eyebrow">Preguntas frecuentes</div>
+      <h2 id="faq-h" style="margin-top:10px">Lo que suelen preguntar antes de entrar.</h2>
+      <div class="faq">
+        <details open><summary>¿Qué es Luca?</summary><p>Una herramienta gratuita para ordenar tus gastos personales en Perú. Lee las notificaciones de BCP y Yape que ya te llegan al correo y las convierte en movimientos categorizados dentro de una Google Sheet de tu propiedad.</p></details>
+        <details><summary>¿Luca guarda mis transacciones?</summary><p>No. Tus movimientos viven en una Sheet de tu Google Drive y los procesa un script que corre en tu propia cuenta de Google.</p></details>
+        <details><summary>¿Qué permisos pide?</summary><p>Tu correo para identificarte y el permiso drive.file, que solo alcanza a los archivos que creas o eliges con Luca. El permiso de Gmail se lo das a tu propio script.</p></details>
+        <details><summary>¿Cuánto cuesta?</summary><p>Nada. Es un proyecto personal, gratuito, sin anuncios y sin rastreadores.</p></details>
+        <details><summary>¿Puedo consultar mis gastos desde una IA?</summary><p>Sí, de forma opcional, con el servidor MCP de Luca en Claude o ChatGPT. Reenvía las preguntas a tu script y no guarda las respuestas.</p></details>
+      </div>
+    </section>
+
+    <footer class="l-foot">
+      <span>Luca · lucaa.lat · proyecto personal, gratuito y sin anuncios</span>
+      <span><a href="#privacidad">Privacidad</a> · <a href="#faq">Términos</a></span>
+    </footer>
+  </div>
+</div>
+
+<!-- ===================== PANEL ===================== -->
+<div class="view" id="view-panel">
+  <header class="a-top">
+    <div class="wrap a-top-in">
+      <a class="brand" href="#panel"><img alt="" src="data:image/png;base64,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"><span>luca<b>.</b></span></a>
+      <nav class="a-nav" aria-label="Secciones">
+        <a href="#panel" aria-current="page">Resumen</a><a href="#panel">Movimientos</a><a href="#panel">Agregar</a><a href="#panel">Conexiones</a><a href="#panel">Ajustes</a>
+      </nav>
+      <div class="a-actions">
+        <button class="btn refresh" type="button">Actualizar</button>
+        <span class="pill user">usuario@gmail.com</span>
+        <label class="btn ghost" for="v-portada">Salir</label>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap a-main">
+    <section class="card onb" aria-labelledby="onb-h">
+      <div class="onb-steps">
+        <span class="pill"><span class="dot ok"></span>1. Tu Sheet</span>
+        <span class="pill"><span class="dot ok"></span>2. Autorizar</span>
+        <span class="pill"><span class="dot warn"></span>3. Activar conexiones (opcional)</span>
+      </div>
+      <h2 id="onb-h">Activa las conexiones (opcional)</h2>
+      <p>Con el correo ya tienes tus gastos. Si además quieres los yapeos que recibes en el iPhone o preguntarle a tu IA, publica el script como Web App desde tu Sheet. Luca nunca ve esos datos: van de tu teléfono o tu IA a tu script.</p>
+      <div class="onb-status">
+        <span class="pill"><span class="dot"></span>Web App sin publicar</span>
+        <span class="pill"><span class="dot"></span>iPhone no configurado</span>
+        <span class="pill"><span class="dot"></span>IA no configurada</span>
+      </div>
+      <div class="onb-cta"><button class="btn primary" type="button">Ver la guía de conexiones</button><button class="btn" type="button">Omitir por ahora</button></div>
+    </section>
+
+    <div class="notice" role="status">
+      <span>Hay una versión nueva de Luca (<span class="ver">v12</span>; tu copia usa <span class="ver">v10</span>). En tu Sheet: <b>Extensiones → Apps Script → Bibliotecas → LucaLib → versión 12 → Guardar</b>.</span>
+      <button class="btn" type="button">Abrir mi Sheet ↗</button>
+    </div>
+
+    <div class="sum-head">
+      <span class="eyebrow">Resumen</span>
+      <label class="month" for="mes">Mes <select id="mes"><option>Oct 2026</option><option>Sep 2026</option></select></label>
+    </div>
+
+    <div class="kpis">
+      <div class="card kpi"><div class="eyebrow">Ingresos del mes</div><div class="v"><span class="cur">S/</span> 0.00</div><div class="note">sin ingresos registrados</div></div>
+      <div class="card kpi"><div class="eyebrow">Gastos del mes</div><div class="v"><span class="cur">S/</span> 104.56</div><div class="note">−93 % vs mes anterior</div></div>
+      <div class="card kpi"><div class="eyebrow">Te queda</div><div class="v neg">−S/ 104.56</div><div class="note">sin ingresos este mes</div></div>
+      <div class="card kpi"><div class="eyebrow">Recibido por Yape</div><div class="v"><span class="cur">S/</span> 0.00</div><div class="note">sin yapeos recibidos</div></div>
+    </div>
+
+    <div class="grid">
+      <div class="col">
+        <div class="charts">
+          <section class="card" aria-labelledby="cat-h">
+            <div class="card-head"><h3 id="cat-h" class="eyebrow">Gastos por categoría</h3></div>
+            <div class="donut-wrap">
+              <svg class="donut" viewBox="0 0 148 148" role="img" aria-label="Sin categoría 51 %, Suscripciones 36 %, Transferencias 13 %">
+                <g transform="rotate(-90 74 74)" fill="none" stroke-width="14">
+                  <circle cx="74" cy="74" r="56" stroke="var(--strong)"/>
+                  <circle cx="74" cy="74" r="56" pathLength="100" stroke="var(--cat-none)" stroke-dasharray="50.4 49.6" stroke-dashoffset="0"/>
+                  <circle cx="74" cy="74" r="56" pathLength="100" stroke="var(--cat-peach)" stroke-dasharray="35.4 64.6" stroke-dashoffset="-51"/>
+                  <circle cx="74" cy="74" r="56" pathLength="100" stroke="var(--cat-blue)" stroke-dasharray="12.4 87.6" stroke-dashoffset="-87"/>
+                </g>
+                <text x="74" y="72" text-anchor="middle" fill="var(--ink)" font-family="Geist Mono, monospace" font-size="17" font-weight="500">S/ 104.56</text>
+                <text x="74" y="91" text-anchor="middle" fill="var(--muted)" font-family="Geist, sans-serif" font-size="11.5">gastado</text>
+              </svg>
+              <div class="legend">
+                <div><i style="background:var(--cat-none)"></i><span>Sin categoría</span><span class="num">51 %</span></div>
+                <div><i style="background:var(--cat-peach)"></i><span>Suscripciones</span><span class="num">36 %</span></div>
+                <div><i style="background:var(--cat-blue)"></i><span>Transferencias</span><span class="num">13 %</span></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="card" aria-labelledby="m6-h">
+            <div class="card-head"><h3 id="m6-h" class="eyebrow">Últimos 6 meses</h3></div>
+            <!-- escala: 1 500 soles = 112 px; base en y=132 -->
+            <svg class="bars" viewBox="0 0 330 160" role="img" aria-label="Gasto mensual: mayo a agosto sin datos, septiembre S/ 1 480, octubre S/ 104.56">
+              <g stroke="var(--hairline)" stroke-width="1"><line x1="0" y1="20" x2="330" y2="20" stroke-dasharray="2 4"/><line x1="0" y1="76" x2="330" y2="76" stroke-dasharray="2 4"/><line x1="0" y1="132" x2="330" y2="132"/></g>
+              <g font-family="Geist Mono, monospace" font-size="10" fill="var(--muted)">
+                <text x="0" y="16">1.5k</text><text x="0" y="72">750</text>
+              </g>
+              <g fill="var(--strong)">
+                <rect x="38" y="130" width="30" height="2" rx="1"/><rect x="86" y="130" width="30" height="2" rx="1"/><rect x="134" y="130" width="30" height="2" rx="1"/><rect x="182" y="130" width="30" height="2" rx="1"/>
+                <rect x="230" y="21.5" width="30" height="110.5" rx="4"/>
+              </g>
+              <rect x="278" y="124.2" width="30" height="7.8" rx="3" fill="var(--primary)"/>
+              <g font-family="Geist Mono, monospace" font-size="10.5" text-anchor="middle" fill="var(--body)">
+                <text x="245" y="15">1.48k</text><text x="293" y="117" fill="var(--primary)" font-weight="500">105</text>
+              </g>
+              <g font-family="Geist, sans-serif" font-size="11.5" text-anchor="middle" fill="var(--muted)">
+                <text x="53" y="151">May</text><text x="101" y="151">Jun</text><text x="149" y="151">Jul</text><text x="197" y="151">Ago</text><text x="245" y="151">Sep</text><text x="293" y="151" fill="var(--ink)" font-weight="600">Oct</text>
+              </g>
+            </svg>
+          </section>
+        </div>
+
+        <section class="card" aria-labelledby="mer-h">
+          <div class="card-head"><h3 id="mer-h" class="eyebrow">Comercios principales</h3></div>
+          <div class="merchants">
+            <div class="mer"><div class="mer-row"><span>CA012 AVIACION</span><span class="num"><span class="cur">S/</span> 53.30</span></div><div class="track"><i style="width:100%"></i></div><small>1 movimiento</small></div>
+            <div class="mer"><div class="mer-row"><span>Google CLOUD</span><span class="num"><span class="cur">S/</span> 17.08</span></div><div class="track"><i style="width:32%"></i></div><small>1 movimiento</small></div>
+            <div class="mer"><div class="mer-row"><span>APPLE.COM/BILL</span><span class="num"><span class="cur">S/</span> 13.51</span></div><div class="track"><i style="width:25%"></i></div><small>1 movimiento</small></div>
+            <div class="mer"><div class="mer-row"><span>Yape a María Q*</span><span class="num"><span class="cur">S/</span> 10.00</span></div><div class="track"><i style="width:19%"></i></div><small>1 movimiento</small></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="col">
+        <section class="card pending" aria-labelledby="pc-h">
+          <div class="card-head" style="margin-bottom:6px"><h3 id="pc-h" class="eyebrow">Por categorizar · 1</h3></div>
+          <div class="row"><span>CA012 AVIACION</span><span class="num"><span class="cur">S/</span> 53.30</span></div>
+          <label for="cat-ca012" class="eyebrow" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Categoría</label>
+          <select id="cat-ca012"><option>Por categorizar</option><option>Transporte</option><option>Viajes</option><option>Suscripciones</option></select>
+        </section>
+
+        <section class="card" aria-labelledby="mv-h">
+          <div class="card-head"><h3 id="mv-h" class="eyebrow">Movimientos · Oct 2026</h3><a href="#panel">Ver todos</a></div>
+          <ul class="txs">
+            <li class="tx"><span class="cd" style="background:var(--cat-peach)"></span><div style="min-width:0"><div class="who">SPACESHIP.COM* OJF3CV</div><div class="meta">04/10 · Suscripciones <span class="tag">BCP email</span></div></div><span class="amt">−<span class="cur">$</span> 1.24</span></li>
+            <li class="tx"><span class="cd" style="background:var(--cat-blue)"></span><div style="min-width:0"><div class="who">Transferencia a tercero</div><div class="meta">04/10 · Transferencias <span class="tag">BCP email</span></div></div><span class="amt">−<span class="cur">$</span> 0.96</span></li>
+            <li class="tx"><span class="cd" style="background:var(--cat-blue)"></span><div style="min-width:0"><div class="who">Yape a María Q*</div><div class="meta">04/10 · Transferencias <span class="tag">Yape email</span></div></div><span class="amt">−<span class="cur">S/</span> 10.00</span></li>
+            <li class="tx own"><span class="cd" style="background:var(--cat-none)"></span><div style="min-width:0"><div class="who">Transferencia entre cuentas</div><div class="meta">03/10 · Propia <span class="tag">BCP email</span></div></div><span class="amt"><span class="cur">S/</span> 30.00</span></li>
+            <li class="tx"><span class="cd" style="background:var(--cat-peach)"></span><div style="min-width:0"><div class="who">APPLE.COM/BILL</div><div class="meta">03/10 · Suscripciones <span class="tag">BCP email</span></div></div><span class="amt">−<span class="cur">$</span> 3.86</span></li>
+            <li class="tx own"><span class="cd" style="background:var(--cat-none)"></span><div style="min-width:0"><div class="who">Transferencia entre cuentas</div><div class="meta">02/10 · Propia <span class="tag">BCP email</span></div></div><span class="amt"><span class="cur">S/</span> 45.00</span></li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+// Opcional: sin JavaScript todo funciona; esto solo abre #panel directo y vuelve arriba al cambiar de vista.
+(function () {
+  if (location.hash === "#panel") document.getElementById("v-panel").checked = true;
+  document.querySelectorAll('input[name="view"]').forEach(function (r) { r.addEventListener("change", function () { window.scrollTo(0, 0); }); });
+})();
+</script>
+</body>
+</html>

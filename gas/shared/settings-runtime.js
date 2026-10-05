@@ -12,7 +12,7 @@
  * Versión de LucaLib que se escribe en `Ajustes.luca.version` en cada pasada (ADR-006 §5): la web y el
  * sidebar comparan con la última publicada para avisar "hay una versión nueva". Subirla en cada release.
  */
-var LUCA_VERSION = '17';
+var LUCA_VERSION = '22';
 // Versión mínima del stub que esta librería necesita (stub v2 = pasa setupTriggers y execUrl/stubVersion).
 var STUB_MIN_VERSION_ = '2';
 
@@ -52,6 +52,8 @@ var AJUSTES_DEFAULTS_ = {
   'scan.lastRunAt': '',
   'scan.lastStats': '',
   'triggers.installedAt': '',
+  // Versión del estilo aplicado a las pestañas (estilo-hojas-runtime.js). Vaciarla fuerza a reaplicarlo.
+  'ui.estiloVersion': '',
   'conexiones.execUrl': '',
   'conexiones.execUrl.manual': '',
   'conexiones.mcp.execUrl': '',
@@ -73,9 +75,11 @@ var AJUSTES_DEFAULTS_ = {
 function ensureKeyValueTab_(sheetId, name) {
   var ss = getSpreadsheet_(sheetId);
   var sh = ss.getSheetByName(name);
+  var nueva = !sh;
   if (!sh) sh = ss.insertSheet(name);
   var map = getHeaderMap_(sh);
   if (!map['key'] || !map['value']) sh.getRange(1, 1, 1, 2).setValues([['key', 'value']]);
+  if (nueva) estilizarNueva_(sh);
   // Fuerza la columna 'value' a TEXTO: evita que Sheets convierta "22:05" en Date.
   try { sh.getRange(2, 2, Math.max(sh.getMaxRows() - 1, 1), 1).setNumberFormat('@'); } catch (e) {}
   return sh;
@@ -277,4 +281,6 @@ function writeTelemetria_(sheetId, config, stats) {
     if (stats !== undefined) upd['scan.lastStats'] = JSON.stringify(stats || {});
     setAjustes_(sheetId, config, upd);
   } catch (e) { Logger.log('writeTelemetria_: ' + (e && e.message || e)); }
+  // Copias existentes: reciben el estilo de las pestañas en la primera pasada con una versión nueva.
+  try { aplicarEstiloSiCorresponde_(sheetId, config); } catch (e) { Logger.log('estilo de hojas: ' + (e && e.message || e)); }
 }

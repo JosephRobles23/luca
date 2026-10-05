@@ -13,20 +13,10 @@ export function Field({ label, htmlFor, hint, error, children }: { label: string
   );
 }
 
-export function Kpi({ label, value, sub, highlight, testId }: { label: string; value: string; sub?: ReactNode; highlight?: boolean; testId?: string }) {
-  return (
-    <div className={`card ${highlight ? "border-accent bg-accent-soft" : ""}`} data-testid={testId}>
-      <div className="label">{label}</div>
-      <div className={`text-2xl font-extrabold tracking-tight tabular-nums ${highlight ? "text-accent-2" : ""}`}>{value}</div>
-      {sub ? <div className="mt-1 text-[11.5px] text-muted">{sub}</div> : null}
-    </div>
-  );
-}
-
 export function Notice({ kind = "info", children, action }: { kind?: "info" | "warn" | "ok"; children: ReactNode; action?: ReactNode }) {
   return (
-    <div role={kind === "warn" ? "alert" : "status"} className={`card flex flex-wrap items-center gap-3 py-3 text-sm ${kind === "warn" ? "border-warn" : kind === "ok" ? "border-ok" : ""}`}>
-      <i className={`dot flex-none ${kind === "warn" ? "warn" : kind === "info" ? "off" : ""}`} />
+    <div role={kind === "warn" ? "alert" : "status"} className={`notice fade-in ${kind === "warn" ? "warn" : kind === "ok" ? "ok" : ""}`}>
+      <i className={`dot flex-none ${kind === "warn" ? "warn" : kind === "info" ? "off" : ""}`} aria-hidden />
       <div className="min-w-0 flex-1">{children}</div>
       {action}
     </div>

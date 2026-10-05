@@ -2,9 +2,30 @@
 
 Skill de release: `.claude/skills/deploy-luca/SKILL.md`
 
-Actualizado: 2026-10-04 (noche). Fuente de verdad de qué está hecho, en curso y pendiente. Commits en `main`.
+Actualizado: 2026-10-05. Fuente de verdad de qué está hecho, en curso y pendiente. Commits en `main`.
 
 ## Hecho y publicado
+- LucaLib **v22** — logo del sidebar más grande: `_Logo.html` lo genera ahora `apps/web/scripts/brand-assets.py`, que
+  recorta el halo casi transparente del PNG fuente y reduce el margen (mismo cambio en favicon, iconos PWA y og:image). 215 tests.
+- LucaLib **v21** — iconos SVG de categoría en los avatares del Dashboard (`iconoCategoria` en `_Ui`: fijos para la
+  taxonomía por defecto, palabras clave para categorías propias, etiqueta por defecto). 214 tests.
+- LucaLib **v20** — **Dashboard de la Sheet** rediseñado: `dashboard-runtime.js` (`resumenDashboard`, paridad con `summarize` de la web)
+  + `DialogDashboard` con pestañas Resumen / Categorías / Tendencias / Movimientos, selector de mes y gráficos SVG
+  (dona, barras de 6 meses, líneas por categoría, barras apiladas, ritmo del mes). Vista previa: botón Dashboard en
+  `docs/html/preview-sidebar.html` (datos calculados con el `resumenDashboard` real). 213 tests.
+- LucaLib **v19** — fix: en v18 el sidebar llegaba sin estilos ni `_Ui` (se quedaba en "cargando…"). Los
+  marcadores de parciales eran comentarios HTML y HtmlService los elimina; ahora son `<luca-parcial nombre="_X">`
+  y los archivos se leen sin procesar (`createTemplateFromFile(...).getRawContent()`). El harness ya elimina los
+  comentarios como HtmlService, así que el test de parciales reproduce el bug.
+- LucaLib **v18** — UI de la Sheet con la identidad de DESIGN.md (210 tests):
+  - Parciales `_Estilos`/`_Ui`/`_Logo` insertados en el servidor (`htmlConParciales_`): tokens, Geist, botones con
+    estado de carga, toasts arriba, esqueletos.
+  - Sidebar rediseñado: pestañas Estado/IA/iPhone/MCP con iconos SVG, iPhone en 3 pasos, código MCP con cuenta
+    atrás, **Modo avanzado** por usuario (UserProperties). Maqueta: `docs/html/preview-sidebar.html` (monta el real).
+  - **Guía** (`DialogGuia`, modeless) con pasos auto-detectados; abre el panel en su pestaña.
+  - **Estilo de las hojas** (`estilo-hojas-runtime.js`): encabezado, filas alternas, colores de categoría (paridad
+    con la web), columnas técnicas plegadas; se aplica solo una vez por `ui.estiloVersion` y desde Luca → 🎨.
+  - Pendiente: verificar en una Sheet real (fuente Geist en Sheets, diálogos desde el panel).
 - LucaLib **v17** (`gas/shared`), 164 tests unitarios en total (GAS + web + Worker):
   - Parsers correo (9 tipos + avisos ignorados) validados con 8 `.eml` reales; parser push (yapeo recibido → `transfer_in`).
   - **Autorizar** = consentimiento + trigger (callback `setupTriggers` del stub) + importación del último mes + telemetría.

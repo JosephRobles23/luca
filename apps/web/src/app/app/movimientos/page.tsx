@@ -1,7 +1,8 @@
 import Movimientos from "@/components/Movimientos";
+import PageTransition from "@/components/PageTransition";
 
-export const metadata = { title: "Movimientos · Luca" };
+export const metadata = { title: "Movimientos" };
 
 export default function MovimientosPage() {
-  return <Movimientos />;
+  return <PageTransition><Movimientos /></PageTransition>;
 }

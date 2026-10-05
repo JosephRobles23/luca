@@ -29,12 +29,20 @@ export const FAQ: ReadonlyArray<readonly [string, string]> = [
     "La web pide tu correo para identificarte y el permiso drive.file, que solo alcanza a los archivos que creas o eliges con Luca. El permiso para leer los correos de BCP y Yape se lo das a tu propio script, dentro de tu Sheet, nunca a Luca.",
   ],
   [
+    "¿Qué bancos funcionan?",
+    "Por ahora BCP y Yape, a partir de los correos de notificación que ya te envían: de BCP, los consumos con tarjeta, las transferencias entre tus cuentas y los pagos con QR; de Yape, los yapeos que haces, los pagos de servicios y las recargas. Si tienes iPhone, un atajo opcional suma también los yapeos que recibes.",
+  ],
+  [
     "¿Cuánto cuesta?",
     "Nada. Luca es un proyecto personal, gratuito, sin anuncios y sin rastreadores.",
   ],
   [
     "¿Puedo consultar mis gastos desde una IA como Claude o ChatGPT?",
     "Sí, de forma opcional. Luca ofrece un servidor MCP que reenvía las preguntas de tu IA a tu script y devuelve la respuesta sin guardarla. También puedes registrar los yapeos recibidos en el iPhone con un atajo.",
+  ],
+  [
+    "¿Puedo dejar de usarlo?",
+    "Sí, cuando quieras. Borra la Sheet de tu Drive y con ella se van tus datos y el script que lee tu correo. También puedes revocar el acceso de Luca y de tu script desde tu cuenta de Google (myaccount.google.com → Seguridad → Apps de terceros).",
   ],
 ];
 

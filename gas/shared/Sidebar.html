@@ -2,308 +2,514 @@
 <html>
 <head>
 <base target="_top">
+<meta charset="utf-8">
+<luca-parcial nombre="_Estilos"></luca-parcial>
 <style>
-  body { font: 13px system-ui, sans-serif; margin: 12px; color: #1d1a17; }
-  h3 { margin: 16px 0 6px; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #8b857c; }
-  input, button { font: inherit; width: 100%; box-sizing: border-box; padding: 7px 9px; margin-top: 6px; }
-  button { background: #d9623b; color: #fff; border: 0; border-radius: 6px; cursor: pointer; }
-  button.sec { background: #eee; color: #1d1a17; }
-  button.danger { background: #fff; color: #a3321c; border: 1px solid #e3b7ab; }
-  button:disabled { opacity: .5; cursor: default; }
-  .ok { color: #2e7d4f; } .warn { color: #b26a00; } .muted { color: #8b857c; }
-  .row { display: flex; justify-content: space-between; gap: 8px; padding: 3px 0; border-bottom: 1px dotted #eee; }
-  .hint { font-size: 12px; color: #6b655d; margin-top: 4px; }
-  code, pre { background: #f4efe8; font-size: 11px; }
-  code { padding: 1px 4px; border-radius: 3px; word-break: break-all; }
-  pre { padding: 8px; white-space: pre-wrap; margin-top: 10px; }
-  label.chk { display: flex; gap: 8px; align-items: flex-start; margin-top: 10px; font-size: 12px; color: #1d1a17; }
-  label.chk input { width: auto; margin: 2px 0 0; flex: none; }
-  .box { background: #faf7f2; border: 1px solid #eee3d5; border-radius: 6px; padding: 8px; margin-top: 8px; }
-  .paso { font-size: 12px; margin-bottom: 2px; }
-  .copiar { display: flex; gap: 6px; } .copiar button { flex: 1; }
+  /* Estructura del panel (300px). Los componentes viven en _Estilos; maqueta: docs/html/preview-sidebar.html. */
+  html, body { height: 100%; }
+  body { padding: 0; overflow: hidden; }
+  .sb { height: 100%; display: flex; flex-direction: column; background: var(--canvas); }
+
+  .sb-head { flex: none; display: flex; align-items: center; gap: 10px; padding: 12px 14px 10px; }
+  .logo { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line); flex: none; }
+  .sb-head .t { flex: 1; min-width: 0; }
+  .sb-head .t b { display: block; font: 600 15px/1.1 var(--sans); letter-spacing: -.2px; }
+  .sb-head .t b i { font-style: normal; color: var(--primary); }
+  .sb-head .t small { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button.guia { width: auto; min-height: 32px; margin: 0; padding: 0 10px; gap: 5px; font-size: 13px; }
+  button.guia svg { width: 15px; height: 15px; }
+  #avisoStub { margin: 0 14px 10px; }
+
+  .tabs { flex: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin: 0 14px; padding: 3px; background: var(--strong); border-radius: 11px; }
+  .tabs button { position: relative; flex-direction: column; gap: 3px; min-height: 48px; margin: 0; padding: 6px 0 5px; border-radius: 8px;
+    background: transparent; color: var(--muted); font-size: 11.5px; font-weight: 500; }
+  .tabs button:hover:not(:disabled) { background: transparent; color: var(--ink); }
+  .tabs button[aria-selected="true"] { background: var(--raised); color: var(--ink); box-shadow: 0 1px 2px rgba(29, 26, 23, .1); }
+  .tabs button svg { width: 17px; height: 17px; }
+  .tabs .dot { position: absolute; top: 6px; right: calc(50% - 15px); width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--strong); }
+  .tabs button[aria-selected="true"] .dot { border-color: var(--raised); }
+  .dot.warn { background: var(--warning); } .dot.err { background: var(--error); }
+
+  .sb-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 14px 16px; scrollbar-width: thin; }
+  .panel { display: none; }
+  .panel.on { display: block; animation: subir var(--base) var(--ease-out); }
+  @keyframes subir { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  .sb-foot { flex: none; display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--line); background: var(--card); }
+  .sb-foot .t { flex: 1; font-size: 12.5px; color: var(--ink); line-height: 1.3; }
+  .sb-foot .t small { display: block; color: var(--muted); font-size: 11.5px; }
 </style>
 </head>
 <body>
-  <h3>Estado</h3>
-  <div id="estado" class="box">cargando…</div>
-  <button class="sec" id="btnEscanear" onclick="escanear()">Escanear Gmail ahora</button>
-  <div class="hint" id="hintAutorizar"></div>
+<div class="sb" id="sb">
+  <header class="sb-head">
+    <luca-parcial nombre="_Logo"></luca-parcial>
+    <div class="t"><b>luca<i>.</i></b><small id="subtitulo">cargando…</small></div>
+    <button class="sec guia" id="btnGuia" data-cargando="Abriendo…" onclick="abrirGuia()" title="Guía paso a paso (no bloquea la hoja)"><i data-icon="brujula"></i>Guía</button>
+  </header>
 
-  <h3>API key del LLM (opcional)</h3>
-  <div class="hint">Mejora la categorización de comercios nuevos. Solo viajan comercio + monto + moneda + canal. La key se guarda en tu cuenta (UserProperties), nunca en el Sheet.</div>
-  <div id="llmEstado" class="box">cargando…</div>
-  <select id="llmProvider" onchange="cambiarProveedor()">
-    <option value="gemini">Gemini (Google AI Studio, gratis)</option>
-    <option value="openai">OpenAI</option>
-    <option value="anthropic">Anthropic</option>
-  </select>
-  <input id="llmModel" type="text" placeholder="modelo (vacío = por defecto)">
-  <input id="llmKey" type="password" placeholder="pega tu API key (déjalo vacío para no cambiarla)">
-  <button onclick="guardarKey()">Guardar proveedor, modelo y key</button>
-  <button class="sec" id="btnProbarKey" onclick="probarKey()">Probar key</button>
-  <button class="sec" id="btnCategorizar" onclick="categorizarPendientes()">Categorizar pendientes ahora</button>
-  <label class="chk"><input type="checkbox" id="llmExtract" onchange="guardarExtraer()"><span>Extraer con IA los correos que Luca no reconoce (envía el texto del correo con nombres y números enmascarados)</span></label>
-  <button class="sec" id="btnExtraer" onclick="extraerDesconocidos()">Reintentar desconocidos con IA</button>
-
-  <h3>Importar historial</h3>
-  <div class="hint">Autorizar ya importó el último mes. Para traer más atrás, elige una fecha; el trigger continúa por lotes.</div>
-  <input id="desde" type="date">
-  <button class="sec" onclick="importar()">Importar desde esa fecha</button>
-
-  <h3>URL de tu aplicación web</h3>
-  <div class="hint">Si tienes varias implementaciones, pega aquí la URL de la de tipo "Aplicación web" (termina en <code>/exec</code>). Luca la verifica antes de guardarla.</div>
-  <input id="execUrlManual" placeholder="https://script.google.com/macros/s/…/exec">
-  <button class="sec" onclick="guardarExecUrl()">Verificar y guardar URL</button>
-
-  <h3>Conectar iPhone</h3>
-  <div class="hint">Captura los yapeos recibidos (que no llegan por correo) desde el iPhone, directo a esta hoja. Tres pasos: comprobar el Web App, copiar URL y token (o el prompt completo) y crear el atajo en iOS 27.</div>
-  <div class="box">
-    <div class="paso"><b>1.</b> Web App desplegado (Implementar → Aplicación web → ejecutar como yo, acceso: cualquiera)</div>
-    <div id="iphoneWebApp" class="hint">sin comprobar</div>
-    <button class="sec" id="btnIphoneProbar" onclick="probarWebAppIphone()">Comprobar Web App</button>
+  <div class="notice" id="avisoStub" hidden>
+    <span class="ico" data-icon="alerta"></span>
+    <span id="avisoStubTxt"></span>
+    <button aria-label="Ocultar aviso" onclick="this.parentNode.hidden = true">×</button>
   </div>
-  <div class="box">
-    <div class="paso"><b>2.</b> Datos del atajo</div>
-    <div id="iphoneDatos" class="hint">Pulsa "Conectar iPhone" para generar el token y ver la URL.</div>
-    <button id="btnConectar" onclick="conectar()">Conectar iPhone</button>
-    <div class="copiar"><button class="sec" id="btnCopiarUrl" onclick="copiarUrlIphone()">Copiar URL</button><button class="sec" id="btnCopiarToken" onclick="copiarTokenIphone()">Copiar token</button></div>
+
+  <nav class="tabs" role="tablist" aria-label="Secciones">
+    <button role="tab" aria-selected="true" data-tab="estado"><i data-icon="actividad"></i>Estado<span class="dot" hidden></span></button>
+    <button role="tab" aria-selected="false" data-tab="ia"><i data-icon="chispas"></i>IA<span class="dot" hidden></span></button>
+    <button role="tab" aria-selected="false" data-tab="iphone"><i data-icon="iphone"></i>iPhone<span class="dot" hidden></span></button>
+    <button role="tab" aria-selected="false" data-tab="mcp"><i data-icon="enchufe"></i>MCP<span class="dot" hidden></span></button>
+  </nav>
+
+  <div class="sb-scroll">
+    <!-- ESTADO -->
+    <section class="panel on" id="p-estado" role="tabpanel" aria-label="Estado">
+      <h3>Resumen</h3>
+      <div class="card" id="resumen"><div class="esq"></div><div class="esq media"></div><div class="esq corta"></div></div>
+
+      <h3>Conexiones</h3>
+      <div class="box lista" id="conexiones"><div class="esq"></div><div class="esq media"></div><div class="esq"></div></div>
+
+      <div class="acciones" style="margin-top:4px">
+        <button class="sec" id="btnDashboard" data-cargando="Abriendo…" onclick="abrirDashboard()"><i data-icon="grafico"></i>Dashboard</button>
+        <a class="boton" href="https://lucaa.lat/app" target="_blank" rel="noopener"><i data-icon="externo"></i>lucaa.lat</a>
+      </div>
+
+      <div class="avz">
+        <div class="avz-h"><i data-icon="terminal"></i>Detalles técnicos</div>
+        <div class="box" id="tecnico"></div>
+        <details class="box" style="margin-top:8px">
+          <summary>Importar historial<i data-icon="chevron"></i></summary>
+          <div>
+            <div class="hint" style="margin-top:0">Autorizar ya importó el último mes. Elige desde cuándo traer más; el trigger continúa por lotes.</div>
+            <input id="desde" type="date">
+            <button class="sec" data-cargando="Importando…" onclick="importar()">Importar desde esa fecha</button>
+          </div>
+        </details>
+        <details class="box">
+          <summary>URL del Web App<i data-icon="chevron"></i></summary>
+          <div>
+            <div class="hint" style="margin-top:0">Solo si tienes varias implementaciones: pega la de tipo "Aplicación web" (termina en <code>/exec</code>). Luca la verifica antes de guardarla.</div>
+            <input id="execUrlManual" placeholder="https://script.google.com/macros/s/…/exec">
+            <button class="sec" data-cargando="Verificando…" onclick="guardarExecUrl()">Verificar y guardar URL</button>
+          </div>
+        </details>
+        <details class="box">
+          <summary>Diagnosticar un correo<i data-icon="chevron"></i></summary>
+          <div>
+            <div class="hint" style="margin-top:0">Pega un <code>gmail_id</code> de <code>_Procesados</code> o <code>Movimientos</code>. Muestra la estructura y lo extraído, sin el contenido.</div>
+            <input id="diagId" placeholder="gmail_id">
+            <button class="sec" data-cargando="Diagnosticando…" onclick="diagnosticar()">Diagnosticar correo</button>
+            <pre id="out"></pre>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    <!-- IA -->
+    <section class="panel" id="p-ia" role="tabpanel" aria-label="IA">
+      <h3>Categorización con IA</h3>
+      <div class="card">
+        <div class="card-h"><span class="ico" data-icon="chispas"></span><b>Proveedor</b><span class="pill" id="iaPill">—</span></div>
+        <p class="lead">Categoriza comercios nuevos. Solo viajan comercio, monto, moneda y canal.</p>
+        <div class="seg" id="llmProvider" role="group" aria-label="Proveedor">
+          <button aria-pressed="true" data-p="gemini">Gemini</button>
+          <button aria-pressed="false" data-p="openai">OpenAI</button>
+          <button aria-pressed="false" data-p="anthropic">Anthropic</button>
+        </div>
+        <input id="llmKey" type="password" placeholder="Pega tu API key" autocomplete="off">
+        <div class="hint"><span data-icon="escudo" style="display:inline-flex;vertical-align:-3px;width:14px"></span> Se guarda en tu cuenta de Google (UserProperties), nunca en la hoja.</div>
+        <button data-cargando="Guardando…" onclick="guardarKey()">Guardar</button>
+        <div class="acciones">
+          <button class="sec" id="btnProbarKey" data-cargando="Probando…" onclick="probarKey()">Probar key</button>
+          <button class="sec" id="btnCategorizar" data-cargando="Categorizando…" onclick="categorizarPendientes()">Categorizar</button>
+        </div>
+        <div class="fila-switch">
+          <div class="t">Extraer con IA los correos que Luca no reconoce<small>Envía el texto del correo con nombres y números enmascarados. <span id="desconocidos"></span></small></div>
+          <label class="switch"><input type="checkbox" id="llmExtract" onchange="guardarExtraer()" aria-label="Extraer con IA los correos no reconocidos"><span></span></label>
+        </div>
+      </div>
+      <div class="avz">
+        <div class="avz-h"><i data-icon="terminal"></i>Avanzado</div>
+        <div class="box" id="llmEstado"></div>
+        <input id="llmModel" type="text" placeholder="Modelo (vacío = por defecto)">
+        <button class="sec" id="btnExtraer" data-cargando="Extrayendo…" onclick="extraerDesconocidos()">Reintentar desconocidos con IA</button>
+      </div>
+    </section>
+
+    <!-- iPHONE -->
+    <section class="panel" id="p-iphone" role="tabpanel" aria-label="iPhone">
+      <h3>Yapeos desde el iPhone</h3>
+      <div class="card">
+        <div class="card-h"><span class="ico" data-icon="iphone"></span><b>Atajo de iOS</b><span class="pill" id="ipPill">—</span></div>
+        <p class="lead">Los yapeos recibidos no llegan por correo: un atajo los envía directo a esta hoja.</p>
+      </div>
+      <div class="box pasos" id="pasos"></div>
+      <div id="iphoneAtajo" class="hint"></div>
+      <div class="box" id="iphone" hidden></div>
+      <div class="avz">
+        <div class="avz-h"><i data-icon="terminal"></i>Mantenimiento</div>
+        <div class="box" id="iphoneDatos"></div>
+        <button class="sec" id="btnRegenerar" data-cargando="Regenerando…" onclick="regenerar()">Regenerar token</button>
+        <button class="danger" id="btnDesconectar" data-cargando="Desconectando…" onclick="desconectar()">Desconectar iPhone</button>
+      </div>
+      <textarea id="clip" aria-hidden="true" tabindex="-1" style="position:absolute;left:-9999px;top:0;height:1px;width:1px;opacity:0"></textarea>
+    </section>
+
+    <!-- MCP -->
+    <section class="panel" id="p-mcp" role="tabpanel" aria-label="MCP">
+      <h3>Claude o ChatGPT</h3>
+      <div class="card">
+        <div class="card-h"><span class="ico" data-icon="enchufe"></span><b>Conector</b><span class="pill" id="mcpPill">—</span></div>
+        <p class="lead">Pregúntale a tu IA por tus gastos. Lee tu hoja a través de tu propio Web App.</p>
+        <div id="mcp"></div>
+        <div id="codigo"></div>
+        <button id="btnMcp" data-cargando="Generando código…" onclick="conectarIa()">Generar código de conexión</button>
+        <div class="hint">En tu IA: añade un conector con esa URL y pega el código (válido 10 min) cuando lo pida.</div>
+      </div>
+      <div class="avz">
+        <div class="avz-h"><i data-icon="terminal"></i>Mantenimiento</div>
+        <button class="sec" id="btnProbarWebApp" data-cargando="Probando…" onclick="probarWebApp()">Probar Web App</button>
+        <button class="danger" id="btnMcpOff" data-cargando="Desconectando…" onclick="desconectarIa()">Desconectar IA</button>
+      </div>
+    </section>
   </div>
-  <div class="box">
-    <div class="paso"><b>3.</b> Crear el atajo en iOS 27</div>
-    <div class="hint">Copia el prompt, pégalo en Atajos (generador en lenguaje natural) y luego activa "Permitir con el equipo bloqueado" y la automatización Notificación → Yape. No compartas ese atajo: lleva tu token.</div>
-    <button id="btnPrompt" onclick="copiarPromptIphone()">Copiar prompt para Atajos</button>
-    <div id="iphoneAtajo" class="hint"></div>
-  </div>
-  <div id="iphone" class="box">cargando…</div>
-  <button class="sec" id="btnRegenerar" onclick="regenerar()">Regenerar token</button>
-  <button class="danger" id="btnDesconectar" onclick="desconectar()">Desconectar iPhone</button>
-  <textarea id="clip" aria-hidden="true" style="position:absolute;left:-9999px;top:0;height:1px;width:1px;opacity:0"></textarea>
 
-  <h3>Conectar con tu IA (Claude / ChatGPT)</h3>
-  <div class="hint">Genera un código de un solo uso (10 min). En tu IA añade el conector con la URL que aparece y pega el código cuando te lo pida. Requiere el Web App desplegado.</div>
-  <div id="mcp" class="box">cargando…</div>
-  <button class="sec" id="btnProbarWebApp" onclick="probarWebApp()">Probar Web App</button>
-  <button id="btnMcp" onclick="conectarIa()">Generar código de conexión</button>
-  <button class="danger" id="btnMcpOff" onclick="desconectarIa()">Desconectar IA</button>
+  <footer class="sb-foot">
+    <div class="t">Modo avanzado<small>Versiones, diagnóstico y mantenimiento</small></div>
+    <label class="switch"><input type="checkbox" id="avanzado" onchange="cambiarAvanzado()" aria-label="Modo avanzado"><span></span></label>
+  </footer>
+</div>
 
-  <h3>Diagnóstico</h3>
-  <div class="hint">Pega un <code>gmail_id</code> de la pestaña <code>_Procesados</code> o <code>Movimientos</code>. Devuelve la estructura del correo y qué pudo extraer, sin el contenido.</div>
-  <input id="diagId" placeholder="gmail_id">
-  <button class="sec" onclick="diagnosticar()">Diagnosticar correo</button>
-
-  <pre id="out"></pre>
+<luca-parcial nombre="_Ui"></luca-parcial>
 <script>
-  function run(method) {
-    var args = Array.prototype.slice.call(arguments, 1);
-    return new Promise(function (resolve, reject) {
-      google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).lucaRun(method, JSON.stringify(args));
-    });
-  }
-  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  if (typeof run !== 'function') { document.body.insertAdjacentHTML('afterbegin', '<p style="padding:14px;color:#cf2d56">No se cargó la interfaz de Luca (_Ui). Actualiza LucaLib o avísanos.</p>'); throw new Error('Luca: falta _Ui'); }
+  function $(id) { return document.getElementById(id); }
   function fecha(iso) { return iso ? String(iso).slice(0, 16).replace('T', ' ') : '—'; }
-  function show(x) { document.getElementById('out').textContent = typeof x === 'string' ? x : JSON.stringify(x, null, 2); }
-  function fila(k, v) { return '<div class="row"><span class="muted">' + k + '</span><span>' + v + '</span></div>'; }
+  function hace(iso) {
+    if (!iso) return '';
+    var min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+    if (!(min >= 0)) return fecha(iso);
+    if (min < 2) return 'hace un momento';
+    if (min < 60) return 'hace ' + min + ' min';
+    if (min < 48 * 60) return 'hace ' + Math.round(min / 60) + ' h';
+    return 'hace ' + Math.round(min / 1440) + ' d';
+  }
+  function pill(tipo, txt, id) { return '<span class="pill ' + (tipo || '') + '"' + (id ? ' id="' + id + '"' : '') + '>' + esc(txt) + '</span>'; }
+  function ponerPill(id, tipo, txt) { $(id).outerHTML = pill(tipo, txt, id); }
+  function fila(k, v) { return '<div class="row"><span>' + k + '</span><span>' + v + '</span></div>'; }
+  // Detalle técnico (JSON) → la salida de Diagnóstico; los mensajes cortos van al toast.
+  function salida(x) { var el = $('out'); el.textContent = typeof x === 'string' ? x : JSON.stringify(x, null, 2); el.closest('details').open = true; el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+  function resumenScan(r) { r = r || {}; return 'Nuevos: ' + (r.added || 0) + ' · Ya existentes: ' + (r.skipped || 0) + ' · Ignorados: ' + (r.ignored || 0) + ' · Desconocidos: ' + (r.unknown || 0); }
 
-  function pintarEstado(st) {
-    var s = st.lastStats || {};
-    var imp = st.importacion || {};
-    document.getElementById('estado').innerHTML =
-      fila('Versión LucaLib', 'v' + esc(st.version) + ' <span class="muted">· stub v' + esc(st.stubVersion || '1') + '</span>') +
-      (st.stubUpdate ? '<div class="warn" style="margin:4px 0">' + esc(st.stubUpdate) + '</div>' : '') +
-      fila('Autorizado', st.autorizado ? '<span class="ok">sí</span>' : '<span class="warn">no — usa el menú Luca → Autorizar</span>') +
-      fila('Cursor de Gmail', esc(fecha(st.cursorIso))) +
-      fila('Último escaneo', esc(fecha(st.lastRunAt)) + (st.lastStats ? ' <span class="muted">(+' + (s.added || 0) + ')</span>' : '')) +
-      fila('Escaneo automático', st.triggerInstaladoEn ? '<span class="ok">cada 15 min</span>' : '<span class="warn">no instalado</span>') +
-      fila('Importación', imp.status === 'running' ? '<span class="warn">en curso</span>' : (imp.status || '—')) +
-      fila('Movimientos', '<b>' + st.ledger.total + '</b>' + (st.ledger.sinCategoria ? ' <span class="muted">(' + st.ledger.sinCategoria + ' por categorizar)</span>' : '')) +
-      fila('Recibido por Yape', st.ledger.recibidoYape || 0) +
-      fila('API key LLM', st.secretos.llmKey ? '<span class="ok">configurada</span>' : '<span class="warn">falta (opcional)</span>') +
-      fila('Conexión IA (MCP)', st.secretos.mcp ? '<span class="ok">activa</span>' : '<span class="muted">no conectada</span>');
-    document.getElementById('btnEscanear').disabled = !st.autorizado;
-    document.getElementById('hintAutorizar').textContent = st.autorizado ? '' : 'Primero autoriza desde el menú Luca → Autorizar (instala el escaneo automático e importa el último mes).';
-    pintarLlm(st);
-    pintarIphone({ execUrl: st.execUrl, conectado: st.secretos.iphone, token: '' }, st.iphone);
+  var st = null;          // estadoLuca
+  var webAppOk = false;   // resultado de "Comprobar Web App" en esta sesión
+
+  /* ---- Pestañas (la inicial puede venir del servidor: buildSidebar(tab) → body[data-tab]) ---- */
+  function irA(tab) {
+    document.querySelectorAll('.tabs button').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.tab === tab)); });
+    document.querySelectorAll('.panel').forEach(function (p) { p.classList.toggle('on', p.id === 'p-' + tab); });
+  }
+  document.querySelectorAll('.tabs button').forEach(function (b) { b.onclick = function () { irA(b.dataset.tab); }; });
+  function punto(tab, tipo) {
+    var d = document.querySelector('.tabs [data-tab="' + tab + '"] .dot');
+    d.hidden = !tipo; d.className = 'dot ' + (tipo || '');
+  }
+  if (document.body.dataset.tab) irA(document.body.dataset.tab);
+
+  /* ---- Modo avanzado: preferencia por usuario (UserProperties) ---- */
+  function aplicarAvanzado(on) { $('avanzado').checked = !!on; $('sb').classList.toggle('avanzado', !!on); }
+  function cambiarAvanzado() {
+    var on = $('avanzado').checked;
+    aplicarAvanzado(on);
+    run('guardarPrefUi', { avanzado: on }).catch(fallo);
   }
 
+  /* ---- Estado ---- */
+  function pintarEstado(s) {
+    st = s;
+    var lg = s.ledger || {};
+    $('subtitulo').textContent = 'v' + s.version + ' · ' + (s.autorizado ? (s.lastRunAt ? 'escaneado ' + hace(s.lastRunAt) : 'autorizado') : 'sin autorizar');
+    // Aviso corto arriba; el texto completo (cómo actualizar) va en Detalles técnicos.
+    $('avisoStub').hidden = !s.stubUpdate;
+    $('avisoStub').title = s.stubUpdate || '';
+    $('avisoStubTxt').innerHTML = esc(String(s.stubUpdate || '').split(':')[0]) + '. <a href="#" onclick="verStub();return false">Cómo actualizar</a>';
+    if (s.ui) aplicarAvanzado(s.ui.avanzado);
+
+    if (!s.autorizado) {
+      $('resumen').innerHTML = '<div class="card-h"><span class="ico">' + icono('correo') + '</span><b>Empieza autorizando</b></div>' +
+        '<p class="lead">Luca leerá tus correos del BCP y Yape, importará el último mes y escaneará cada 15 minutos.</p>' +
+        '<div class="notice" style="margin-bottom:0"><span class="ico">' + icono('info') + '</span><span>Abre el menú <b>Luca → ✅ Autorizar / Escanear ahora</b>. Todo queda en tu Google: tu Gmail y esta hoja.</span></div>';
+    } else {
+      var imp = s.importacion || {};
+      var viejo = s.lastRunAt && (Date.now() - new Date(s.lastRunAt).getTime()) > 2 * 3600000;
+      var salud = imp.status === 'running' ? pill('warn', 'Importando historial')
+        : !s.triggerInstaladoEn ? pill('warn', 'Escaneo manual')
+        : viejo ? pill('warn', 'Sin escanear · ' + hace(s.lastRunAt))
+        : pill('ok', 'Al día' + (s.lastRunAt ? ' · ' + hace(s.lastRunAt) : ''));
+      $('resumen').innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><small class="muted">Movimientos</small>' + salud + '</div>' +
+        '<div class="big" style="margin-top:6px">' + (lg.total || 0) + '</div>' +
+        '<div class="trio"><div><small>Por categorizar</small><b>' + (lg.sinCategoria || 0) + '</b></div><div><small>Recibido por Yape</small><b>' + (lg.recibidoYape || 0) + '</b></div></div>' +
+        '<button id="btnEscanear" data-cargando="Escaneando…" onclick="escanear()">' + icono('refrescar') + 'Escanear Gmail ahora</button>';
+    }
+
+    var sec = s.secretos || {}, llm = s.llm || {}, tele = s.iphone || {};
+    var iaErr = !!(sec.llmKey && llm.lastError);
+    var ipListo = !!(sec.iphone && (tele.lastEventAt || tele.lastTestAt));
+    var filas = [
+      ['correo', 'Gmail', s.autorizado ? (s.triggerInstaladoEn ? 'Escaneo cada 15 min' : 'Escaneo automático no instalado') : 'Sin autorizar', s.autorizado && s.triggerInstaladoEn ? 'ok' : 'warn', ''],
+      ['chispas', 'IA para categorizar', sec.llmKey ? (iaErr ? 'La última prueba falló' : (llm.provider || 'IA') + ' · key guardada') : 'Opcional', sec.llmKey ? (iaErr ? 'err' : 'ok') : '', 'ia'],
+      ['iphone', 'iPhone', ipListo ? 'Conectado' + (tele.lastEventAt ? ' · último yapeo ' + hace(tele.lastEventAt) : '') : sec.iphone ? 'Falta probar el atajo' : 'No conectado', ipListo ? 'ok' : 'warn', 'iphone'],
+      ['enchufe', 'Claude / ChatGPT', sec.mcp ? 'Conectado' : 'No conectado', sec.mcp ? 'ok' : '', 'mcp']
+    ];
+    var ETIQ = { ok: 'Listo', warn: 'Pendiente', err: 'Revisar', '': 'Opcional' };
+    $('conexiones').innerHTML = filas.map(function (f) {
+      var dentro = icono(f[0]) + '<span class="t">' + esc(f[1]) + '<small>' + esc(f[2]) + '</small></span>' + pill(f[3], ETIQ[f[3]]);
+      return f[4] ? '<button class="item" onclick="irA(\'' + f[4] + '\')">' + dentro + '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>'
+                  : '<div class="item">' + dentro + '</div>';
+    }).join('');
+
+    var stats = s.lastStats || {};
+    $('tecnico').innerHTML =
+      fila('Versión LucaLib', '<span class="num">v' + esc(s.version) + '</span> <span class="muted">· stub v' + esc(s.stubVersion || '1') + '</span>') +
+      fila('Autorizado', s.autorizado ? '<span class="ok">sí</span>' : '<span class="warn">no</span>') +
+      fila('Cursor de Gmail', '<span class="num">' + esc(fecha(s.cursorIso)) + '</span>') +
+      fila('Último escaneo', '<span class="num">' + esc(fecha(s.lastRunAt)) + '</span>' + (s.lastStats ? ' <span class="muted">(+' + (stats.added || 0) + ')</span>' : '')) +
+      fila('Escaneo automático', s.triggerInstaladoEn ? '<span class="ok">cada 15 min</span>' : '<span class="warn">no instalado</span>') +
+      fila('Importación', (s.importacion || {}).status === 'running' ? '<span class="warn">en curso</span>' : esc((s.importacion || {}).status || '—')) +
+      (s.stubUpdate ? '<div class="notice" id="stubDetalle"><span class="ico">' + icono('alerta') + '</span><span>' + esc(s.stubUpdate) + '</span></div>' : '');
+
+    punto('estado', s.autorizado && s.triggerInstaladoEn ? '' : 'warn');
+    punto('ia', iaErr ? 'err' : '');
+    punto('iphone', s.autorizado && !ipListo ? 'warn' : '');
+    pintarLlm(s);
+    pintarIphone({ execUrl: s.execUrl, conectado: sec.iphone, token: '' }, tele);
+    iconos($('sb'));
+  }
+  function pintar() {
+    cargarIa();
+    return run('estadoLuca').then(pintarEstado).catch(fallo);
+  }
+  function verStub() { aplicarAvanzado(true); irA('estado'); setTimeout(function () { $('tecnico').scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 50); }
+  function escanear() { run('escanearAhora').then(function (r) { toast('Escaneo listo. ' + resumenScan(r)); pintar(); }).catch(fallo); }
+  function abrirGuia() { run('abrirGuia').catch(fallo); }
+  function abrirDashboard() { run('abrirDashboard').catch(fallo); }
+  function importar() {
+    var d = $('desde').value;
+    if (!d) return toast('Elige una fecha.', 'info');
+    var epoch = Math.floor(new Date(d + 'T00:00:00-05:00').getTime() / 1000);
+    run('iniciarImportacion', epoch).then(function (r) { toast('Importación: ' + resumenScan(r) + (r.done ? '.' : '. Sigue en segundo plano.')); pintar(); }).catch(fallo);
+  }
+  function guardarExecUrl() { var u = $('execUrlManual').value.trim(); if (!u) return toast('Pega la URL /exec.', 'info'); run('guardarExecUrl', u).then(function (r) { toast('URL verificada y guardada: ' + r.url); pintar(); }).catch(fallo); }
+  function diagnosticar() { var id = $('diagId').value.trim(); if (!id) return toast('Pega un gmail_id.', 'info'); run('diagnosticarCorreo', id).then(salida).catch(fallo); }
+
+  /* ---- IA ---- */
   var llmDefaults = { gemini: 'gemini-3.7-flash', openai: 'gpt-5-mini', anthropic: 'claude-haiku-4-5-20251001' };
-  function pintarLlm(st) {
-    var llm = st.llm || {};
+  var proveedor = 'gemini';
+  function elegirProveedor(p, cambiarModelo) {
+    proveedor = p;
+    document.querySelectorAll('#llmProvider button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.p === p)); });
+    if (cambiarModelo) $('llmModel').value = llmDefaults[p] || '';
+  }
+  document.querySelectorAll('#llmProvider button').forEach(function (b) { b.onclick = function () { elegirProveedor(b.dataset.p, true); }; });
+  function pintarLlm(s) {
+    var llm = s.llm || {};
     if (llm.defaults) llmDefaults = llm.defaults;
-    var tieneKey = !!(st.secretos && st.secretos.llmKey);
-    document.getElementById('llmEstado').innerHTML =
+    var tieneKey = !!(s.secretos && s.secretos.llmKey);
+    var sinCat = (s.ledger && s.ledger.sinCategoria) || 0;
+    if (!tieneKey) ponerPill('iaPill', '', 'Opcional');
+    else if (llm.lastError) ponerPill('iaPill', 'err', 'Revisar');
+    else ponerPill('iaPill', 'ok', 'Activa');
+    if (llm.provider) elegirProveedor(llm.provider, false);
+    $('llmModel').value = llm.model || '';
+    $('llmKey').placeholder = tieneKey ? '•••••••• guardada · pega otra para cambiarla' : 'Pega tu API key';
+    $('llmEstado').innerHTML =
       fila('Key', tieneKey ? '<span class="ok">configurada</span>' : '<span class="warn">falta</span>') +
       fila('Proveedor / modelo', esc(llm.provider || '') + ' · <code>' + esc(llm.model || '') + '</code>') +
-      fila('Última prueba', esc(fecha(llm.lastTestAt)) + (llm.lastError ? ' <span class="warn">' + esc(llm.lastError) + '</span>' : (llm.lastTestAt ? ' <span class="ok">ok</span>' : ''))) +
-      fila('Por categorizar', st.ledger && st.ledger.sinCategoria || 0) +
-      fila('Correos no reconocidos', llm.desconocidos || 0);
-    var sel = document.getElementById('llmProvider');
-    if (llm.provider) sel.value = llm.provider;
-    document.getElementById('llmModel').value = llm.model || '';
-    document.getElementById('btnProbarKey').disabled = !tieneKey;
-    document.getElementById('btnCategorizar').disabled = !tieneKey || !(st.ledger && st.ledger.sinCategoria);
-    var chk = document.getElementById('llmExtract');
+      fila('Última prueba', '<span class="num">' + esc(fecha(llm.lastTestAt)) + '</span>' + (llm.lastError ? ' <span class="err">' + esc(llm.lastError) + '</span>' : (llm.lastTestAt ? ' <span class="ok">ok</span>' : ''))) +
+      fila('Por categorizar', '<span class="num">' + sinCat + '</span>') +
+      fila('Correos no reconocidos', '<span class="num">' + (llm.desconocidos || 0) + '</span>');
+    $('btnProbarKey').disabled = !tieneKey;
+    $('btnCategorizar').disabled = !tieneKey || !sinCat;
+    $('btnCategorizar').textContent = 'Categorizar' + (sinCat ? ' (' + sinCat + ')' : '');
+    var chk = $('llmExtract');
     chk.checked = !!llm.extractUnknown;
     chk.disabled = !tieneKey;
-    document.getElementById('btnExtraer').disabled = !tieneKey || !llm.extractUnknown || !llm.desconocidos;
+    $('desconocidos').textContent = tieneKey && llm.desconocidos ? llm.desconocidos + ' sin reconocer.' : '';
+    $('btnExtraer').disabled = !tieneKey || !llm.extractUnknown || !llm.desconocidos;
   }
-  function guardarExtraer() {
-    var on = document.getElementById('llmExtract').checked;
-    show('guardando…');
-    run('guardarAjustes', { 'llm.extractUnknown': on ? 'true' : 'false' })
-      .then(function () { pintar(); show(on ? 'Extracción con IA activada: el escaneo probará con el LLM los correos no reconocidos.' : 'Extracción con IA desactivada.'); })
-      .catch(function (e) { show('Error: ' + e.message); });
-  }
-  function extraerDesconocidos() {
-    show('reintentando con IA…');
-    run('extraerDesconocidos', { limit: 20 }).then(function (r) {
-      show('Revisados: ' + r.procesados + ' · Extraídos: ' + r.extraidos + ' · Descartados: ' + r.ignorados + ' · Llamadas al LLM: ' + r.llmCalls + (r.llmErrores ? ' · Errores: ' + r.llmErrores : '') + ' · Siguen sin reconocer: ' + r.restantes);
-      pintar();
-    }).catch(function (e) { show('Error: ' + e.message); });
-  }
-  function cambiarProveedor() {
-    document.getElementById('llmModel').value = llmDefaults[document.getElementById('llmProvider').value] || '';
+  function guardarKey() {
+    var model = $('llmModel').value.trim() || llmDefaults[proveedor] || '';
+    var key = $('llmKey').value.trim();
+    run('guardarAjustes', { 'llm.provider': proveedor, 'llm.model': model })
+      .then(function () { return key ? run('guardarLlmKey', key) : null; })
+      .then(function () { $('llmKey').value = ''; pintar(); toast(key ? 'Proveedor, modelo y key guardados.' : 'Proveedor y modelo guardados (la key no cambió).'); })
+      .catch(fallo);
   }
   function probarKey() {
-    show('probando…');
-    run('probarLlm').then(function (r) { show((r.ok ? 'OK: ' : 'Error: ') + r.mensaje + (r.ms ? ' (' + r.ms + ' ms)' : '')); pintar(); }).catch(function (e) { show('Error: ' + e.message); });
+    run('probarLlm').then(function (r) { toast(r.mensaje + (r.ms ? ' (' + r.ms + ' ms)' : ''), r.ok ? 'ok' : 'error'); pintar(); }).catch(fallo);
   }
   function categorizarPendientes() {
-    show('categorizando pendientes…');
     run('categorizarPendientes', { limit: 50 }).then(function (r) {
-      show('Revisadas: ' + r.procesadas + ' · Categorizadas: ' + r.categorizadas + ' · Llamadas al LLM: ' + r.llmCalls + (r.llmErrores ? ' · Errores: ' + r.llmErrores : '') + ' · Quedan: ' + r.restantes);
+      toast('Revisadas: ' + r.procesadas + ' · Categorizadas: ' + r.categorizadas + ' · Llamadas al LLM: ' + r.llmCalls + (r.llmErrores ? ' · Errores: ' + r.llmErrores : '') + ' · Quedan: ' + r.restantes, r.llmErrores ? 'info' : 'ok');
       pintar();
-    }).catch(function (e) { show('Error: ' + e.message); });
+    }).catch(fallo);
+  }
+  function guardarExtraer() {
+    var on = $('llmExtract').checked;
+    run('guardarAjustes', { 'llm.extractUnknown': on ? 'true' : 'false' })
+      .then(function () { pintar(); toast(on ? 'Extracción con IA activada: el escaneo probará con el LLM los correos no reconocidos.' : 'Extracción con IA desactivada.'); })
+      .catch(function (e) { $('llmExtract').checked = !on; fallo(e); });
+  }
+  function extraerDesconocidos() {
+    run('extraerDesconocidos', { limit: 20 }).then(function (r) {
+      toast('Revisados: ' + r.procesados + ' · Extraídos: ' + r.extraidos + ' · Descartados: ' + r.ignorados + ' · Llamadas al LLM: ' + r.llmCalls + (r.llmErrores ? ' · Errores: ' + r.llmErrores : '') + ' · Siguen sin reconocer: ' + r.restantes, r.llmErrores ? 'info' : 'ok');
+      pintar();
+    }).catch(fallo);
   }
 
-  // --- Conectar iPhone (mini-wizard) ---
+  /* ---- iPhone: tres pasos (Web App → datos del atajo → crear el atajo) ---- */
   var iphoneDatos = { execUrl: '', eventsUrl: '', token: '', shortcutUrl: '', shortcutDisponible: false, conectado: false };
+  var teleIphone = {};
 
   function copiarTexto(texto, etiqueta) {
-    var ta = document.getElementById('clip');
+    var ta = $('clip');
     function fallback() {
       ta.value = texto; ta.select(); ta.setSelectionRange(0, texto.length);
       var ok = false; try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
-      show(ok ? etiqueta + ' copiado al portapapeles.' : 'No se pudo copiar automáticamente; selecciona y copia este texto:\n\n' + texto);
+      if (ok) toast(etiqueta + ' copiado al portapapeles.');
+      else { aplicarAvanzado(true); salida(texto); toast('No se pudo copiar automáticamente: selecciónalo en Diagnóstico y cópialo.', 'error'); }
     }
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(texto).then(function () { show(etiqueta + ' copiado al portapapeles.'); }).catch(fallback);
+      navigator.clipboard.writeText(texto).then(function () { toast(etiqueta + ' copiado al portapapeles.'); }).catch(fallback);
     } else fallback();
   }
-  function copiarUrlIphone() { if (!iphoneDatos.eventsUrl) return show('Primero pulsa "Conectar iPhone".'); copiarTexto(iphoneDatos.eventsUrl, 'URL de eventos'); }
-  function copiarTokenIphone() { if (!iphoneDatos.token) return show('Primero pulsa "Conectar iPhone".'); copiarTexto(iphoneDatos.token, 'Token'); }
-  function copiarPromptIphone() {
-    show('generando prompt…');
-    run('generarPromptIphone').then(function (r) {
-      iphoneDatos = Object.assign({}, iphoneDatos, r, { conectado: !!r.token });
-      copiarTexto(r.prompt, 'Prompt para Atajos');
-      run('estadoLuca').then(function (st) { pintarIphone(iphoneDatos, st.iphone); });
-    }).catch(function (e) { show('Error: ' + e.message); });
+  function copiarUrlIphone() { if (!iphoneDatos.eventsUrl) return toast('Primero pulsa "Conectar iPhone".', 'info'); copiarTexto(iphoneDatos.eventsUrl, 'URL de eventos'); }
+  function copiarTokenIphone() { if (!iphoneDatos.token) return toast('Primero pulsa "Conectar iPhone".', 'info'); copiarTexto(iphoneDatos.token, 'Token'); }
+
+  function pasoHtml(i, hechos, titulo, texto, cuerpo) {
+    var cls = i < hechos ? 'hecho' : i === hechos ? 'activo' : '';
+    return '<div class="pas ' + cls + '" onclick="abrirPaso(this)"><div class="pas-h"><span class="pas-n">' + (i < hechos ? icono('check') : i + 1) + '</span>' +
+      '<span class="t">' + titulo + '<small>' + (i < hechos ? 'Hecho' : i === hechos ? 'Siguiente paso' : 'Pendiente') + '</small></span></div>' +
+      '<div class="pas-c"><div><div class="hint" style="margin-top:0">' + texto + '</div>' + cuerpo + '</div></div></div>';
   }
-  function probarWebAppIphone() {
-    var el = document.getElementById('iphoneWebApp');
-    el.className = 'hint'; el.textContent = 'comprobando…';
-    run('probarWebApp').then(function (r) {
-      var ok = !!(r.challenge && r.challenge.sigOk);
-      el.className = ok ? 'ok' : 'warn';
-      el.textContent = (ok ? 'OK: ' : '') + r.veredicto;
-      show(r.veredicto + '\n\n' + JSON.stringify(r, null, 2));
-      if (ok) pintar();
-    }).catch(function (e) { el.className = 'warn'; el.textContent = 'Error: ' + e.message; });
+  function abrirPaso(el) {
+    if (el.classList.contains('activo')) return;
+    el.parentNode.querySelectorAll('.pas').forEach(function (x) { x.classList.remove('activo'); });
+    el.classList.add('activo');
   }
 
   function pintarIphone(d, tele) {
-    tele = tele || {};
+    teleIphone = tele = tele || {};
     if (d.token) iphoneDatos = d; else iphoneDatos = Object.assign({}, iphoneDatos, { execUrl: d.execUrl || iphoneDatos.execUrl, conectado: d.conectado });
-    var datos = document.getElementById('iphoneDatos');
-    if (!d.execUrl) {
-      datos.innerHTML = '<span class="warn">Web App no desplegado: falta la URL /exec. Completa el paso 1.</span>';
-    } else if (iphoneDatos.token) {
-      datos.innerHTML = fila('URL de eventos', '<code>' + esc(iphoneDatos.eventsUrl) + '</code>') + fila('Token', '<code>' + esc(iphoneDatos.token) + '</code>');
-    } else {
-      datos.innerHTML = fila('URL del Web App', '<code>' + esc(d.execUrl) + '</code>') + '<div class="hint">' + (d.conectado ? 'Pulsa "Ver datos del atajo" para volver a ver la URL de eventos y el token.' : 'Pulsa "Conectar iPhone" para generar el token.') + '</div>';
-    }
-    var atajo = document.getElementById('iphoneAtajo');
-    atajo.innerHTML = (iphoneDatos.shortcutDisponible && iphoneDatos.shortcutUrl)
+    var execUrl = d.execUrl || iphoneDatos.execUrl;
+    var probado = !!(tele.lastEventAt || tele.lastTestAt);
+    var hechos = !(execUrl && (webAppOk || iphoneDatos.conectado)) ? 0 : !iphoneDatos.conectado ? 1 : !probado ? 2 : 3;
+
+    var p1 = '<div id="iphoneWebApp" class="hint">' + (execUrl ? 'URL: <code>' + esc(execUrl) + '</code>' : '<span class="warn">Falta la URL /exec: despliega el Web App.</span>') + '</div>' +
+      '<button class="' + (hechos === 0 ? '' : 'sec') + '" id="btnIphoneProbar" data-cargando="Comprobando…" onclick="probarWebAppIphone()">Comprobar Web App</button>';
+    var datos = iphoneDatos.token
+      ? '<div class="dato"><div><small>URL de eventos</small><code>' + esc(iphoneDatos.eventsUrl) + '</code></div><button class="sec icono" id="btnCopiarUrl" aria-label="Copiar URL" onclick="copiarUrlIphone()">' + icono('copiar') + '</button></div>' +
+        '<div class="dato"><div><small>Token</small><code>' + esc(iphoneDatos.token) + '</code></div><button class="sec icono" id="btnCopiarToken" aria-label="Copiar token" onclick="copiarTokenIphone()">' + icono('copiar') + '</button></div>'
+      : '';
+    var p2 = datos + '<button class="' + (hechos === 1 ? '' : 'sec') + '" id="btnConectar" data-cargando="Generando…" onclick="conectar()"' + (execUrl ? '' : ' disabled') + '>' +
+      (iphoneDatos.conectado ? 'Ver datos del atajo' : 'Conectar iPhone') + '</button>';
+    var p3 = '<button class="' + (hechos === 2 ? '' : 'sec') + '" id="btnPrompt" data-cargando="Generando prompt…" onclick="copiarPromptIphone()"' + (execUrl ? '' : ' disabled') + '>Copiar prompt para Atajos</button>' +
+      (iphoneDatos.conectado && !probado ? '<div class="hint">Luego, en el iPhone, ejecuta a mano "Luca – Captura Yape" (▶): envía una prueba y este paso se marca solo.</div>' : '');
+    $('pasos').innerHTML =
+      pasoHtml(0, hechos, 'Web App desplegado', 'Implementar → Aplicación web → ejecutar como yo, acceso: cualquiera.', p1) +
+      pasoHtml(1, hechos, 'Datos del atajo', 'Genera tu token: el atajo lo usa para escribir solo en esta hoja.', p2) +
+      pasoHtml(2, hechos, 'Crear el atajo en iOS 27', 'Pega el prompt en Atajos (generador en lenguaje natural), activa "Permitir con el equipo bloqueado" y la automatización Notificación → Yape. No compartas ese atajo: lleva tu token.', p3);
+
+    $('iphoneAtajo').innerHTML = (iphoneDatos.shortcutDisponible && iphoneDatos.shortcutUrl)
       ? 'Alternativa: <a href="' + esc(iphoneDatos.shortcutUrl) + '" target="_blank">Instalar atajo (iCloud)</a> y responder URL y token al importarlo.'
       : '';
-    var html = '';
-    if (!d.conectado) {
-      html += fila('Estado', '<span class="muted">no conectado</span>');
-    } else {
-      html += fila('Estado', '<span class="ok">conectado</span>') +
-        (tele.device ? fila('Dispositivo', esc(tele.device)) : '') +
-        fila('Eventos recibidos', tele.eventsCount || 0) +
-        fila('Último evento', esc(fecha(tele.lastEventAt))) +
-        fila('Última prueba', esc(fecha(tele.lastTestAt))) +
-        (tele.lastError ? fila('Último error', '<span class="warn">' + esc(tele.lastError) + '</span>') : '') +
-        (tele.execUrl && d.execUrl && tele.execUrl !== d.execUrl ? '<div class="warn" style="margin-top:4px">La URL /exec cambió desde que generaste el atajo: vuelve a copiar el prompt (o edita la URL en el atajo).</div>' : '') +
-        '<div class="hint" style="margin-top:6px">En el iPhone, abre Atajos y ejecuta a mano "Luca – Captura Yape" (▶): sin notificación envía una prueba y revisa "Última prueba" aquí.</div>';
-    }
-    document.getElementById('iphone').innerHTML = html;
-    document.getElementById('btnConectar').textContent = d.conectado ? 'Ver datos del atajo' : 'Conectar iPhone';
-    document.getElementById('btnCopiarUrl').disabled = !iphoneDatos.eventsUrl;
-    document.getElementById('btnCopiarToken').disabled = !iphoneDatos.token;
-    document.getElementById('btnPrompt').disabled = !d.execUrl;
-    document.getElementById('btnRegenerar').disabled = !d.conectado;
-    document.getElementById('btnDesconectar').disabled = !d.conectado;
-  }
 
-  function pintarMcp(st) {
-    var html = fila('Estado', st.connected ? '<span class="ok">conectada</span>' : '<span class="muted">no conectada</span>') +
-      fila('URL del conector', '<code>' + esc(st.connectorUrl) + '</code>') +
-      (st.webApp && !st.webApp.ready ? '<div class="warn" style="margin-top:6px">' + esc(st.webApp.message) + '</div>' : '');
-    if (st.code) html += '<div class="hint" style="margin-top:8px">Código (válido ' + Math.round((st.expiresInSeconds || 600) / 60) + ' min):</div><div style="font-size:22px;font-weight:700;letter-spacing:.2em">' + esc(st.code) + '</div>';
-    document.getElementById('mcp').innerHTML = html;
-    document.getElementById('btnMcp').disabled = !!(st.webApp && !st.webApp.ready);
-    document.getElementById('btnMcpOff').disabled = !st.connected;
+    if (hechos === 3) ponerPill('ipPill', 'ok', 'Conectado');
+    else ponerPill('ipPill', 'warn', 'Paso ' + (hechos + 1) + ' de 3');
+
+    var tel = $('iphone');
+    tel.hidden = !iphoneDatos.conectado;
+    tel.innerHTML = !iphoneDatos.conectado ? '' :
+      (tele.device ? fila('Dispositivo', esc(tele.device)) : '') +
+      fila('Eventos recibidos', '<span class="num">' + (tele.eventsCount || 0) + '</span>') +
+      fila('Último evento', '<span class="num">' + esc(fecha(tele.lastEventAt)) + '</span>') +
+      fila('Última prueba', '<span class="num">' + esc(fecha(tele.lastTestAt)) + '</span>') +
+      (tele.lastError ? fila('Último error', '<span class="err">' + esc(tele.lastError) + '</span>') : '') +
+      (tele.execUrl && execUrl && tele.execUrl !== execUrl ? '<div class="notice"><span class="ico">' + icono('alerta') + '</span><span>La URL /exec cambió desde que generaste el atajo: vuelve a copiar el prompt (o edita la URL en el atajo).</span></div>' : '');
+
+    $('iphoneDatos').innerHTML = fila('Estado', iphoneDatos.conectado ? '<span class="ok">conectado</span>' : '<span class="muted">no conectado</span>') +
+      fila('Token', iphoneDatos.token ? '<code>' + esc(iphoneDatos.token) + '</code>' : '<span class="muted">' + (iphoneDatos.conectado ? 'pulsa "Ver datos del atajo"' : '—') + '</span>');
+    $('btnRegenerar').disabled = !iphoneDatos.conectado;
+    $('btnDesconectar').disabled = !iphoneDatos.conectado;
   }
-  function probarWebApp() { show('probando el Web App…'); run('probarWebApp').then(function (r) { show(r.veredicto + '\n\n' + JSON.stringify(r, null, 2)); }).catch(function (e) { show('Error: ' + e.message); }); }
-  function cargarIa() { run('cargarMcp').then(pintarMcp).catch(function (e) { document.getElementById('mcp').textContent = 'Error: ' + e.message; }); }
-  function conectarIa() {
-    show('generando código…');
-    run('iniciarConexionMcp').then(function (r) { run('cargarMcp').then(function (st) { st.code = r.code; st.expiresInSeconds = r.expiresInSeconds; pintarMcp(st); }); show('Código generado. Pégalo en la pantalla de autorización de tu IA.'); })
-      .catch(function (e) { show('Error: ' + e.message); });
-  }
-  function desconectarIa() {
-    if (!confirm('¿Desconectar la IA? Tus conectores dejarán de funcionar hasta que generes un código nuevo.')) return;
-    run('desconectarMcp').then(function () { cargarIa(); pintar(); show('IA desconectada.'); }).catch(function (e) { show('Error: ' + e.message); });
-  }
-  function diagnosticar() { var id = document.getElementById('diagId').value.trim(); if (!id) return show('Pega un gmail_id.'); show('diagnosticando…'); run('diagnosticarCorreo', id).then(show).catch(function (e) { show('Error: ' + e.message); }); }
-  function guardarExecUrl() { var u = document.getElementById('execUrlManual').value.trim(); if (!u) return show('Pega la URL /exec.'); show('verificando…'); run('guardarExecUrl', u).then(function (r) { show('URL verificada y guardada: ' + r.url); pintar(); }).catch(function (e) { show('Error: ' + e.message); }); }
-  function pintar() {
-    cargarIa();
-    run('estadoLuca').then(pintarEstado).catch(function (e) { show('Error: ' + e.message); });
-  }
-  function escanear() { show('escaneando…'); run('escanearAhora').then(function (r) { show(r); pintar(); }).catch(function (e) { show('Error: ' + e.message); }); }
-  function guardarKey() {
-    var provider = document.getElementById('llmProvider').value;
-    var model = document.getElementById('llmModel').value.trim() || llmDefaults[provider] || '';
-    var key = document.getElementById('llmKey').value.trim();
-    show('guardando…');
-    run('guardarAjustes', { 'llm.provider': provider, 'llm.model': model })
-      .then(function () { return key ? run('guardarLlmKey', key) : null; })
-      .then(function () { document.getElementById('llmKey').value = ''; pintar(); show(key ? 'Proveedor, modelo y key guardados.' : 'Proveedor y modelo guardados (la key no cambió).'); })
-      .catch(function (e) { show('Error: ' + e.message); });
-  }
-  function importar() {
-    var d = document.getElementById('desde').value;
-    if (!d) return show('Elige una fecha.');
-    var epoch = Math.floor(new Date(d + 'T00:00:00-05:00').getTime() / 1000);
-    show('importando…'); run('iniciarImportacion', epoch).then(function (r) { show(r); pintar(); }).catch(function (e) { show('Error: ' + e.message); });
+  function refrescarIphone(d) { return run('estadoLuca').then(function (s) { st = s; pintarIphone(d || { execUrl: s.execUrl, conectado: s.secretos.iphone, token: '' }, s.iphone); }); }
+  function probarWebAppIphone() {
+    run('probarWebApp').then(function (r) {
+      webAppOk = !!(r.challenge && r.challenge.sigOk);
+      toast(r.veredicto, webAppOk ? 'ok' : 'error');
+      if (webAppOk) pintar(); else refrescarIphone();
+    }).catch(fallo);
   }
   function conectar() {
-    run('conectarIphone').then(function (d) { run('estadoLuca').then(function (st) { pintarIphone(d, st.iphone); }); show('Token listo. Usa los botones Copiar o copia el prompt completo para Atajos.'); })
-      .catch(function (e) { show('Error: ' + e.message); });
+    run('conectarIphone').then(function (d) { refrescarIphone(d); toast('Token listo. Copia la URL y el token, o el prompt completo para Atajos.'); }).catch(fallo);
+  }
+  function copiarPromptIphone() {
+    run('generarPromptIphone').then(function (r) {
+      iphoneDatos = Object.assign({}, iphoneDatos, r, { conectado: !!r.token });
+      copiarTexto(r.prompt, 'Prompt para Atajos');
+      refrescarIphone(iphoneDatos);
+    }).catch(fallo);
   }
   function regenerar() {
     if (!confirm('El token anterior dejará de funcionar y tendrás que actualizarlo en el atajo. ¿Continuar?')) return;
-    run('regenerarTokenIphone').then(function (d) { run('estadoLuca').then(function (st) { pintarIphone(d, st.iphone); }); show('Token regenerado.'); })
-      .catch(function (e) { show('Error: ' + e.message); });
+    run('regenerarTokenIphone').then(function (d) { refrescarIphone(d); toast('Token regenerado. Actualízalo en el atajo.'); }).catch(fallo);
   }
   function desconectar() {
     if (!confirm('El iPhone dejará de poder enviar eventos a esta hoja. ¿Desconectar?')) return;
-    run('desconectarIphone').then(function () { iphoneDatos = { execUrl: iphoneDatos.execUrl, eventsUrl: '', token: '', shortcutUrl: '', shortcutDisponible: false, conectado: false }; pintar(); show('iPhone desconectado.'); }).catch(function (e) { show('Error: ' + e.message); });
+    run('desconectarIphone').then(function () { iphoneDatos = { execUrl: iphoneDatos.execUrl, eventsUrl: '', token: '', shortcutUrl: '', shortcutDisponible: false, conectado: false }; pintar(); toast('iPhone desconectado.'); }).catch(fallo);
   }
+
+  /* ---- MCP: conector + código de un solo uso con cuenta atrás ---- */
+  var cuenta = null;
+  var connectorUrl = '';
+  function copiarConector() { copiarTexto(connectorUrl, 'URL del conector'); }
+  function anillo(frac, texto) {
+    var r = 18, c = 2 * Math.PI * r;
+    return '<svg viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="' + r + '" fill="none" stroke="var(--strong)" stroke-width="4"/>' +
+      '<circle cx="22" cy="22" r="' + r + '" fill="none" stroke="var(--primary)" stroke-width="4" stroke-linecap="round" stroke-dasharray="' + c + '" stroke-dashoffset="' + (c * (1 - frac)) + '" style="transition:stroke-dashoffset var(--slow) var(--ease-out)"/></svg><span>' + texto + '</span>';
+  }
+  function mostrarCodigo(code, segundos) {
+    clearInterval(cuenta);
+    var total = segundos || 600, seg = total;
+    function tic() {
+      var m = Math.floor(seg / 60), s = ('0' + (seg % 60)).slice(-2);
+      $('codigo').innerHTML = '<div class="codigo"><div class="anillo">' + anillo(seg / total, m + ':' + s) + '</div><div><small class="muted">Código de un solo uso</small><div class="big">' + esc(code) + '</div></div></div>';
+      if (--seg < 0) { clearInterval(cuenta); $('codigo').innerHTML = ''; toast('El código caducó: genera otro.', 'info'); }
+    }
+    tic(); cuenta = setInterval(tic, 1000);
+  }
+  function pintarMcp(m) {
+    connectorUrl = m.connectorUrl || '';
+    if (m.connected) ponerPill('mcpPill', 'ok', 'Conectado'); else ponerPill('mcpPill', '', 'No conectado');
+    $('mcp').innerHTML =
+      '<div class="dato"><div><small>URL del conector</small><code>' + esc(m.connectorUrl) + '</code></div><button class="sec icono" aria-label="Copiar URL del conector" onclick="copiarConector()">' + icono('copiar') + '</button></div>' +
+      (m.webApp && !m.webApp.ready ? '<div class="notice"><span class="ico">' + icono('alerta') + '</span><span>' + esc(m.webApp.message) + '</span></div>' : '');
+    $('btnMcp').disabled = !!(m.webApp && !m.webApp.ready);
+    $('btnMcp').textContent = m.connected ? 'Generar otro código' : 'Generar código de conexión';
+    $('btnMcpOff').disabled = !m.connected;
+    punto('mcp', '');
+  }
+  function cargarIa() { run('cargarMcp').then(pintarMcp).catch(function (e) { $('mcp').innerHTML = '<div class="hint err">' + esc(e.message) + '</div>'; }); }
+  function conectarIa() {
+    run('iniciarConexionMcp').then(function (r) { mostrarCodigo(r.code, r.expiresInSeconds); cargarIa(); toast('Código generado. Pégalo en la pantalla de autorización de tu IA.'); }).catch(fallo);
+  }
+  function probarWebApp() { run('probarWebApp').then(function (r) { var ok = !!(r.challenge && r.challenge.sigOk); toast(r.veredicto, ok ? 'ok' : 'error'); salida(r); }).catch(fallo); }
+  function desconectarIa() {
+    if (!confirm('¿Desconectar la IA? Tus conectores dejarán de funcionar hasta que generes un código nuevo.')) return;
+    run('desconectarMcp').then(function () { clearInterval(cuenta); $('codigo').innerHTML = ''; pintar(); toast('IA desconectada.'); }).catch(fallo);
+  }
+
   pintar();
 </script>
 </body>

@@ -20,6 +20,7 @@ const SHARED = path.join(HERE, '..', 'gas', 'shared');
 export const RUNTIME_FILES = [
   'sheets-runtime.js',
   'settings-runtime.js',
+  'estilo-hojas-runtime.js',
   'secrets-runtime.js',
   'iphone-runtime.js',
   'llm-runtime.js',
@@ -31,13 +32,15 @@ export const RUNTIME_FILES = [
   'mime-runtime.js',
   'gmail-scan-runtime.js',
   'webapp-runtime.js',
+  'dashboard-runtime.js',
   'ui-runtime.js',
   'mcp-runtime.js'
 ];
 
 let sheetIdSeq = 1;
 
-function makeRange(data, row, col, nr, nc) {
+function makeRange(data, row, col, nr, nc, est) {
+  const reg = (op, arg) => { if (est) est.ops.push({ op, row, col, nr, nc, arg }); return range; };
   const range = {
     getValues() {
       const out = [];
@@ -58,9 +61,24 @@ function makeRange(data, row, col, nr, nc) {
       }
       return range;
     },
-    setNumberFormat() { return range; },
-    setFontWeight() { return range; },
-    setBackground() { return range; }
+    setNumberFormat: (f) => reg('numberFormat', f),
+    setFontWeight: (w) => reg('fontWeight', w),
+    setBackground: (c) => reg('background', c),
+    setFontFamily: (f) => reg('fontFamily', f),
+    setFontColor: (c) => reg('fontColor', c),
+    setVerticalAlignment: (a) => reg('vAlign', a),
+    setHorizontalAlignment: (a) => reg('hAlign', a),
+    setWrapStrategy: (w) => reg('wrap', w),
+    setBorder: (...a) => reg('border', a),
+    shiftColumnGroupDepth: (d) => { for (let c = col; c < col + nc; c++) est.groups[c] = (est.groups[c] || 0) + d; return range; },
+    applyRowBanding: (theme) => {
+      const b = { theme, row, col, nr, nc, colors: {}, remove: () => { est.bandings.splice(est.bandings.indexOf(b), 1); } };
+      b.setHeaderRowColor = (c) => { b.colors.header = c; return b; };
+      b.setFirstRowColor = (c) => { b.colors.first = c; return b; };
+      b.setSecondRowColor = (c) => { b.colors.second = c; return b; };
+      est.bandings.push(b);
+      return b;
+    }
   };
   return range;
 }
@@ -70,7 +88,10 @@ function makeSheet(name, data) {
   let _name = name;
   const numRows = () => data.length;
   const numCols = () => data.reduce((m, r) => Math.max(m, (r && r.length) || 0), 0);
+  // Estilo aplicado (estilo-hojas-runtime.js), para que los tests lo inspeccionen.
+  const est = { ops: [], widths: {}, groups: {}, collapsed: [], bandings: [], rules: [], tabColor: null, rowHeights: {}, hiddenGridlines: false, frozenRows: 0 };
   return {
+    _estilo: est,
     _data: data,
     getName: () => _name,
     setName: (n) => { _name = n; },
@@ -78,9 +99,18 @@ function makeSheet(name, data) {
     getLastRow: () => numRows(),
     getLastColumn: () => numCols(),
     getMaxRows: () => Math.max(numRows(), 2),
-    getRange: (row, col, nr = 1, nc = 1) => makeRange(data, row, col, nr, nc),
-    getDataRange: () => makeRange(data, 1, 1, Math.max(numRows(), 1), Math.max(numCols(), 1)),
-    setFrozenRows: () => {},
+    getRange: (row, col, nr = 1, nc = 1) => makeRange(data, row, col, nr, nc, est),
+    getDataRange: () => makeRange(data, 1, 1, Math.max(numRows(), 1), Math.max(numCols(), 1), est),
+    setFrozenRows: (n) => { est.frozenRows = n; },
+    setRowHeight: (r, px) => { est.rowHeights[r] = px; },
+    setColumnWidth: (c, px) => { est.widths[c] = px; },
+    setHiddenGridlines: (v) => { est.hiddenGridlines = v; },
+    setTabColor: (c) => { est.tabColor = c; },
+    getBandings: () => est.bandings.slice(),
+    setConditionalFormatRules: (rules) => { est.rules = rules.slice(); },
+    getConditionalFormatRules: () => est.rules.slice(),
+    getColumnGroupDepth: (c) => est.groups[c] || 0,
+    getColumnGroup: (c, depth) => ({ collapse: () => { est.collapsed.push(c); } }),
     clearContents: () => { data.length = 0; }
   };
 }
@@ -146,6 +176,7 @@ export function makeHarness(opts = {}) {
     fetchCalls: [],
     uiCalls: [],
     alerts: [],
+    toasts: [],
     fetch: opts.fetch || (() => { throw new Error('UrlFetchApp.fetch no fue mockeado'); })
   };
   const byId = {};
@@ -197,18 +228,49 @@ export function makeHarness(opts = {}) {
     Gmail: gmail,
     SpreadsheetApp: {
       openById: (id) => { if (!byId[id]) throw new Error('Spreadsheet no mockeado: ' + id); return byId[id]; },
+      getActiveSpreadsheet: () => ({ toast: (...a) => { state.toasts.push(a); } }),
       flush: () => {},
+      BorderStyle: { SOLID_MEDIUM: 'SOLID_MEDIUM' },
+      BandingTheme: { LIGHT_GREY: 'LIGHT_GREY' },
+      WrapStrategy: { CLIP: 'CLIP' },
+      newConditionalFormatRule: () => {
+        const r = {};
+        const b = {
+          whenTextEqualTo: (t) => { r.text = t; return b; },
+          whenFormulaSatisfied: (f) => { r.formula = f; return b; },
+          setBackground: (c) => { r.background = c; return b; },
+          setFontColor: (c) => { r.fontColor = c; return b; },
+          setRanges: (rs) => { r.ranges = rs; return b; },
+          build: () => r
+        };
+        return b;
+      },
       getUi: () => ({
         alert: (...a) => { state.alerts.push(a); },
         showModalDialog: (html, titulo) => { state.uiCalls.push({ kind: 'modal', html, titulo }); },
+        showModelessDialog: (html, titulo) => { state.uiCalls.push({ kind: 'modeless', html, titulo }); },
         showSidebar: (html) => { state.uiCalls.push({ kind: 'sidebar', html }); },
         createMenu: () => { const m = { addItem: () => m, addSeparator: () => m, addToUi: () => {} }; return m; },
         ButtonSet: { OK: 'OK' }
       })
     },
     HtmlService: {
-      createHtmlOutput: (html) => { const out = { _html: String(html ?? ''), getContent: () => out._html, setTitle() { return out; } }; return out; },
-      createHtmlOutputFromFile: (name) => { const out = { _file: name, setTitle() { return out; }, setWidth() { return out; }, setHeight() { return out; } }; return out; }
+      createHtmlOutput: (html) => {
+        const out = { _html: String(html ?? ''), getContent: () => out._html,
+          setTitle(t) { out._title = t; return out; }, setWidth(w) { out._width = w; return out; }, setHeight(h) { out._height = h; return out; } };
+        return out;
+      },
+      // Lee el .html real de gas/shared como HtmlService en la librería, que ELIMINA los comentarios HTML
+      // (por eso los marcadores de parciales no pueden ser comentarios: bug del sidebar en v18).
+      createHtmlOutputFromFile: (name) => {
+        const html = fs.readFileSync(path.join(SHARED, name + '.html'), 'utf8').replace(/<!--[\s\S]*?-->/g, '');
+        const out = { _file: name, getContent: () => html, setTitle() { return out; }, setWidth() { return out; }, setHeight() { return out; } };
+        return out;
+      },
+      createTemplateFromFile: (name) => {
+        const raw = fs.readFileSync(path.join(SHARED, name + '.html'), 'utf8');
+        return { getRawContent: () => raw };
+      }
     }
   };
 
@@ -223,6 +285,7 @@ export function makeHarness(opts = {}) {
     fetchCalls: state.fetchCalls,
     uiCalls: state.uiCalls,
     alerts: state.alerts,
+    toasts: state.toasts,
     userProps: state.userProps._map,
     gmail,
     getSpreadsheet: (id) => byId[id],

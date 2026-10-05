@@ -1,6 +1,8 @@
 import Link from "next/link";
 import LegalLayout from "@/components/LegalLayout";
 
+const SECTIONS = [["quien-trata-tus-datos", "Quién trata tus datos"], ["donde-viven-tus-datos", "Dónde viven tus datos"], ["que-no-hacemos", "Qué no hacemos"], ["tus-derechos-y-como-ejercerlos", "Tus derechos y cómo ejercerlos"], ["cambios", "Cambios"]] as const;
+
 export const metadata = {
   title: "Política de privacidad",
   description: "Dónde viven tus datos cuando usas Luca: en tu Google. Qué permisos pide la web, qué hace el servidor MCP y qué no guardamos.",
@@ -9,14 +11,14 @@ export const metadata = {
 
 export default function Privacidad() {
   return (
-    <LegalLayout title="Política de privacidad" updated="4 de octubre de 2026">
-      <h2>Quién trata tus datos</h2>
+    <LegalLayout title="Política de privacidad" updated="4 de octubre de 2026" sections={SECTIONS}>
+      <h2 id="quien-trata-tus-datos">Quién trata tus datos</h2>
       <p>
         Luca es un proyecto personal, gratuito y sin anuncios. El responsable del tratamiento es su autor, una persona natural, con contacto en
         <a href="mailto:gavynenita@gmail.com"> gavynenita@gmail.com</a>. No hay empresa detrás ni venta de datos: no tenemos nada que vender porque no almacenamos tus transacciones.
       </p>
 
-      <h2>Dónde viven tus datos (la arquitectura, tal cual es)</h2>
+      <h2 id="donde-viven-tus-datos">Dónde viven tus datos (la arquitectura, tal cual es)</h2>
       <ul>
         <li><b>Tu hoja de cálculo (Sheet).</b> Tus movimientos, categorías y ajustes se guardan en una Google Sheet de tu propiedad, en tu Google Drive. Luca no tiene base de datos.</li>
         <li><b>Tu script.</b> La Sheet trae una copia de un pequeño script de Apps Script que corre en tu cuenta de Google con tus permisos. Es él quien lee los correos de BCP y Yape (con el permiso que le das tú, a él, en la pantalla de Google) y escribe en tu Sheet. Ese permiso de lectura de Gmail nunca se concede a Luca ni a su web.</li>
@@ -26,7 +28,7 @@ export default function Privacidad() {
         <li><b>Categorización con IA, opcional.</b> Si configuras una clave de un proveedor (Gemini, OpenAI o Anthropic) en tu script, para los comercios que no se resuelven con reglas se envía solo el nombre del comercio y el monto; nunca el correo. La clave se guarda en las propiedades de usuario de tu propio script.</li>
       </ul>
 
-      <h2>Qué no hacemos</h2>
+      <h2 id="que-no-hacemos">Qué no hacemos</h2>
       <ul>
         <li>No almacenamos transacciones, saldos ni correos en ningún servidor nuestro.</li>
         <li>No usamos analítica, rastreadores ni publicidad.</li>
@@ -34,14 +36,14 @@ export default function Privacidad() {
         <li>No accedemos a tu Gmail desde la web ni desde el servidor MCP.</li>
       </ul>
 
-      <h2>Tus derechos y cómo ejercerlos</h2>
+      <h2 id="tus-derechos-y-como-ejercerlos">Tus derechos y cómo ejercerlos</h2>
       <p>
         Como todo está en tu cuenta de Google, los ejerces tú mismo y al instante: borra la Sheet y desaparecen tus datos; revoca el acceso de Luca y del script
         en <a href="https://myaccount.google.com/permissions" target="_blank" rel="noreferrer">myaccount.google.com/permissions</a>; desconecta la IA o el iPhone desde el menú Luca de tu Sheet.
         Para cualquier otra consulta escribe al correo de contacto.
       </p>
 
-      <h2>Cambios</h2>
+      <h2 id="cambios">Cambios</h2>
       <p>Si esta política cambia, actualizaremos la fecha de arriba. Los cambios de arquitectura relevantes se documentan públicamente en las decisiones del proyecto.</p>
 
       <p><Link href="/terminos">Términos de uso</Link> · <Link href="/">Inicio</Link></p>

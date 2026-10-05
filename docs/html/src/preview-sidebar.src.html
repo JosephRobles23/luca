@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sidebar de Luca</title>
+<!-- Vista previa del panel "Luca — Configuración" REAL: scripts/build-previews.mjs incrusta gas/shared/Sidebar.html,
+     DialogGuia.html y DialogDashboard.html (con sus parciales) y aquí se montan en iframes; sus lucaRun(...) los
+     responde un servidor simulado. No editar docs/html/preview-sidebar.html: se regenera. -->
+<luca-parcial nombre="_Estilos"></luca-parcial>
+<style>
+  html, body { background: #e9e4dc; }
+  body { padding: 24px 16px; display: flex; gap: 28px; justify-content: center; align-items: flex-start; flex-wrap: wrap; min-height: 100vh; }
+  .demo-panel { width: 280px; font-size: 13px; color: var(--body); }
+  .demo-panel h1 { font: 500 24px/1.1 var(--sans); letter-spacing: -0.03em; color: var(--ink); margin: 4px 0 6px; }
+  .demo-panel p { margin: 0 0 14px; }
+  .demo-panel .grupo { margin-bottom: 16px; }
+  .demo-panel .grupo > b { display: block; font: 600 11px/1.2 var(--sans); letter-spacing: .88px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .demo-panel ul { margin: 0; padding-left: 18px; } .demo-panel li { margin: 3px 0; }
+  .demo-panel .seg { margin-top: 0; }
+  .gs-frame { width: 300px; height: min(860px, calc(100vh - 48px)); background: #fff; border-radius: 16px; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 12px 40px -12px rgba(0,0,0,.25); display: flex; flex-direction: column; }
+  .gs-title { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; font: 400 16px/1 'Google Sans', Roboto, Arial, sans-serif; color: #1f1f1f; }
+  .gs-title span:last-child { font-size: 20px; color: #444; }
+  .gs-frame iframe, .dlg iframe { flex: 1; width: 100%; border: 0; display: block; background: var(--canvas); }
+  .velo { position: fixed; inset: 0; background: rgba(29,26,23,.28); display: none; align-items: center; justify-content: center; z-index: 40; padding: 16px; }
+  .velo.on { display: flex; }
+  .velo.modeless { background: transparent; pointer-events: none; justify-content: flex-start; padding-left: 4vw; }
+  .dlg { pointer-events: auto; background: #fff; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;
+    box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 24px 60px -16px rgba(0,0,0,.35); max-width: 100%; max-height: calc(100vh - 32px); }
+  .dlg .gs-title button { width: auto; min-height: 0; margin: 0; padding: 0 4px; background: none; color: #444; font-size: 20px; }
+  @media (max-width: 680px) { body { padding: 12px; } .gs-frame, .demo-panel { width: 100%; max-width: 360px; } .velo.modeless { justify-content: center; padding-left: 16px; } }
+</style>
+</head>
+<body>
+<aside class="demo-panel">
+  <h1>Sidebar de Luca</h1>
+  <p>El panel <b>real</b> de <code>gas/shared/Sidebar.html</code> con un servidor simulado. Los botones, las pestañas, la Guía y el Dashboard funcionan con datos de ejemplo.</p>
+  <div class="grupo">
+    <b>Escenario</b>
+    <div class="seg" id="escenarios">
+      <button aria-pressed="false" data-esc="nuevo">Nuevo</button>
+      <button aria-pressed="true" data-esc="ok">Conectado</button>
+      <button aria-pressed="false" data-esc="avisos">Con avisos</button>
+    </div>
+  </div>
+  <div class="grupo">
+    <b>Simular</b>
+    <button class="sec" onclick="simularPruebaIphone()">Llega la prueba del iPhone</button>
+  </div>
+  <div class="grupo">
+    <b>Qué probar</b>
+    <ul>
+      <li>Pestañas con icono y punto de aviso.</li>
+      <li>"Modo avanzado" abajo: versiones, diagnóstico y mantenimiento.</li>
+      <li>Botones con estado de carga y toasts arriba.</li>
+      <li>"Guía" en la cabecera (diálogo modeless).</li>
+      <li>iPhone: pasos que se completan; MCP: código con cuenta atrás.</li>
+    </ul>
+  </div>
+</aside>
+
+<div class="gs-frame" role="region" aria-label="Panel lateral de Google Sheets (simulado)">
+  <div class="gs-title"><span>Luca — Configuración</span><span aria-hidden="true">×</span></div>
+  <iframe id="fSidebar" title="Luca — Configuración"></iframe>
+</div>
+
+<div class="velo" id="velo" onclick="if (event.target === this) cerrarDialogo()">
+  <div class="dlg" id="dlg" role="dialog" aria-modal="true">
+    <div class="gs-title"><span id="dlgTitulo"></span><button aria-label="Cerrar" onclick="cerrarDialogo()">×</button></div>
+    <iframe id="fDialogo" title="Diálogo"></iframe>
+  </div>
+</div>
+
+<script>
+  var HTML = { Sidebar: /*@html Sidebar*/, DialogGuia: /*@html DialogGuia*/, DialogDashboard: /*@html DialogDashboard*/ };
+  // resumenDashboard real (dashboard-runtime.js) sobre un ledger sintético, calculado al generar esta página.
+  var DASHBOARD = /*@datos dashboard*/;
+
+  /* ---- Puente: cada iframe recibe un google.script.run que pregunta a esta página por postMessage ---- */
+  var PUENTE = '<script>(function(){var n=0,p={};window.addEventListener("message",function(e){var d=e.data||{};if(d.rpc&&p[d.rpc]){var x=p[d.rpc];delete p[d.rpc];d.ok?x.ok(d.val):x.ko(new Error(d.err));}});' +
+    'function mk(ok,ko){return{withSuccessHandler:function(f){return mk(f,ko)},withFailureHandler:function(f){return mk(ok,f)},' +
+    'lucaRun:function(m,a){var id=++n;p[id]={ok:ok||function(){},ko:ko||function(){}};parent.postMessage({rpc:id,m:m,args:JSON.parse(a||"[]")},"*");}}}' +
+    'window.google={script:{run:mk()}};})();<\/script>';
+  function montar(iframe, nombre, tab) {
+    var html = HTML[nombre].replace('<head>', '<head>' + PUENTE);
+    if (tab) html = html.replace('<body>', '<body data-tab="' + tab + '">');
+    iframe.srcdoc = html;
+  }
+
+  /* ---- Servidor simulado ---- */
+  var BASE = {
+    nuevo:  { autorizado: false, trigger: false, total: 0, sinCat: 0, yape: 0, minScan: 0, key: false, llmError: '', desconocidos: 0, extract: false, iphone: false, ipProbado: false, mcp: false, stub: false },
+    ok:     { autorizado: true, trigger: true, total: 93, sinCat: 3, yape: 1, minScan: 8, key: true, llmError: '', desconocidos: 4, extract: false, iphone: true, ipProbado: true, mcp: true, stub: false },
+    avisos: { autorizado: true, trigger: false, total: 93, sinCat: 12, yape: 1, minScan: 190, key: true, llmError: '401 · key rechazada', desconocidos: 4, extract: true, iphone: false, ipProbado: false, mcp: false, stub: true }
+  };
+  var st, avanzado = false, provider = 'gemini', model = 'gemini-3.7-flash';
+  var EXEC = 'https://script.google.com/macros/s/AKfy…demo/exec', TOKEN = 'lk_7f3a2c…c91e';
+  function iso(minAtras) { return new Date(Date.now() - minAtras * 60000).toISOString(); }
+  function datosIphone() { return { execUrl: EXEC, eventsUrl: EXEC + '?events=1', token: TOKEN, conectado: true, shortcutUrl: 'https://www.icloud.com/shortcuts/PENDIENTE', shortcutDisponible: false }; }
+
+  var SERVIDOR = {
+    estadoLuca: function () {
+      return { version: '21', stubVersion: st.stub ? '1' : '2', stubUpdate: st.stub ? 'Tu script necesita actualizarse (stub v1 < v2): haz una copia nueva de la plantilla o reemplaza los archivos del stub (Extensiones → Apps Script).' : '',
+        autorizado: st.autorizado, cursorIso: st.autorizado ? iso(st.minScan) : '', lastRunAt: st.autorizado ? iso(st.minScan) : '', lastStats: st.autorizado ? { added: 0 } : null,
+        triggerInstaladoEn: st.trigger ? '2026-09-05T00:24:00Z' : '', importacion: { status: st.autorizado ? 'done' : '' },
+        ledger: { total: st.total, sinCategoria: st.sinCat, recibidoYape: st.yape }, secretos: { llmKey: st.key, mcp: st.mcp, iphone: st.iphone },
+        llm: { provider: provider, model: model, lastTestAt: st.key ? '2026-10-04T22:45:00' : '', lastError: st.llmError, extractUnknown: st.extract, desconocidos: st.desconocidos,
+          defaults: { gemini: 'gemini-3.7-flash', openai: 'gpt-5-mini', anthropic: 'claude-haiku-4-5-20251001' } },
+        execUrl: st.autorizado ? EXEC : '',
+        iphone: st.iphone ? { device: 'iPhone', eventsCount: st.ipProbado ? 27 : 0, lastEventAt: st.ipProbado ? iso(35) : '', lastTestAt: st.ipProbado ? '2026-10-04T22:10:00' : '', lastError: '' } : {},
+        ui: { avanzado: avanzado } };
+    },
+    cargarMcp: function () { return { connected: st.mcp, connectorUrl: 'https://mcp.lucaa.lat/mcp', webApp: st.autorizado ? { ready: true } : { ready: false, message: 'Primero autoriza Luca y despliega el Web App.' } }; },
+    escanearAhora: [1500, function () { st.total += 2; st.minScan = 0; return { added: 2, skipped: 40, ignored: 1, unknown: 0 }; }],
+    iniciarImportacion: [1200, function () { return { added: 120, skipped: 0, ignored: 3, unknown: 1, done: false }; }],
+    guardarExecUrl: [900, function (a) { return { url: a[0] }; }],
+    diagnosticarCorreo: [900, function (a) { return { gmail_id: a[0], remitente: 'notificaciones@yape.pe', partes: ['text/html'], parser: 'yape_p2p', extraido: { monto: 10, moneda: 'PEN', contraparte: 'Nolberto R***' } }; }],
+    guardarAjustes: [700, function (a) { var o = a[0] || {}; if (o['llm.provider']) provider = o['llm.provider']; if (o['llm.model']) model = o['llm.model']; if (o['llm.extractUnknown']) st.extract = o['llm.extractUnknown'] === 'true'; return {}; }],
+    guardarLlmKey: [600, function () { st.key = true; st.llmError = ''; return {}; }],
+    probarLlm: [1100, function () { return st.llmError ? { ok: false, mensaje: 'La key fue rechazada por el proveedor (401).' } : { ok: true, mensaje: 'Key OK', ms: 640 }; }],
+    categorizarPendientes: [1600, function () { var n = st.sinCat; st.sinCat = 0; return { procesadas: n, categorizadas: n, llmCalls: n, llmErrores: 0, restantes: 0 }; }],
+    extraerDesconocidos: [1500, function () { var n = st.desconocidos; st.desconocidos = 0; st.total += n - 1; return { procesados: n, extraidos: n - 1, ignorados: 1, llmCalls: n, llmErrores: 0, restantes: 0 }; }],
+    probarWebApp: [1100, function () { return st.autorizado ? { veredicto: 'Web App OK: responde y firma correctamente.', challenge: { sigOk: true } } : { veredicto: 'No hay Web App desplegado.', challenge: { sigOk: false } }; }],
+    conectarIphone: [1000, function () { st.iphone = true; return datosIphone(); }],
+    generarPromptIphone: [1000, function () { st.iphone = true; var d = datosIphone(); d.prompt = 'Crea un atajo "Luca – Captura Yape"… (URL ' + d.eventsUrl + ', token ' + TOKEN + ')'; return d; }],
+    regenerarTokenIphone: [900, function () { return datosIphone(); }],
+    desconectarIphone: [900, function () { st.iphone = false; st.ipProbado = false; return {}; }],
+    iniciarConexionMcp: [1000, function () { st.mcp = true; return { code: '482 913', expiresInSeconds: 600 }; }],
+    desconectarMcp: [900, function () { st.mcp = false; return {}; }],
+    guardarPrefUi: function (a) { avanzado = !!(a[0] && a[0].avanzado); return { avanzado: avanzado }; },
+    resumenDashboard: [600, function (a) { var m = a[0] && a[0].mes; return DASHBOARD[m] || DASHBOARD['2026-10']; }],
+    leerLedger: function () {
+      return [{ fecha: '2026-10-02T21:06:00-05:00', tipo: 'expense', comercio: 'CA012 AVIACION', moneda: 'PEN', monto: 53.3, categoria: 'Transporte' },
+        { fecha: '2026-10-03T19:07:00-05:00', tipo: 'internal_transfer', moneda: 'PEN', monto: 30, categoria: 'Transferencias' },
+        { fecha: '2026-10-04T16:05:00-05:00', tipo: 'expense', comercio: 'SPACESHIP.COM* OJF3CV', moneda: 'USD', monto: 1.24, categoria: 'Suscripciones' }];
+    },
+    abrirGuia: [500, function () { setTimeout(function () { abrirDialogo('DialogGuia', 'Luca — Guía', 460, 640, true); }, 0); return { ok: true }; }],
+    abrirDashboard: [500, function () { setTimeout(function () { abrirDialogo('DialogDashboard', 'Luca — Dashboard', 1100, 760, false); }, 0); return { ok: true }; }],
+    abrirSidebar: [400, function (a) { setTimeout(function () { montar(document.getElementById('fSidebar'), 'Sidebar', a[0]); }, 0); return { ok: true }; }]
+  };
+  window.addEventListener('message', function (e) {
+    var d = e.data || {};
+    if (!d.rpc) return;
+    var h = SERVIDOR[d.m], ms = 300;
+    if (Array.isArray(h)) { ms = h[0]; h = h[1]; }
+    setTimeout(function () {
+      try {
+        if (!h) throw new Error('Función no permitida vía lucaRun: ' + d.m);
+        e.source.postMessage({ rpc: d.rpc, ok: true, val: JSON.parse(JSON.stringify(h(d.args) || null)) }, '*');
+      } catch (err) { e.source.postMessage({ rpc: d.rpc, ok: false, err: err.message }, '*'); }
+    }, ms);
+  });
+
+  /* ---- Diálogos (en Sheets: showModelessDialog / showModalDialog) ---- */
+  function abrirDialogo(nombre, titulo, ancho, alto, modeless) {
+    var dlg = document.getElementById('dlg');
+    dlg.style.width = ancho + 'px'; dlg.style.height = alto + 'px';
+    document.getElementById('dlgTitulo').textContent = titulo;
+    document.getElementById('velo').className = 'velo on' + (modeless ? ' modeless' : '');
+    montar(document.getElementById('fDialogo'), nombre);
+  }
+  function cerrarDialogo() { document.getElementById('velo').className = 'velo'; document.getElementById('fDialogo').srcdoc = ''; }
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') cerrarDialogo(); });
+
+  /* ---- Escenarios ---- */
+  function escenario(nombre) {
+    st = JSON.parse(JSON.stringify(BASE[nombre]));
+    document.querySelectorAll('#escenarios button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.esc === nombre)); });
+    cerrarDialogo();
+    montar(document.getElementById('fSidebar'), 'Sidebar');
+  }
+  function simularPruebaIphone() { st.iphone = true; st.ipProbado = true; montar(document.getElementById('fSidebar'), 'Sidebar', 'iphone'); }
+  document.querySelectorAll('#escenarios button').forEach(function (b) { b.onclick = function () { escenario(b.dataset.esc); }; });
+  escenario('ok');
+</script>
+</body>
+</html>
