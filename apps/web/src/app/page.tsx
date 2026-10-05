@@ -68,12 +68,15 @@ export default async function Home() {
         </section>
 
         <section className={`${s.final} mt-20 sm:mt-[88px]`} aria-labelledby="final-h">
-          <svg className={s.finalArt} viewBox="0 0 200 200" aria-hidden>
-            {[90, 66, 42].map((r, n) => (
-              <circle key={r} cx="100" cy="100" r={r} fill="none" stroke="var(--primary)" strokeOpacity={0.25 + n * 0.25} strokeWidth="1.5" strokeDasharray="4 7" />
-            ))}
-            <circle cx="100" cy="100" r="9" fill="var(--primary)" />
-          </svg>
+          <div className={s.finalArt} aria-hidden>
+            <span className={s.ringGlow} />
+            <span className={s.ringDash} style={{ "--inset": "18%", "--ring-c": "var(--cat-gold)", "--dur": "22s", "--dir": "reverse" } as React.CSSProperties} />
+            <span className={s.ringDash} style={{ "--inset": "32%", "--ring-c": "var(--cat-lavender)", "--dur": "16s" } as React.CSSProperties} />
+            <span className={s.ringSat} style={{ "--inset": "6%", "--ring-c": "var(--primary-2)", "--dur": "9s" } as React.CSSProperties} />
+            <span className={s.ringSat} style={{ "--inset": "18%", "--ring-c": "var(--cat-mint)", "--dur": "13s", "--dir": "reverse" } as React.CSSProperties} />
+            <span className={s.ringSat} style={{ "--inset": "32%", "--ring-c": "var(--cat-blue)", "--dur": "7s" } as React.CSSProperties} />
+            <span className={s.ringCore} />
+          </div>
           <h2 id="final-h" className="max-w-[20ch] text-[clamp(26px,3.6vw,38px)] font-medium leading-[1.1] tracking-[-0.03em]">Empieza con el último mes de tus correos.</h2>
           <p className={s.finalSub}>En un par de minutos tienes tu Sheet creada y tus gastos del último mes ordenados por categoría.</p>
           <EntrarButton action={entrar} />

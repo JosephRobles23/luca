@@ -5,6 +5,7 @@ import { catColor } from "@/lib/categorias";
 import { SectionHead } from "./DataPath";
 import { GlyphTag } from "./glyphs";
 import { Reveal } from "./Reveal";
+import { AiChatDemo } from "./AiChatDemo";
 import s from "./portada.module.css";
 
 function Tile({ className, icon, title, children, extra }: { className: string; icon: ReactNode; title: string; children: ReactNode; extra?: ReactNode }) {
@@ -40,13 +41,7 @@ export function Features() {
         </Tile>
 
         <Tile className={s.bB} icon={<IconIA size={18} />} title="Pregúntale a tu IA"
-          extra={
-            <div className="mt-1.5 grid gap-2 text-[13.5px]" aria-label="Ejemplo de conversación">
-              <div className={`${s.ask} ${s.chatAsk}`}>¿Cuánto gasté en suscripciones este mes?</div>
-              <div className={`${s.typing} ${s.chatTyping}`} aria-hidden><i /><i /><i /></div>
-              <div className={`${s.answer} ${s.chatAnswer}`}><b className="num font-medium text-ink">S/ 48.20</b> en 3 cobros: música, streaming y almacenamiento en la nube.</div>
-            </div>
-          }>
+          extra={<AiChatDemo />}>
           Conecta Claude o ChatGPT por MCP y consulta en lenguaje natural.
         </Tile>
 

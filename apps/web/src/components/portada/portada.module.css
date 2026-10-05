@@ -86,22 +86,48 @@
 .bento { display: grid; gap: 12px; }
 @media (min-width: 860px) {
   .bento { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-  .bA { grid-column: span 4; } .bB { grid-column: span 2; } .bC, .bD, .bE { grid-column: span 2; }
+  .bA { grid-column: span 3; } .bB { grid-column: span 3; } .bC, .bD, .bE { grid-column: span 2; }
 }
 .tile { display: grid; gap: 10px; align-content: start; padding: 22px; }
 .tileIcon { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--strong); color: var(--ink); }
-.ask { justify-self: end; background: var(--primary-soft); color: var(--ink); padding: 8px 12px; border-radius: 14px 14px 4px 14px; max-width: 90%; }
-.answer { background: var(--sunken); padding: 8px 12px; border-radius: 14px 14px 14px 4px; max-width: 95%; color: var(--body); }
-.typing { display: inline-flex; gap: 4px; padding: 12px 14px; border-radius: 14px 14px 14px 4px; background: var(--sunken); justify-self: start; }
-.typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1s ease-in-out infinite; }
-.typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
+/* ---------- demo "Pregúntale a tu IA" (AiChatDemo) ---------- */
+.ai { --ai-accent: #d97757; display: grid; grid-template-rows: auto 1fr auto; min-height: 352px; margin-top: 6px; border-radius: 14px; border: 1px solid var(--line); background: var(--canvas); overflow: hidden; font-size: 13.5px; transition: opacity .3s var(--ease-out); }
+.aiGpt { --ai-accent: var(--ink); }
+.aiFade { opacity: 0; }
+.aiBar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line-soft); background: var(--card); }
+.aiLogo { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; background: var(--sunken); color: var(--ink); }
+.aiConn { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
+.aiConn i { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 0 var(--success); animation: aiPing 2s ease-out infinite; }
+@keyframes aiPing { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 60%, transparent); } 70%, 100% { box-shadow: 0 0 0 6px transparent; } }
+.aiBody { display: grid; align-content: start; gap: 10px; padding: 14px 12px; }
+.aiUser { justify-self: end; max-width: 88%; padding: 8px 12px; border-radius: 16px; background: var(--strong); color: var(--ink); animation: aiIn .25s var(--ease-out) both; }
+.aiClaude .aiUser { border-radius: 12px; }
+.aiGpt .aiUser { border-radius: 18px; }
+.aiTool { justify-self: start; display: inline-flex; align-items: center; gap: 8px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-size: 11.5px; color: var(--body); animation: aiIn .25s var(--ease-out) both; }
+.aiTool[data-done="true"] { color: var(--muted); }
+.aiSpin { width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--line-strong); border-top-color: var(--ai-accent); animation: aiSpin .7s linear infinite; }
+.aiOk { color: var(--success); font-weight: 700; }
+@keyframes aiSpin { to { transform: rotate(360deg); } }
+.aiAnswer { color: var(--ink); line-height: 1.55; }
+.aiClaude .aiAnswer p { font-family: Georgia, "Times New Roman", serif; font-size: 14.5px; }
+.aiAnswer b { font-weight: 600; color: var(--ink); }
+.aiWord { animation: aiWord .25s var(--ease-out) both; }
+.aiAnswer ul { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+.aiItem { display: flex; justify-content: space-between; gap: 12px; padding: 6px 10px; border-radius: 8px; background: var(--card); border: 1px solid var(--line-soft); animation: aiIn .25s var(--ease-out) both; }
+.aiItem::before { content: ""; width: 3px; border-radius: 3px; background: var(--ai-accent); margin-right: -4px; }
+.aiItem span:first-of-type { flex: 1; }
+.aiComposer { display: flex; align-items: center; gap: 8px; margin: 0 10px 10px; padding: 6px 6px 6px 12px; border: 1px solid var(--line); background: var(--card); }
+.aiClaude .aiComposer { border-radius: 14px; }
+.aiGpt .aiComposer { border-radius: 999px; }
+.aiInput { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
+.aiCaret { display: inline-block; width: 1.5px; height: 1em; margin-left: 1px; vertical-align: -2px; background: var(--ink); animation: blink 1s steps(1) infinite; }
+.aiSend { display: grid; place-items: center; width: 28px; height: 28px; flex: none; border-radius: 50%; background: var(--strong); color: var(--muted); font-weight: 700; transition: background .15s, color .15s; }
+.aiClaude .aiSend { border-radius: 9px; }
+.aiSend[data-on="true"] { background: var(--ai-accent); color: var(--canvas); }
+.aiClaude .aiSend[data-on="true"] { color: #fff; }
+@keyframes aiIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes aiWord { from { opacity: 0; filter: blur(3px); } to { opacity: 1; filter: none; } }
 @keyframes blink { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
-/* Secuencia del chat: pregunta → "escribiendo…" → respuesta. El indicador se colapsa al llegar la respuesta. */
-.chatAsk { animation: chatIn .3s var(--ease-out) both; animation-delay: .2s; }
-.chatTyping { animation: typingLife 1.5s linear both; animation-delay: .5s; overflow: hidden; }
-@keyframes typingLife { 0% { opacity: 0; max-height: 0; padding-block: 0; } 8%, 92% { opacity: 1; max-height: 40px; padding-block: 12px; } 100% { opacity: 0; max-height: 0; padding-block: 0; margin-top: -8px; } }
-.chatAnswer { animation: chatIn .3s var(--ease-out) both; animation-delay: 2s; }
-@keyframes chatIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
 /* Las animaciones de una sección esperan a que se vea (Reveal pone data-inview). */
 @media (prefers-reduced-motion: no-preference) {
@@ -118,13 +144,24 @@
 /* ---------- bloque final y CTA móvil ---------- */
 .final { border-radius: 22px; background: var(--final-bg); color: var(--final-fg); border: 1px solid var(--final-line); padding: clamp(28px, 5vw, 56px); display: grid; gap: 18px; justify-items: start; position: relative; overflow: hidden; }
 .finalSub { color: color-mix(in srgb, var(--final-fg) 72%, transparent); max-width: 52ch; }
-.finalArt { position: absolute; right: -40px; bottom: -40px; width: 260px; height: 260px; opacity: .9; pointer-events: none; }
-@media (max-width: 719px) { .finalArt { width: 180px; height: 180px; right: -60px; bottom: -60px; opacity: .5; } }
+/* Anillo del bloque final: aro de color que gira, dos aros punteados en sentidos opuestos, satélites y núcleo que late. */
+.finalArt { position: absolute; right: -24px; top: 50%; width: 320px; height: 320px; margin-top: -160px; pointer-events: none; }
+@media (max-width: 959px) { .finalArt { width: 220px; height: 220px; margin-top: 0; top: auto; right: -80px; bottom: -80px; opacity: .3; } }
+.ringGlow { position: absolute; inset: 6%; border-radius: 50%;
+  background: conic-gradient(from 0deg, var(--primary), var(--cat-gold), var(--cat-peach), var(--cat-lavender), var(--cat-blue), var(--cat-mint), var(--primary));
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px)); mask: radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3px));
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--primary) 55%, transparent)); animation: ringSpin 14s linear infinite; }
+.ringDash { position: absolute; inset: var(--inset); border-radius: 50%; border: 1.5px dashed var(--ring-c); opacity: .75; animation: ringSpin var(--dur) linear infinite var(--dir, normal); }
+.ringSat { position: absolute; inset: var(--inset); animation: ringSpin var(--dur) linear infinite var(--dir, normal); }
+.ringSat::before { content: ""; position: absolute; top: -4px; left: 50%; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%; background: var(--ring-c); box-shadow: 0 0 12px var(--ring-c); }
+.ringCore { position: absolute; left: 50%; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 18px var(--primary); }
+.ringCore::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--primary); animation: ringPulse 2.4s var(--ease-out) infinite; }
+@keyframes ringSpin { to { transform: rotate(360deg); } }
+@keyframes ringPulse { from { transform: scale(1); opacity: .8; } to { transform: scale(5); opacity: 0; } }
 .mobileCta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); background: color-mix(in srgb, var(--canvas) 90%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--line); }
 @media (min-width: 720px) { .mobileCta { display: none; } }
 
 @media (prefers-reduced-motion: reduce) {
   .dot { display: none; }
   .bubble::after { animation: none; }
-  .chatTyping { display: none; }
 }
