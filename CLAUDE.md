@@ -36,7 +36,8 @@ Release: tests → `lib:push` → `lib:version` → bump en `gas/stub/appsscript
 - Triggers y `ScriptApp.getService().getUrl()` solo desde el stub (apuntan al proyecto contenedor): el stub
   pasa `setupTriggers` como callback a `menuAction` y `config.execUrl` en `getConfig_()`.
 - Al publicar una versión nueva de LucaLib, subir `LUCA_VERSION` en `settings-runtime.js`.
-- Parsers deterministas primero; el LLM solo recibe `comercio + monto` (ADR-004).
+- Parsers deterministas primero; el LLM solo recibe `comercio + monto` (ADR-004). Única excepción: el extractor
+  opt-in de correos no reconocidos (ADR-008), que envía el texto **enmascarado** y solo si `llm.extractUnknown`.
 - Web: lógica pura en `apps/web/src/lib/*.ts` con tests `.test.mjs`; componentes solo presentan.
 - Al comparar objetos del sandbox vm en tests usar `JSON.parse(JSON.stringify(x))` (distinto realm).
 - Fixtures de correo **sintéticos y anonimizados** en `tests/fixtures`; los `.eml` reales van a

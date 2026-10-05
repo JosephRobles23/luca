@@ -17,7 +17,7 @@ test('Sidebar: cada run(...) apunta a una función de DISPATCH_', () => {
   const usadas = [...html.matchAll(/run\('([A-Za-z_]+)'/g)].map((m) => m[1]);
   assert.ok(usadas.length >= 7, 'el sidebar llama a varias funciones');
   for (const fn of usadas) assert.ok(h.api.DISPATCH_[fn] || (h.api.MCP_DISPATCH_ && h.api.MCP_DISPATCH_[fn]), 'falta en DISPATCH_/MCP_DISPATCH_: ' + fn);
-  for (const fn of ['estadoLuca', 'escanearAhora', 'guardarLlmKey', 'guardarAjustes', 'probarLlm', 'categorizarPendientes', 'iniciarImportacion', 'conectarIphone', 'regenerarTokenIphone', 'desconectarIphone']) {
+  for (const fn of ['estadoLuca', 'escanearAhora', 'guardarLlmKey', 'guardarAjustes', 'probarLlm', 'categorizarPendientes', 'extraerDesconocidos', 'iniciarImportacion', 'conectarIphone', 'regenerarTokenIphone', 'desconectarIphone']) {
     assert.ok(usadas.includes(fn), 'el sidebar no usa ' + fn);
   }
 });
@@ -30,6 +30,11 @@ test('Sidebar: cada onclick tiene su función definida y hay secciones Estado / 
   assert.match(html, /Desconectar iPhone/);
   assert.match(html, /Regenerar token/);
   assert.match(html, /Versión LucaLib/);
+  // Extractor opt-in (ADR-008): casilla que guarda llm.extractUnknown y botón de reintento.
+  assert.match(html, /id="llmExtract"[^>]*onchange="guardarExtraer\(\)"/);
+  assert.match(html, /Extraer con IA los correos que Luca no reconoce \(envía el texto del correo con nombres y números enmascarados\)/);
+  assert.match(html, /'llm\.extractUnknown': on \? 'true' : 'false'/);
+  assert.match(html, /Reintentar desconocidos con IA/);
 });
 
 test('Sidebar: el enlace del atajo placeholder lo entrega el servidor (conectarIphone), no está cableado en el HTML', () => {
