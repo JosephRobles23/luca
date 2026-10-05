@@ -320,3 +320,23 @@ test('guardarAjustes desde el sidebar persiste llm.extractUnknown y construirCon
   h.api.dispatch('guardarAjustes', [{ 'llm.extractUnknown': 'false' }], SID, configFor(h, SID));
   assert.equal(configFor(h, SID).llm.extractUnknown, false);
 });
+
+test('parse degradado: asunto reconocido pero sin monto (plantilla cambiada) → el extractor rellena y marca deterministic_degraded', () => {
+  // Cuerpo sin la tabla de BCP: el determinista clasifica bcp_card_purchase pero no halla monto.
+  const e = { ...emails.bcp_card_purchase_pen, id: 'm-degradado', html: '<html><body><p>Hola Nombre,</p><p>Tu compra fue procesada. Gracias por preferirnos.</p></body></html>' };
+  const resp = { kind: 'expense', amount: 53.3, currency: 'PEN', occurred_at: '2026-10-02T21:06:00-05:00', merchant: 'CA012 AVIACION', counterparty: '', operation_id: '176424', confidence: 0.9 };
+  const h = harnessExtract({ fetch: () => geminiOk(resp), gmailMessages: [toGmailApi(e)] });
+  const st = h.api.scanGmail_(SID, configFor(h, SID), {});
+  assert.equal(st.added, 1);
+  assert.equal(st.llmExtracted, 1);
+  const data = h.tab(SID, 'Movimientos'); const hdr = data[0]; const fila = data[1];
+  assert.equal(fila[hdr.indexOf('monto')], 53.3);
+  assert.equal(fila[hdr.indexOf('fuente')], 'bcp_email');
+  assert.match(String(fila[hdr.indexOf('flags')]), /llm_extracted/);
+  assert.match(String(fila[hdr.indexOf('flags')]), /deterministic_degraded/);
+  assert.equal(h.tab(SID, '_Procesados')[1][1], 'tx:llm');
+  // Sin casilla: la fila entra con no_amount como antes y no hay llamadas.
+  const h2 = harnessExtract({ flag: 'false', fetch: () => { throw new Error('no debería llamar'); }, gmailMessages: [toGmailApi(e)] });
+  const st2 = h2.api.scanGmail_(SID, configFor(h2, SID), {});
+  assert.equal(st2.added, 1); assert.equal(h2.fetchCalls.length, 0);
+});

@@ -211,6 +211,19 @@ function scanGmail_(sheetId, config, opts) {
       if (ex) { stats.llmExtracted++; txs.push(ex); procesados.push({ gmail_id: email.id, resultado: 'tx:llm', tipo: ex.type, asunto: email.subject, remitente: email.from }); continue; }
       stats.unknown++; procesados.push({ gmail_id: email.id, resultado: 'unknown', tipo: r.type, asunto: email.subject, remitente: email.from }); continue;
     }
+    // Parse degradado: el asunto se reconoce pero el cuerpo no dio monto (p. ej. BCP cambió la plantilla).
+    // Con el extractor activo, el LLM rellena; conserva el tipo determinista y marca la fila.
+    if (extractor && r.amount == null && (r.flags || []).indexOf('no_amount') >= 0) {
+      var ex2 = extractWithLlm_(email, extractor);
+      if (ex2 && !ex2.ignored && ex2.amount != null) {
+        ex2.type = r.type; ex2.kind = ex2.kind || r.kind;
+        if ((ex2.flags || []).indexOf('llm_extracted') < 0) ex2.flags = (ex2.flags || []).concat(['llm_extracted']);
+        ex2.flags.push('deterministic_degraded');
+        stats.llmExtracted++; txs.push(ex2);
+        procesados.push({ gmail_id: email.id, resultado: 'tx:llm', tipo: r.type, asunto: email.subject, remitente: email.from });
+        continue;
+      }
+    }
     txs.push(r);
     procesados.push({ gmail_id: email.id, resultado: 'tx', tipo: r.type });
   }
