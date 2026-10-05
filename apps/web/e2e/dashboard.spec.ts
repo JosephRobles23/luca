@@ -14,31 +14,55 @@ test.describe("Landing → entrar → dashboard", () => {
   test("entrar muestra el dashboard con KPIs coherentes", async ({ page }) => {
     await login(page);
     await waitForDashboard(page);
-    const income = money(await page.getByTestId("kpi-income").locator(".text-2xl").innerText());
-    const expense = money(await page.getByTestId("kpi-expense").locator(".text-2xl").innerText());
-    const net = money(await page.getByTestId("kpi-net").locator(".text-2xl").innerText());
-    const yape = money(await page.getByTestId("kpi-yape").locator(".text-2xl").innerText());
+    const income = money(await page.getByTestId("kpi-income").getByTestId("kpi-value").innerText());
+    const expense = money(await page.getByTestId("kpi-expense").getByTestId("kpi-value").innerText());
+    const net = money(await page.getByTestId("kpi-net").getByTestId("kpi-value").innerText());
+    const yape = money(await page.getByTestId("kpi-yape").getByTestId("kpi-value").innerText());
     expect(income).toBeGreaterThan(0);
     expect(expense).toBeGreaterThan(0);
     expect(Math.abs(income - expense - net)).toBeLessThan(0.02);
     expect(yape).toBeGreaterThan(0); // transfer_in aparte, no infla ingresos
     await expect(page.getByTestId("kpi-yape")).toContainText("no cuenta como ingreso");
     // Aviso de versión: la copia (v4) es anterior a la publicada (v5 en el webServer de Playwright).
-    await expect(page.getByTestId("version-notice")).toContainText("versión nueva");
+    await expect(page.getByTestId("version-notice")).toContainText("disponible");
     await expect(page.getByTestId("dashboard-movements").locator("li").first()).toBeVisible();
+    // Chips de filtro: "Por categorizar" deja solo pendientes y su contador coincide con las filas.
+    const chip = page.getByRole("group", { name: "Filtrar movimientos" }).getByRole("button", { name: /^Por categorizar/ });
+    const n = Number((await chip.innerText()).replace(/\D/g, ""));
+    await chip.click();
+    await expect(chip).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByTestId("dashboard-movements").locator("li")).toHaveCount(Math.min(n, 30));
+    await expect(page.getByTestId("dashboard-movements")).not.toContainText("Recibido por Yape");
     await page.screenshot({ path: `${SHOTS}/02-dashboard.png`, fullPage: true });
   });
 
   test("el selector de mes cambia los KPIs y las barras son clicables", async ({ page }) => {
     await login(page);
     await waitForDashboard(page);
-    const before = await page.getByTestId("kpi-expense").locator(".text-2xl").innerText();
+    const before = await page.getByTestId("kpi-expense").getByTestId("kpi-value").innerText();
     const select = page.getByTestId("month-select");
     const options = await select.locator("option").allTextContents();
     expect(options.length).toBeGreaterThanOrEqual(3);
     await select.selectOption({ index: 1 });
-    await expect(page.getByTestId("kpi-expense").locator(".text-2xl")).not.toHaveText(before);
-    await expect(page.locator("h2", { hasText: /Movimientos · / })).toContainText(options[1]);
+    await expect(page.getByTestId("kpi-expense").getByTestId("kpi-value")).not.toHaveText(before);
+    // El título de la lista usa el nombre largo en minúsculas ("Movimientos de septiembre").
+    await expect(page.locator("h2", { hasText: /^Movimientos de / })).toContainText(options[1].split(" ")[0].toLowerCase());
+    // ‹ › y las flechas del teclado recorren los meses; las barras de 6 meses también eligen mes.
+    await page.getByRole("button", { name: /^Mes siguiente/ }).click();
+    await expect(select).toHaveValue(await select.locator("option").first().getAttribute("value") as string);
+    await select.focus();
+    await page.keyboard.press("ArrowLeft");
+    await expect(page.getByTestId("kpi-expense").getByTestId("kpi-value")).not.toHaveText(before);
+    await page.keyboard.press("ArrowRight");
+    await expect(page.getByTestId("kpi-expense").getByTestId("kpi-value")).toHaveText(before);
+    const bars = page.getByRole("button", { name: /^Ver .+: S\/ / });
+    await expect(bars).toHaveCount(6);
+    // La ventana de 6 meses termina en el mes elegido: tras el clic, ese mes pasa a ser la última barra.
+    const picked = (await bars.nth(4).getAttribute("aria-label"))!.replace(/:.*/, "");
+    await bars.nth(4).click();
+    await expect(bars.last()).toHaveAttribute("aria-pressed", "true");
+    await expect(bars.last()).toHaveAttribute("aria-label", new RegExp(`^${picked}:`));
+    await expect(page.getByTestId("kpi-expense").getByTestId("kpi-value")).not.toHaveText(before);
   });
 
   test("recategorizar desde 'Por categorizar' se refleja en el dashboard y en Movimientos", async ({ page }) => {
@@ -53,7 +77,9 @@ test.describe("Landing → entrar → dashboard", () => {
     await firstSelect.selectOption("Comidas fuera");
     await expect(toast(page)).toContainText("Categoría guardada: Comidas fuera");
     await expect(pending.locator("h2")).toContainText(String(countBefore - 1));
+    // La fila guardada se queda un momento en el Resumen (confirmación + colapso): esperar a estar en Movimientos.
     await page.getByRole("link", { name: "Movimientos" }).click();
+    await expect(page).toHaveURL(/\/app\/movimientos/);
     await expect(page.getByTestId(`cat-${txId}`)).toHaveValue("Comidas fuera");
     // Y sobrevive a una recarga completa (el mock persiste en localStorage igual que la Sheet real).
     await page.reload();
