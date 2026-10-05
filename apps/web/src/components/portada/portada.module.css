@@ -195,34 +195,62 @@
    La ventana imita la UI clara de Sheets en ambos temas (como la hoja real): colores propios y fijos. */
 .gsIcon { width: 22px; height: 28px; border-radius: 3px; background: #1e8e3e; position: relative; flex: none; }
 .gsIcon::after { content: ""; position: absolute; inset: 9px 4px 5px; border: 1.5px solid #fff; border-radius: 1px; background: linear-gradient(#fff, #fff) center/1.5px 100% no-repeat, linear-gradient(#fff, #fff) center/100% 1.5px no-repeat; }
-.sx { --sx-ink: #1d1a17; --sx-body: #57524b; --sx-muted: #6f675d; --sx-line: #e6ddd1; --sx-soft: #efe8de; --sx-canvas: #f4efe8; --sx-card: #fffdf9; --sx-strong: #ebe4d9; color: var(--sx-ink); }
-.sxWin { border-radius: 16px; border: 1px solid var(--line); background: #fff; overflow: hidden; box-shadow: var(--halo); }
-.sxTop { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #f9fbfd; border-bottom: 1px solid #e3e3e3; color: #1f1f1f; }
-.sxMenu { display: flex; align-items: center; gap: 2px; margin-top: 2px; font-size: 12px; color: #444; white-space: nowrap; }
-.sxMenuItem { padding: 2px 6px; border-radius: 4px; }
+.sx { position: relative; --sx-ink: #1d1a17; --sx-body: #57524b; --sx-muted: #6f675d; --sx-line: #e6ddd1; --sx-soft: #efe8de; --sx-canvas: #f4efe8; --sx-card: #fffdf9; --sx-strong: #ebe4d9; color: var(--sx-ink); }
+.sx[data-dash="true"] { padding-bottom: 128px; }
+.sxWin { position: relative; border-radius: 12px; border: 1px solid var(--line); background: #fff; overflow: hidden; box-shadow: var(--halo); }
+.sxTop { display: flex; align-items: center; gap: 10px; padding: 8px 16px 6px 12px; background: #f9fbfd; color: #1f1f1f; }
+.sxTitle { display: flex; align-items: center; gap: 8px; font-size: 17px; line-height: 24px; color: #1f1f1f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sxShare { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 18px 0 14px; border-radius: 999px; background: #c2e7ff; color: #001d35; font-size: 14px; font-weight: 500; flex: none; }
+.sxAvatar2 { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #d9623b; color: #fff; font-size: 14px; font-weight: 600; flex: none; }
+@media (max-width: 640px) { .sxShare { display: none; } }
+.sxMenu { display: flex; align-items: center; gap: 0; margin: 2px 0 0 -6px; font-size: 13.5px; color: #1f1f1f; white-space: nowrap; }
+.sxMenuItem { padding: 2px 7px; border-radius: 4px; }
+@media (max-width: 900px) { .sxMenuItem:nth-child(n+6) { display: none; } }
 @media (max-width: 640px) { .sxMenuItem:nth-child(n+4) { display: none; } }
 .sxMenuLuca { padding: 2px 8px; border-radius: 4px; border: 0; background: #fbe6dc; color: #a8472a; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
 .sxMenuLuca:hover, .sxMenuLuca[aria-expanded="true"] { background: #f6d5c5; }
+.sxTools { padding: 2px 8px 8px; background: #f9fbfd; }
+.sxToolPill { display: flex; align-items: center; gap: 1px; height: 40px; padding: 0 10px; border-radius: 24px; background: #edf2fa; color: #444746; font-size: 13px; overflow: hidden; white-space: nowrap; }
+.sxToolPill i { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 4px; font-style: normal; flex: none; }
+.sxSep { width: 1px; height: 20px; margin: 0 6px; background: #c7c7c7; flex: none; }
+.sxFontSize { width: 32px !important; height: 24px !important; border: 1px solid #747775; }
+.sxFormula { display: flex; align-items: center; height: 30px; border-top: 1px solid #e1e3e1; border-bottom: 1px solid #e1e3e1; background: #fff; font-size: 12.5px; color: #1f1f1f; }
+.sxFormula > span { display: flex; align-items: center; height: 100%; padding: 0 10px; }
+.sxCellRef { width: 86px; border-right: 1px solid #e1e3e1; color: #444746; }
+.sxFx { border-right: 1px solid #e1e3e1; color: #9aa0a6; font-style: italic; font-family: Georgia, serif; }
+.sxCols > span { justify-content: center; background: #f8f9fa; color: #444746; font-size: 11px; }
+.sxCols > span[data-sel="true"] { background: #d3e3fd; color: #0b57d0; font-weight: 600; }
+.sxSel { box-shadow: inset 0 0 0 2px #1a73e8; }
+.sxStrip { display: flex; flex-direction: column; align-items: center; gap: 22px; padding-top: 18px; border-left: 1px solid #e1e3e1; background: #f9fbfd; }
+.sxStrip i { width: 20px; height: 20px; border-radius: 5px; opacity: .9; }
+.sxStrip b { margin-top: 2px; padding-top: 16px; border-top: 1px solid #e1e3e1; width: 24px; text-align: center; color: #444746; font-size: 18px; font-weight: 400; }
+.sxSheets { display: flex; align-items: center; gap: 4px; height: 40px; padding: 0 10px; border-top: 1px solid #e1e3e1; background: #f9fbfd; font-size: 12.5px; color: #444746; white-space: nowrap; overflow: hidden; }
+.sxSheets i { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; font-style: normal; font-size: 16px; }
+.sxSheets span { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 6px; }
+.sxSheets span[data-on="true"] { background: #e1e9f7; color: #0b57d0; font-weight: 600; }
+.sxSheets small { font-size: 8px; }
+.sxSideScroll, .sxDlgBody, .sxDTabs, .sxGrid { scrollbar-width: none; }
+.sxSideScroll::-webkit-scrollbar, .sxDlgBody::-webkit-scrollbar, .sxDTabs::-webkit-scrollbar, .sxGrid::-webkit-scrollbar { display: none; }
 .sxDrop { position: absolute; left: 0; top: calc(100% + 4px); z-index: 20; display: grid; min-width: 230px; padding: 6px; border-radius: 8px; background: #fff; border: 1px solid #e3e3e3; box-shadow: 0 10px 30px -10px rgba(0,0,0,.3); animation: aiIn .18s var(--ease-out) both; }
 .sxDrop button { display: flex; align-items: center; gap: 8px; text-align: left; padding: 8px 10px; border: 0; border-radius: 6px; background: none; font: inherit; font-size: 13px; color: #1f1f1f; cursor: pointer; }
 .sxDrop button:hover { background: #f1f3f4; }
-.sxBody { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 300px; height: 580px; }
-.sxBody[data-side="false"] { grid-template-columns: minmax(0, 1fr); }
+.sxBody { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 300px 48px; height: 470px; }
+.sxBody[data-side="false"] { grid-template-columns: minmax(0, 1fr) 48px; }
 .sxGrid { position: relative; font-size: 12px; color: #1f1f1f; background: #fff; overflow: hidden; }
-.sxRow { display: grid; grid-template-columns: 34px 52px minmax(0, 1fr) 72px 150px; border-bottom: 1px solid #e8e8e8; height: 31px; align-items: center; }
-.sxRow > span { padding: 0 8px; border-right: 1px solid #efefef; min-width: 0; height: 100%; display: flex; align-items: center; }
-.sxRow:nth-child(odd):not(.sxHead) { background: #faf7f3; }
-.sxHead { background: #f3ede6; font-weight: 600; color: #57524b; font-size: 11px; }
-.sxNum { justify-content: center; color: #8a8a8a; background: #f8f9fa; font-size: 10.5px; }
+.sxRow { display: grid; grid-template-columns: 46px 64px minmax(120px, 1.4fr) 84px 158px 92px minmax(0, 1fr); border-bottom: 1px solid #e1e1e1; height: 26px; align-items: center; }
+.sxRow > span { padding: 0 6px; border-right: 1px solid #e1e1e1; min-width: 0; height: 100%; display: flex; align-items: center; }
+.sxRow:nth-child(even):not(.sxHead):not(.sxCols) > span:not(.sxNum) { background: #faf7f3; }
+.sxHead > span:not(.sxNum) { background: #f3ede6; font-weight: 600; color: #57524b; font-size: 11px; }
+.sxNum { justify-content: center; color: #444746; background: #f8f9fa; font-size: 10.5px; }
 .sxChip { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-style: normal; padding: 1px 8px 1px 6px; border-radius: 999px; color: #1d1a17; font-size: 11px; }
-.sxReopen { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); }
+.sxReopen { position: absolute; left: 32%; bottom: 20px; transform: translateX(-50%); z-index: 3; }
 .sxReopenSide { position: absolute; right: 14px; top: 12px; z-index: 5; }
 .sxSide { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; height: 100%; min-height: 0; border-left: 1px solid #e3e3e3; background: var(--sx-canvas); font-size: 13px; animation: sxSlide .25s var(--ease-out) both; }
 @keyframes sxSlide { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
 .sxSideHead, .sxDlgHead { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #fff; font-size: 14px; color: #1f1f1f; }
 .sxSideHead button, .sxDlgHead button { display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 50%; background: none; color: #444; cursor: pointer; }
 .sxSideHead button:hover, .sxDlgHead button:hover { background: #f1f3f4; }
-.sxSideScroll { overflow-y: auto; padding: 12px; scrollbar-width: thin; }
+.sxSideScroll { overflow-y: auto; padding: 12px; }
 .sxBrand { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
 .sxBrand img { border-radius: 8px; border: 1px solid var(--sx-line); }
 .sxBrand b { display: block; font-size: 14px; font-weight: 600; }
@@ -267,10 +295,10 @@
 .sxCode span { font-size: 20px; font-weight: 600; letter-spacing: .12em; } .sxCode small { font-size: 11px; }
 .sxFoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--sx-line); background: #fff; cursor: pointer; }
 .sxFoot small { font-size: 11px; color: var(--sx-muted); }
-.sxDialog { position: absolute; z-index: 4; left: 24px; top: 26px; width: min(600px, calc(100% - 300px - 48px)); height: calc(100% - 52px); display: grid; grid-template-rows: auto minmax(0, 1fr); border-radius: 12px; overflow: hidden; background: var(--sx-canvas); box-shadow: 0 24px 60px -18px rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.06); animation: sxDlg .3s var(--ease-out) both; }
-.sxBody[data-side="false"] .sxDialog { width: min(680px, calc(100% - 48px)); left: 50%; transform: translateX(-50%); animation: none; }
+.sxDialog { position: absolute; z-index: 6; left: 4%; top: 196px; width: min(600px, calc(100% - 348px - 6%)); height: 552px; display: grid; grid-template-rows: auto minmax(0, 1fr); border-radius: 12px; overflow: hidden; background: var(--sx-canvas); box-shadow: 0 28px 70px -20px rgba(0,0,0,.5), 0 0 0 1px rgba(0,0,0,.07); animation: sxDlg .3s var(--ease-out) both; }
+.sx:has(.sxBody[data-side="false"]) .sxDialog { width: min(660px, calc(100% - 48px - 8%)); }
 @keyframes sxDlg { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
-.sxDlgBody { overflow-y: auto; padding: 14px 16px 16px; scrollbar-width: thin; }
+.sxDlgBody { overflow-y: auto; padding: 14px 16px 16px; }
 .sxMonth { display: inline-flex; gap: 8px; align-items: center; padding: 5px 12px; border-radius: 9px; border: 1px solid var(--sx-line); background: #fff; font-size: 12px; color: var(--sx-muted); }
 .sxMonth b { color: var(--sx-ink); font-weight: 500; }
 .sxDTabs { display: flex; gap: 2px; margin: 12px 0 10px; padding: 3px; border-radius: 10px; background: var(--sx-strong); width: max-content; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
@@ -289,11 +317,12 @@
 .sxBar i { display: block; height: 100%; border-radius: 999px; }
 .sxToast { position: absolute; z-index: 10; left: 50%; top: 14px; transform: translateX(-50%); padding: 8px 14px; border-radius: 10px; background: #1d1a17; color: #f4efe8; font-size: 12.5px; box-shadow: 0 10px 24px -10px rgba(0,0,0,.4); animation: aiIn .2s var(--ease-out) both; white-space: nowrap; }
 @media (max-width: 760px) {
-  .sxBody, .sxBody[data-side="false"] { display: flex; flex-direction: column; height: auto; }
-  .sxGrid { display: none; }
-  .sxDialog, .sxBody[data-side="false"] .sxDialog { position: static; order: -1; width: 100%; height: 470px; transform: none; border-radius: 0; box-shadow: none; border-bottom: 1px solid #e3e3e3; animation: none; }
-  .sxSide { height: 540px; border-left: 0; }
-  .sxReopenSide { position: static; margin: 12px auto; }
+  .sx[data-dash="true"] { padding-bottom: 0; }
+  .sxTools, .sxFormula, .sxStrip, .sxGrid { display: none; }
+  .sxBody, .sxBody[data-side="false"] { display: block; height: auto; }
+  .sxSide { height: 520px; border-left: 0; }
+  .sxDialog, .sx:has(.sxBody[data-side="false"]) .sxDialog { position: relative; left: auto; top: auto; width: calc(100% - 24px); height: 470px; margin: -44px auto 0; animation: none; }
+  .sxReopenSide { position: static; display: block; margin: 12px auto; }
   .sxReopen { display: none; }
   .sxClose { visibility: hidden; }
 }

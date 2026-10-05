@@ -53,14 +53,15 @@ export function SheetSection() {
         con resumen, categorías, tendencias y movimientos, sin salir de la hoja. <span className="text-muted">Pruébalo: es navegable.</span>
       </SectionHead>
 
-      <div className={`${s.sx} mt-9`}>
+      <div className={`${s.sx} mt-9`} data-dash={dashOpen}>
         <div className={s.sxWin}>
+          {/* Barra de título: logo, nombre, menús y Compartir */}
           <div className={s.sxTop}>
             <span className={s.gsIcon} aria-hidden />
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-[13px] font-medium">Luca Ledger — Tu nombre</span>
+              <span className={s.sxTitle}>Luca Ledger — Tu nombre<Star /></span>
               <span className={s.sxMenu}>
-                {["Archivo", "Editar", "Ver", "Insertar", "Formato", "Datos", "Extensiones"].map((m) => <span key={m} className={s.sxMenuItem}>{m}</span>)}
+                {["Archivo", "Editar", "Ver", "Insertar", "Formato", "Datos", "Herramientas", "Extensiones", "Ayuda"].map((m) => <span key={m} className={s.sxMenuItem}>{m}</span>)}
                 <span className="relative">
                   <button type="button" className={s.sxMenuLuca} aria-haspopup="menu" aria-expanded={menu} onClick={() => setMenu((m) => !m)}>Luca</button>
                   {menu && (
@@ -73,32 +74,58 @@ export function SheetSection() {
                 </span>
               </span>
             </span>
+            <span className={s.sxShare} aria-hidden><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>Compartir</span>
+            <span className={s.sxAvatar2} aria-hidden>T</span>
           </div>
+
+          {/* Barra de herramientas y de fórmulas */}
+          <div className={s.sxTools} aria-hidden>
+            <span className={s.sxToolPill}>
+              <i>↶</i><i>↷</i><i><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"><path d="M6 9V3h12v6M6 17H4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-2" /><rect x="6" y="14" width="12" height="7" rx="1" /></svg></i><b className={s.sxSep} /><i className="!w-auto px-1.5">100% ▾</i><b className={s.sxSep} />
+              <i className="!w-auto px-1">S/</i><i>%</i><i className="!w-auto px-1">.0</i><i className="!w-auto px-1">.00</i><i className="!w-auto px-1">123</i><b className={s.sxSep} />
+              <i className="!w-auto px-1.5">Geist ▾</i><b className={s.sxSep} /><i>−</i><i className={s.sxFontSize}>10</i><i>+</i><b className={s.sxSep} />
+              <i className="font-bold">B</i><i className="italic">I</i><i className="line-through">S</i><i className="underline decoration-[#d9623b] decoration-2">A</i>
+            </span>
+          </div>
+          <div className={s.sxFormula} aria-hidden><span className={s.sxCellRef}>B3 ▾</span><span className={s.sxFx}>fx</span><span>WONG</span></div>
 
           <div className={s.sxBody} data-side={sideOpen}>
             <div className={s.sxGrid} aria-label="Pestaña Movimientos de ejemplo">
-              <div className={`${s.sxRow} ${s.sxHead}`}><span /><span>fecha</span><span>comercio</span><span>monto</span><span>categoria</span></div>
+              <div className={`${s.sxRow} ${s.sxCols}`}><span />{["A", "B", "C", "D", "E", "F"].map((c) => <span key={c} data-sel={c === "B"}>{c}</span>)}</div>
+              <div className={`${s.sxRow} ${s.sxHead}`}><span className={s.sxNum}>1</span><span>fecha</span><span>comercio</span><span>monto</span><span>categoria</span><span>fuente</span><span /></div>
               {ROWS.map(([f, w, m, c, tipo], k) => (
                 <div key={k} className={s.sxRow}>
-                  <span className={s.sxNum}>{k + 2}</span><span>{f}</span><span className="truncate">{w}</span>
-                  <span className={`num ${m.startsWith("+") ? "text-[#1a7a59]" : ""}`}>{m}</span>
+                  <span className={s.sxNum}>{k + 2}</span><span>{f}</span><span className={k === 0 ? s.sxSel : ""}>{w}</span>
+                  <span className={`num justify-end ${m.startsWith("+") ? "text-[#1a7a59]" : ""}`}>{m}</span>
                   <span><i className={s.sxChip} style={{ background: c ? catColor(c) : "#e9e3da" }}><CategoryIcon categoria={c} tipo={tipo} size={12} />{c || (tipo ? "Recibido" : "Por categorizar")}</i></span>
+                  <span className="text-[#6f675d]">{tipo ? "yape_push" : "bcp_email"}</span><span />
                 </div>
               ))}
-              {!dashOpen && <button type="button" className={`btn sm ${s.sxReopen}`} onClick={() => setDashOpen(true)}>Abrir Dashboard</button>}
+              {Array.from({ length: 4 }, (_, k) => <div key={`v${k}`} className={s.sxRow}><span className={s.sxNum}>{ROWS.length + 2 + k}</span><span /><span /><span /><span /><span /><span /></div>)}
             </div>
 
             {sideOpen && <Sidebar tab={side} setTab={setSide} onClose={() => setSideOpen(false)} onDashboard={() => setDashOpen(true)} onToast={setToast} />}
-
-            {dashOpen && (
-              <div className={s.sxDialog} role="dialog" aria-label="Luca — Dashboard (ejemplo)">
-                <Dashboard tab={dash} setTab={setDash} onClose={() => setDashOpen(false)} />
-              </div>
-            )}
+            <span className={s.sxStrip} aria-hidden>
+              <i style={{ background: "#4285f4" }} /><i style={{ background: "#fbbc04" }} /><i style={{ background: "#1a73e8", borderRadius: "50%" }} /><i style={{ background: "#34a853" }} /><b>+</b>
+            </span>
             {!sideOpen && <button type="button" className={`btn sm ${s.sxReopenSide}`} onClick={() => setSideOpen(true)}>Abrir panel</button>}
+            {!dashOpen && <button type="button" className={`btn sm ${s.sxReopen}`} onClick={() => setDashOpen(true)}>Abrir Dashboard</button>}
             {toast && <div className={s.sxToast} role="status">{toast}</div>}
           </div>
+
+          {/* Pestañas de hojas */}
+          <div className={s.sxSheets} aria-hidden>
+            <i>+</i><i>☰</i>
+            {["Movimientos", "Categorías", "Comercios", "Ajustes"].map((t, k) => <span key={t} data-on={k === 0}>{t}<small>▾</small></span>)}
+          </div>
         </div>
+
+        {/* El diálogo del Dashboard flota sobre la hoja y sobresale por debajo de la ventana */}
+        {dashOpen && (
+          <div className={s.sxDialog} role="dialog" aria-label="Luca — Dashboard (ejemplo)">
+            <Dashboard tab={dash} setTab={setDash} onClose={() => setDashOpen(false)} />
+          </div>
+        )}
       </div>
 
       <ul className="mt-6 grid gap-3 text-[14px] text-body sm:grid-cols-3" aria-label="Qué hay en la Sheet">
@@ -117,6 +144,10 @@ const TABS: [SideTab, string, ReactNode][] = [
   ["iphone", "iPhone", <IconIphone key="p" size={16} />],
   ["mcp", "MCP", <svg key="m" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M12 22v-5M9 8V2M15 8V2M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z" /></svg>],
 ];
+
+function Star() {
+  return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5f6368" strokeWidth="1.8" strokeLinejoin="round" aria-hidden><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" /></svg>;
+}
 
 function Pill({ children }: { children: ReactNode }) { return <span className={s.sxPill}><i />{children}</span>; }
 
@@ -264,7 +295,7 @@ const OFFSETS = CATS.map((_, i) => CATS.slice(0, i).reduce((a, [, , p]) => a + p
 
 function Donut() {
   return (
-    <svg viewBox="0 0 120 120" className="h-[104px] w-[104px] flex-none -rotate-90" aria-hidden>
+    <svg viewBox="0 0 120 120" className="h-[88px] w-[88px] flex-none -rotate-90" aria-hidden>
       <circle cx="60" cy="60" r="44" fill="none" stroke="#ebe4d9" strokeWidth="16" />
       {CATS.map(([c, , p], i) => <circle key={c} cx="60" cy="60" r="44" fill="none" stroke={catColor(c)} strokeWidth="16" pathLength={100} strokeDasharray={`${Math.max(0, p - 0.8)} ${100 - p + 0.8}`} strokeDashoffset={-OFFSETS[i]} />)}
     </svg>
@@ -285,10 +316,10 @@ function DResumen() {
       </div>
       <div className={s.sxCard}>
         <b className="text-[13px]">En qué se fue</b>
-        <div className="mt-2 flex items-center gap-3">
+        <div className="mt-2 flex items-center gap-2.5">
           <Donut />
-          <ul className="grid flex-1 gap-1 text-[11.5px]">
-            {CATS.slice(0, 5).map(([c, , p]) => <li key={c} className="flex items-center gap-1.5"><i className="size-2 rounded-[3px]" style={{ background: catColor(c) }} /><span className="flex-1 truncate">{c}</span><span className="num text-[#6f675d]">{p}%</span></li>)}
+          <ul className="grid min-w-0 flex-1 gap-1 text-[11px]">
+            {CATS.slice(0, 5).map(([c, , p]) => <li key={c} className="flex items-center gap-1.5"><i className="size-2 rounded-[3px]" style={{ background: catColor(c) }} /><span className="min-w-0 flex-1 truncate">{c}</span><span className="num flex-none text-[#6f675d]">{p}%</span></li>)}
           </ul>
         </div>
       </div>
