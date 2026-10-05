@@ -72,6 +72,70 @@ Lo que anotar por cada prueba: ¿llegó el POST a webhook.site? ¿`title` y `bod
 
 ---
 
+## Prompt 1 (producción) — "Luca – Captura Yape" contra tu propia Sheet
+
+Diferencias con la versión de prueba: la URL es **tu `/exec` con `?events=1`**, el token es el que muestra el sidebar en **Conectar iPhone**, `received_at` lleva hora, y el atajo pregunta URL y token al importarse (así se comparte por iCloud sin incluir tus datos). Cómo viaja el dato y qué lo protege: `docs/architecture/adr-003-canal-iphone-directo.md`.
+
+```text
+Crea un atajo llamado "Luca – Captura Yape" pensado para ejecutarse como automatización personal
+cuando llega una notificación de la app Yape. Debe correr sin pedir confirmación, sin abrirse en
+pantalla y sin mostrar alertas ni notificaciones propias.
+
+Al importarse, el atajo debe hacer dos preguntas de configuración y guardarlas como valores fijos:
+- "URL de tu Luca" (texto; ejemplo: https://script.google.com/macros/s/XXXX/exec)
+- "Token de tu iPhone" (texto)
+
+Pasos exactos, en este orden:
+
+1. Toma la entrada del atajo (la notificación) y guarda en variables: "titulo" (título), "subtitulo"
+   (subtítulo, puede estar vacío), "cuerpo" (texto o mensaje), "fechaNotif" (fecha de la notificación)
+   y "raw" (la entrada completa convertida a texto).
+
+2. Guarda la fecha y hora actual en "ahora" formateada como ISO 8601 con hora y zona horaria
+   (ejemplo 2026-10-05T12:34:56-05:00), nunca solo la fecha.
+
+3. Genera "eventId" concatenando "ahora", un guion y un número aleatorio entre 100000 y 999999.
+
+4. Obtén el nombre del dispositivo en "dispositivo".
+
+5. Construye un Diccionario:
+   - "schema_version": "1"
+   - "id": eventId
+   - "source": "yape"
+   - "channel": "ios-notification"
+   - "token": el valor de "Token de tu iPhone"
+   - "title": titulo
+   - "subtitle": subtitulo
+   - "body": cuerpo
+   - "raw": raw
+   - "notified_at": fechaNotif
+   - "received_at": ahora
+   - "device": dispositivo
+
+6. Construye la URL destino concatenando "URL de tu Luca" con el texto "?events=1".
+
+7. Haz una petición HTTP a esa URL con método POST, tipo de cuerpo JSON, enviando el Diccionario del
+   paso 5. Debe seguir redirecciones. Guarda la respuesta en "respuesta".
+
+8. Si "respuesta" contiene el texto "\"ok\":true", termina. En cualquier otro caso (error de red,
+   respuesta vacía o sin "ok":true), añade el Diccionario del paso 5 a la lista persistente
+   "luca_pendientes" del almacenamiento de Atajos (acción "Añadir elemento a la lista").
+
+9. Incluye además un segundo atajo pequeño llamado "Luca – Probar iPhone" que envíe a la misma URL
+   un Diccionario con "schema_version": "1", "id": "test-" + ahora, "source": "test", "token": el
+   token, "device": dispositivo, y muestre el texto de la respuesta en pantalla. Sirve para verificar
+   la conexión sin esperar un yapeo: el sidebar de Luca mostrará "Última prueba".
+```
+
+Después de generarlo:
+1. **Editar** → **ⓘ** → **Privacidad** → activa **"Permitir ejecución con el equipo bloqueado"** (etiqueta aprox.).
+2. **Editar** → **Automatización** → **Notificación** → App: **Yape** → **Ejecutar inmediatamente**.
+3. Ejecuta **"Luca – Probar iPhone"**: debe mostrar `{"ok":true,"test":true}` y en el sidebar aparecer "Última prueba: hace unos segundos".
+4. Pide un yapeo de S/1: en el sidebar sube "Eventos recibidos" y en `Movimientos` aparece una fila `transfer_in`.
+5. Para compartirlo: **⋯ → Compartir → Copiar enlace de iCloud**; ese enlace es el que va en el sidebar (`SHORTCUT_URL_`). Quien lo importe responderá las dos preguntas con sus propios datos.
+
+Seguridad en una línea: el `/exec` es público pero solo acepta tu token; el daño máximo con el token es insertar filas en tu propia hoja; "Regenerar token" lo invalida; nada de esto pasa por servidores de Luca.
+
 ## Prompt 2 — Atajo "Luca – Flush" (Experimento 2: cola offline)
 
 ```text
