@@ -115,6 +115,7 @@ export function Step3Connections() {
       </ul>
       <div className="mt-4 flex flex-wrap gap-3">
         <Link className="btn primary" href="/app/conexiones">Ver la guía de conexiones</Link>
+        <Link className="btn" href="/app/conexiones/iphone">Conectar iPhone</Link>
         <button className="btn" onClick={() => skipConnections(true)}>Omitir por ahora</button>
       </div>
     </section>

@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { connectionsStatus } from "@/lib/ajustes";
+import { IPHONE_KEYS } from "@/lib/iphone-wizard";
 import { useLedger } from "./LedgerProvider";
 import { CopyButton, Notice, fmtDateTime, timeAgo } from "./ui";
 
@@ -14,6 +16,8 @@ export default function Conexiones() {
   const c = connectionsStatus(state.data.ajustes);
   const sheetUrl = state.file.webViewLink ?? `https://docs.google.com/spreadsheets/d/${state.file.id}/edit`;
   const scanAt = state.data.ajustes["scan.lastRunAt"];
+  const iphoneToken = state.data.ajustes[IPHONE_KEYS.token] ?? "";
+  const iphonePending = !c.iphone.connected && !!iphoneToken; // token generado, sin prueba ni eventos todavía
 
   return (
     <div className="grid gap-4">
@@ -28,7 +32,7 @@ export default function Conexiones() {
 
       {c.iphone.execUrlChanged && (
         <Notice kind="warn" action={<CopyButton text={c.execUrl} label="Copiar URL nueva" />}>
-          La URL de tu Web App cambió (volviste a publicar la implementación). El atajo del iPhone sigue apuntando a la anterior: <b>reimporta el atajo</b> con la nueva URL desde tu Sheet → menú Luca → Conectar iPhone.
+          La URL de tu Web App cambió (volviste a publicar la implementación). El atajo del iPhone sigue apuntando a la anterior: <b>reimporta el atajo</b> con la nueva URL desde <Link href="/app/conexiones/iphone?paso=3" className="underline">Conectar iPhone</Link>.
         </Notice>
       )}
 
@@ -70,14 +74,19 @@ export default function Conexiones() {
               {c.iphone.lastError && <><dt className="text-muted">Último error</dt><dd className="text-warn">{c.iphone.lastError}</dd></>}
               {c.iphone.schemaVersion && <><dt className="text-muted">Esquema</dt><dd>v{c.iphone.schemaVersion}</dd></>}
             </dl>
+          ) : iphonePending ? (
+            <p className="text-sm text-muted">Ya tienes un token generado pero tu iPhone aún no ha enviado nada. Termina el asistente: instala el atajo y ejecuta la prueba.</p>
           ) : (
-            <p className="text-sm text-muted">Yape no envía correo por los yapeos que recibes ni por los menores a S/ 10. Con un atajo de iOS 27, tu iPhone reenvía esas notificaciones a tu script.</p>
+            <p className="text-sm text-muted">Yape no envía correo por los yapeos que recibes ni por los menores a S/ 10. Con un atajo de iOS 27, tu iPhone reenvía esas notificaciones a tu script. El asistente te guía en 5 pasos (ábrelo en el iPhone).</p>
           )}
-          {c.iphone.silent && c.iphone.connected && <p className="text-xs text-warn">Sin eventos en más de 7 días. Si sigues recibiendo yapeos, revisa que la automatización del atajo esté activa y ejecuta <b>Probar</b> desde tu Sheet.</p>}
+          {c.iphone.silent && c.iphone.connected && <p className="text-xs text-warn">Sin eventos en más de 7 días. Si sigues recibiendo yapeos, revisa que la automatización del atajo esté activa y ejecuta <b>Luca – Probar iPhone</b>.</p>}
           <div className="flex flex-wrap gap-2">
-            <a className="btn" href={sheetUrl} target="_blank" rel="noreferrer">{c.iphone.connected ? "Probar / Regenerar token / Desconectar" : "Conectar iPhone"} en tu Sheet → menú Luca ↗</a>
+            <Link className={`btn ${c.iphone.connected ? "" : "primary"}`} data-testid="iphone-configurar"
+              href={c.iphone.connected ? "/app/conexiones/iphone?paso=5" : iphonePending ? "/app/conexiones/iphone?paso=3" : "/app/conexiones/iphone"}>
+              {c.iphone.connected ? "Gestionar (probar, regenerar token, desconectar)" : iphonePending ? "Continuar la configuración" : "Configurar"}
+            </Link>
           </div>
-          <p className="text-xs text-muted">{c.webAppReady ? "El token del dispositivo lo genera tu script; por eso estas acciones se hacen desde el Sheet." : "Requiere la Web App publicada (arriba)."}</p>
+          {!c.webAppReady && <p className="text-xs text-muted">Requiere la Web App publicada (arriba); el asistente lo explica en su primer paso.</p>}
         </section>
 
         <section className="card grid content-start gap-3" data-testid="card-mcp">

@@ -60,7 +60,7 @@ test.describe("Ajustes, Conexiones y páginas legales", () => {
     await expect(page.getByTestId("card-webapp")).toContainText("Nueva implementación");
     await expect(page.getByTestId("card-iphone")).toContainText("no configurado");
     await expect(page.getByTestId("card-mcp")).toContainText("no configurada");
-    await expect(page.getByTestId("card-iphone").getByRole("link", { name: /Conectar iPhone/ })).toHaveAttribute("href", /docs\.google\.com/);
+    await expect(page.getByTestId("card-iphone").getByTestId("iphone-configurar")).toHaveAttribute("href", "/app/conexiones/iphone");
   });
 
   test("páginas legales en español, persona natural, gratuito y arquitectura literal", async ({ page }) => {
