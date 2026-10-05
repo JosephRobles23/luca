@@ -12,7 +12,7 @@
  * Versión de LucaLib que se escribe en `Ajustes.luca.version` en cada pasada (ADR-006 §5): la web y el
  * sidebar comparan con la última publicada para avisar "hay una versión nueva". Subirla en cada release.
  */
-var LUCA_VERSION = '16';
+var LUCA_VERSION = '17';
 // Versión mínima del stub que esta librería necesita (stub v2 = pasa setupTriggers y execUrl/stubVersion).
 var STUB_MIN_VERSION_ = '2';
 
@@ -54,6 +54,7 @@ var AJUSTES_DEFAULTS_ = {
   'triggers.installedAt': '',
   'conexiones.execUrl': '',
   'conexiones.execUrl.manual': '',
+  'conexiones.mcp.execUrl': '',
   'conexiones.execUrl.verifiedAt': '',
   // iPhone (ADR-003, addendum 2026-10-05): el token del atajo vive AQUÍ (la web solo lee la hoja y el token
   // solo permite insertar filas en esta misma hoja). `iphone.execUrl` = URL con la que se generó el atajo.
@@ -222,7 +223,8 @@ function execUrlResponde_(url) {
 function resolverExecUrl_(sheetId, config) {
   var a = (config && config.ajustes) || {};
   var cands = [];
-  [str_(a['conexiones.execUrl.manual']).trim(), execUrlGuardada_(config), execUrlLive_(config)].forEach(function (u) {
+  // Candidatas: la que pegó el usuario, la última que funcionó con el MCP, la guardada y la que da Google.
+  [str_(a['conexiones.execUrl.manual']).trim(), str_(a['conexiones.mcp.execUrl']).trim(), execUrlGuardada_(config), execUrlLive_(config)].forEach(function (u) {
     if (u && cands.indexOf(u) < 0) cands.push(u);
   });
   var probadas = [];

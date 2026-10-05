@@ -5,7 +5,7 @@ Skill de release: `.claude/skills/deploy-luca/SKILL.md`
 Actualizado: 2026-10-04 (noche). Fuente de verdad de qué está hecho, en curso y pendiente. Commits en `main`.
 
 ## Hecho y publicado
-- LucaLib **v16** (`gas/shared`), 163 tests unitarios en total (GAS + web + Worker):
+- LucaLib **v17** (`gas/shared`), 164 tests unitarios en total (GAS + web + Worker):
   - Parsers correo (9 tipos + avisos ignorados) validados con 8 `.eml` reales; parser push (yapeo recibido → `transfer_in`).
   - **Autorizar** = consentimiento + trigger (callback `setupTriggers` del stub) + importación del último mes + telemetría.
   - Categorización `user → reglas → caché Comercios → LLM (hook, null sin key)`; pestañas `Categorías` (13) y `Comercios`; `recategorizar` aprende y arrastra.
@@ -17,7 +17,7 @@ Actualizado: 2026-10-04 (noche). Fuente de verdad de qué está hecho, en curso 
   - **Extractor LLM opt-in** (`llm-extract-runtime.js`, ADR-008): correos BCP/Yape no reconocidos → JSON estricto con PII enmascarada; `extraerDesconocidos`; casilla en sidebar.
   - Telemetría en `Ajustes` alineada con la web: `conexiones.iphone.execUrl`, `conexiones.mcp*`, `llm.apiKey.configured`.
 - **Worker `services/luca-mcp`** (fork de Vera-MCP): `/enroll`, `/authorize`, `/token`, `/register`, `/mcp`, `GET /meta`; TTL 24 h; tools v0; typecheck y `wrangler deploy --dry-run` OK. **Desplegado** en https://mcp.lucaa.lat (y workers.dev), D1 + KV propios. Aún **0 tenants**: falta la primera conexión real desde Claude/ChatGPT.
-- Stub en la plantilla `1FMx…` apuntando a LucaLib v16 (stub v2 con STUB_VERSION) (`lucaMenu1` pasa `setupTriggers`; `getConfig_` añade `execUrl`).
+- Stub en la plantilla `1FMx…` apuntando a LucaLib v17 (stub v2 con STUB_VERSION) (`lucaMenu1` pasa `setupTriggers`; `getConfig_` añade `execUrl`).
 - Parser validado contra **8 `.eml` reales** (`docs/gmails/`, ignorados por git) con `scripts/eml-check.mjs`: 100 % correctos tras ajustar el layout de Yape (una celda por fila), `PLIN-<nombre>` y avisos de seguridad. 40 tests.
 - **Asistente Conectar iPhone** en la web (`/app/conexiones/iphone`): 5 pasos, QR, copiar URL/token/prompt (idéntico al del sidebar, test de paridad), espera de la prueba en vivo. Falta `NEXT_PUBLIC_SHORTCUT_URL` cuando exista el enlace de iCloud.
 - **Web completa** (`apps/web`): landing, onboarding de 3 pasos, dashboard (4 KPIs incl. Recibido por Yape, USD con TC), movimientos con filtros/recategorizar/marcar transferencia/detalle, agregar manual, ajustes, conexiones (iPhone/IA/Web App con telemetría), `/privacidad`, `/terminos`, tema claro/oscuro, 360 px. Modo `LUCA_MOCK=1` y **17 e2e Playwright** en verde. `merchantKey` alineada con GAS. **No probada aún contra Google real** por el usuario.
@@ -31,7 +31,7 @@ Integrados en `main`: `agent/mcp-m5`, `agent/gas-m1`, `agent/web-m2`, `agent/gas
 |---|---|---|
 
 ## Pendiente del usuario
-- Actualizar su copia a LucaLib **v16** y reimportar (limpiar Movimientos/_Procesados/cursor) (o hacer una copia nueva de la plantilla) y repetir Autorizar/Escanear; reportar números y filas raras; `.eml` de correos problemáticos y **del correo de abono BCP** (captura o `.eml`) a `spikes/eml-raw/`.
+- Actualizar su copia a LucaLib **v17** y reimportar (limpiar Movimientos/_Procesados/cursor) (o hacer una copia nueva de la plantilla) y repetir Autorizar/Escanear; reportar números y filas raras; `.eml` de correos problemáticos y **del correo de abono BCP** (captura o `.eml`) a `spikes/eml-raw/`.
 - `apps/web/.env.local`, prueba de la web en la workstation (puerto 3000).
 - ~~DNS~~ ✅ `lucaa.lat` en Cloudflare; web en https://lucaa.lat (Vercel). Pendiente: cliente OAuth "Luca Web" con las URIs y publicar el consentimiento (guía Parte D/E).
 - Conectar el MCP de punta a punta: Web App desplegado → sidebar "Generar código" → conector en Claude.

@@ -81,7 +81,13 @@ function datosIphoneFor_(sheetId, config) {
  * y el token ya puestos (no hace preguntas al importarse). Requiere el Web App desplegado.
  */
 function generarPromptIphone(sheetId, config) {
-  resolverExecUrl_(sheetId, config);
+  var res = resolverExecUrl_(sheetId, config);
+  // Nunca generar un atajo con una URL que no responde (2026-10-05: se generó con una implementación rota).
+  if (!res.verified && !res.candidatas.length) throw new Error('Despliega primero el Web App (Implementar → Nueva implementación → ⚙️ Aplicación web → ejecutar como yo, acceso: cualquiera) para obtener la URL /exec.');
+  if (!res.verified) {
+    throw new Error('Ninguna URL de tu aplicación web responde como Luca (' + res.candidatas.map(function (c) { return '…' + c.url.slice(-14); }).join(', ') +
+      '). Pega la URL correcta en "URL de tu aplicación web" → "Verificar y guardar URL" y vuelve a copiar el prompt.');
+  }
   var d = conectarIphone(sheetId, config);
   if (!d.execUrl) throw new Error('Despliega primero el Web App (Implementar → Aplicación web → ejecutar como yo, acceso: cualquiera) para obtener la URL /exec.');
   return { prompt: promptIphone_(d.execUrl, d.token), execUrl: d.execUrl, token: d.token, shortcutUrl: d.shortcutUrl, eventsUrl: d.eventsUrl };

@@ -80,7 +80,7 @@ test('eventos: valida el token contra Ajustes (editar la celda cambia el token a
 });
 
 test('generarPromptIphone: prompt con la URL ?events=1 y el token literales, sin preguntas de importación', () => {
-  const h = makeHarness({ execUrl: 'https://script.google.com/macros/s/TEST/exec', spreadsheets: { [SID]: {} } });
+  const h = makeHarness({ execUrl: 'https://script.google.com/macros/s/TEST/exec', spreadsheets: { [SID]: {} }, fetch: () => ({ getResponseCode: () => 200, getContentText: () => JSON.stringify({ ok: true, app: 'luca' }) }) });
   const cfg = configFor(h, SID);
   const r = h.api.dispatch('generarPromptIphone', [], SID, cfg);
   assert.equal(r.execUrl, 'https://script.google.com/macros/s/TEST/exec');
@@ -207,4 +207,17 @@ test('eventos: push y correo del mismo yapeo quedan ambos con flag fuzzy_dup en 
   h.api.appendTransactions_(SID, cfg, [h.api.parseEmail(emails.yape_p2p_sent)]);     // S/ 10 · 02:35
   const r = post(h, cfg, evento(token, { id: 'f-1', body: 'Yapeaste S/ 10 a Carlos', notified_at: '2026-10-04T02:35:10-05:00' }));
   assert.deepEqual([r.stored, r.fuzzy], [true, 1]);
+});
+
+test('generarPromptIphone se niega si ninguna URL responde, y usa la del MCP si es la única buena', () => {
+  const rota = 'https://script.google.com/macros/s/ROTA/exec';
+  const buena = 'https://script.google.com/macros/s/BUENA/exec';
+  const resp = (c, b) => ({ getResponseCode: () => c, getContentText: () => (typeof b === 'string' ? b : JSON.stringify(b)) });
+  const fetch = (url) => url.startsWith(buena) ? resp(200, { ok: true, app: 'luca' }) : resp(404, '<html>Not Found</html>');
+  const h1 = makeHarness({ execUrl: rota, spreadsheets: { [SID]: { Ajustes: [['key', 'value'], ['conexiones.execUrl', rota]] } }, fetch });
+  assert.throws(() => h1.api.generarPromptIphone(SID, configFor(h1, SID)), /Verificar y guardar URL/);
+  const h2 = makeHarness({ execUrl: rota, spreadsheets: { [SID]: { Ajustes: [['key', 'value'], ['conexiones.execUrl', rota], ['conexiones.mcp.execUrl', buena]] } }, fetch });
+  const r = h2.api.generarPromptIphone(SID, configFor(h2, SID));
+  assert.ok(r.prompt.includes(buena + '?events=1'));
+  assert.ok(!r.prompt.includes(rota));
 });

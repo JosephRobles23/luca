@@ -489,7 +489,8 @@ function iniciarConexionMcp(sheetId, config) {
       : 'No se pudo contactar al servidor MCP. Revisa que la Web App esté publicada y la URL del Worker.');
   }
   // Telemetría no sensible para la web (conexiones.mcp*): enrolado; el pairing lo consume el Worker.
-  setAjustes_(sheetId, config, { 'conexiones.mcp': '1', 'conexiones.mcp.connectedAt': new Date().toISOString(), 'conexiones.workerUrl': estado.workerUrl });
+  // El Worker verificó este /exec por challenge: es una URL buena; queda como candidata para el iPhone.
+  setAjustes_(sheetId, config, { 'conexiones.mcp': '1', 'conexiones.mcp.connectedAt': new Date().toISOString(), 'conexiones.workerUrl': estado.workerUrl, 'conexiones.mcp.execUrl': estado.webApp.url, 'conexiones.execUrl': estado.webApp.url, 'conexiones.execUrl.verifiedAt': new Date().toISOString() });
   return {
     code: String(json.code),
     expiresInSeconds: json.expiresInSeconds || 600,
