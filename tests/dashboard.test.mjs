@@ -66,6 +66,7 @@ test('resumenDashboard: USD con el tipo de cambio del correo o el de Ajustes; tr
   assert.ok(!r.categorias.some((c) => c.nombre === 'Transferencias'), 'la transferencia propia no aparece en "en qué se fue"');
   assert.equal(r.categorias.find((c) => c.nombre === 'Sin categoría').color, '#cfc6b8');
   assert.equal(r.movimientos[0].fecha, '2026-10-05T00:20:00-05:00', 'más recientes primero');
+  assert.equal(r.comercios.find((c) => c.nombre === 'RAPPI SAC').categoria, 'Comidas fuera');
 });
 
 test('resumenDashboard: ritmo (día/días, cerrado), delta vs mes anterior, meses con datos y tendencia por categoría', () => {
@@ -96,4 +97,30 @@ test('Dashboard: el diálogo pide resumenDashboard (en DISPATCH_), tiene 4 pesta
   assert.match(html, /esc\(m\.etiqueta\)/);
   assert.match(html, /esc\(c\.nombre\)/);
   assert.doesNotMatch(h.api.buildDialog('dashboard').html.getContent(), /luca-parcial/);
+});
+
+test('Iconos de categoría: cada categoría por defecto tiene su SVG propio; las propias se reconocen por palabra clave', async () => {
+  const vm = await import('node:vm');
+  const ui = fs.readFileSync(path.join(HERE, '..', 'gas', 'shared', '_Ui.html'), 'utf8');
+  const script = ui.slice(ui.indexOf('<script>') + 8, ui.lastIndexOf('</script>'));
+  const doc = { addEventListener() {}, querySelectorAll: () => [], getElementById: () => null };
+  const ctx = vm.createContext({ document: doc, setTimeout, window: {} });
+  vm.runInContext(script, ctx);
+  const h = makeHarness();
+  const defecto = plain(h.api.CATEGORIAS_INICIALES_).map((c) => c[0]);
+  const claves = new Set();
+  for (const c of defecto) {
+    const k = ctx.claveIconoCategoria(c);
+    assert.ok(ctx.ICONOS_CAT_[k] || ctx.ICONOS_[k], c + ' → ' + k + ' no existe');
+    if (c !== 'Otros') assert.notEqual(k, 'etiqueta', c + ' usa el icono genérico');
+    claves.add(k);
+  }
+  assert.equal(claves.size, defecto.length, 'cada categoría por defecto con un icono distinto');
+  for (const [nombre, k] of [['Mascotas', 'huella'], ['Viajes', 'avion'], ['Gimnasio', 'pesa'], ['Cafés', 'cafe'], ['Impuestos SUNAT', 'recibo'], ['', 'duda'], ['Sin categoría', 'duda'], ['Cosas raras', 'etiqueta']]) {
+    assert.equal(ctx.claveIconoCategoria(nombre), k, nombre || '(vacía)');
+  }
+  for (const [cat, tipo, k] of [['', 'internal_transfer', 'flechas'], ['', 'transfer_in', 'recibir'], ['', 'income', 'billetera']]) {
+    assert.ok(ctx.iconoCategoria(cat, tipo).includes(ctx.ICONOS_CAT_[k]), tipo);
+  }
+  for (const k of ctx.ICONO_PALABRAS_.map((x) => x[1])) assert.ok(ctx.ICONOS_CAT_[k] || ctx.ICONOS_[k], 'falta el icono ' + k);
 });

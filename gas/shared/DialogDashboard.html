@@ -78,7 +78,8 @@
   @keyframes dibujar { from { stroke-dashoffset: 1; } }
   svg.grafico .punto { stroke-width: 2.5; fill: var(--card); }
 
-  .avatar { width: 34px; height: 34px; border-radius: 10px; flex: none; display: grid; place-items: center; font: 600 13px var(--sans); color: var(--ink); }
+  .avatar { width: 34px; height: 34px; border-radius: 10px; flex: none; display: grid; place-items: center; color: var(--ink); }
+  .avatar svg { width: 18px; height: 18px; }
   .filas { display: grid; gap: 2px; }
   .fila { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 12px; }
   .fila:hover { background: var(--sunken); }
@@ -168,7 +169,6 @@
   function cifra(n) { return Number(n || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   function soles(n) { return 'S/ ' + cifra(n); }
   function corto(n) { return n >= 1000 ? (n / 1000).toLocaleString('es-PE', { maximumFractionDigits: 1 }) + 'k' : String(Math.round(n)); }
-  function inicial(m) { if (m.tipo === 'internal_transfer') return '⇄'; var s = (m.etiqueta || '?').replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ0-9]/g, ''); return esc((s[0] || '•').toUpperCase()); }
 
   var D = null, mes = '', tab = 'resumen', filtro = { tipo: '', categoria: '', q: '' }, ocultas = {}, primeraVez = true;
 
@@ -247,7 +247,7 @@
         '<section class="card" style="--i:2"><div class="card-t"><b>Últimos 6 meses</b><small>Toca un mes para verlo</small></div>' + barrasMeses() + '</section>' +
         '<section class="card" style="--i:3"><div class="card-t"><b>Dónde más gastaste</b><small>' + mesNombre(mes) + '</small></div><div class="filas">' +
           (D.comercios.slice(0, 5).map(function (c) {
-            return '<div class="fila"><span class="avatar" style="background:' + c.color + '">' + inicial({ etiqueta: c.nombre }) + '</span><span class="t"><span>' + esc(c.nombre) + '</span><small>' + c.n + (c.n === 1 ? ' movimiento' : ' movimientos') + '</small></span><span class="m">' + soles(c.monto) + '</span></div>';
+            return '<div class="fila"><span class="avatar" style="background:' + c.color + '" title="' + esc(c.categoria || 'Sin categoría') + '">' + iconoCategoria(c.categoria) + '</span><span class="t"><span>' + esc(c.nombre) + '</span><small>' + c.n + (c.n === 1 ? ' movimiento' : ' movimientos') + '</small></span><span class="m">' + soles(c.monto) + '</span></div>';
           }).join('') || '<p class="hint">Sin gastos este mes.</p>') + '</div></section>' +
       '</div>';
     contar(); animarDona();
@@ -301,14 +301,14 @@
       '<section class="card" style="--i:0"><div class="card-t"><b>Gasto por categoría</b><small>' + soles(total) + ' en ' + mesNombre(mes) + '</small></div>' +
       '<div class="cat-barra">' + cats.map(function (c, i) { return '<i title="' + esc(c.nombre) + ' · ' + c.pct + '%" style="flex:' + c.monto + ';background:' + c.color + ';animation-delay:' + i * 30 + 'ms"></i>'; }).join('') + '</div>' +
       (cats.map(function (c, i) {
-        return '<button class="cat-fila" onclick="verCategoria(' + i + ')"><span class="avatar" style="background:' + c.color + '">' + inicial({ etiqueta: c.nombre }) + '</span>' +
+        return '<button class="cat-fila" onclick="verCategoria(' + i + ')"><span class="avatar" style="background:' + c.color + '">' + iconoCategoria(c.nombre) + '</span>' +
           '<span class="t">' + esc(c.nombre) + '<small>' + c.n + (c.n === 1 ? ' movimiento' : ' movimientos') + '</small></span>' +
           '<span class="pista"><i style="width:' + (c.monto / max * 100) + '%;background:' + c.color + ';animation-delay:' + i * 30 + 'ms"></i></span>' +
           '<span class="m">' + soles(c.monto) + '</span><em>' + c.pct + '%</em></button>';
       }).join('') || '<p class="hint">Sin gastos este mes.</p>') + '</section>' +
       '<div class="rejilla mitad"><section class="card" style="--i:1"><div class="card-t"><b>Comercios y personas</b><small>Top 8</small></div><div class="filas">' +
         (D.comercios.map(function (c) {
-          return '<div class="fila"><span class="avatar" style="background:' + c.color + '">' + inicial({ etiqueta: c.nombre }) + '</span><span class="t"><span>' + esc(c.nombre) + '</span><small>' + c.n + (c.n === 1 ? ' movimiento' : ' movimientos') + '</small></span><span class="m">' + soles(c.monto) + '</span></div>';
+          return '<div class="fila"><span class="avatar" style="background:' + c.color + '" title="' + esc(c.categoria || 'Sin categoría') + '">' + iconoCategoria(c.categoria) + '</span><span class="t"><span>' + esc(c.nombre) + '</span><small>' + c.n + (c.n === 1 ? ' movimiento' : ' movimientos') + '</small></span><span class="m">' + soles(c.monto) + '</span></div>';
         }).join('') || '<p class="hint">Sin gastos este mes.</p>') + '</div></section>' +
       '<section class="card" style="--i:2"><div class="card-t"><b>Cómo leerlo</b></div><p class="lead">Solo cuentan los <b>gastos</b>. Las transferencias entre tus cuentas y los yapeos recibidos no suman aquí. Los importes en dólares se convierten a soles con el tipo de cambio del correo o el de tu hoja (S/ ' + cifra(D.usd) + ').</p>' +
         '<p class="hint">Toca una categoría para ver sus movimientos.</p></section></div>';
@@ -397,7 +397,7 @@
       var propia = m.tipo === 'internal_transfer', entra = m.tipo === 'income' || m.tipo === 'transfer_in';
       var signo = propia ? '' : entra ? '+' : '−';
       var monto = (m.moneda === 'USD' ? '$ ' : 'S/ ') + cifra(m.monto);
-      html += '<div class="fila' + (propia ? ' propia' : '') + '"><span class="avatar" style="background:' + (propia ? '#cfc6b8' : m.color) + '">' + inicial(m) + '</span>' +
+      html += '<div class="fila' + (propia ? ' propia' : '') + '"><span class="avatar" style="background:' + (propia ? '#cfc6b8' : m.color) + '" title="' + esc(m.categoria || '') + '">' + iconoCategoria(m.categoria, m.tipo) + '</span>' +
         '<span class="t"><span>' + esc(m.etiqueta) + '</span><small>' + esc(propia ? 'No cuenta como gasto' : m.tipo === 'transfer_in' ? 'Yape recibido' : m.tipo === 'income' ? (m.categoria || 'Ingreso') : (m.categoria || 'Sin categoría')) + ' · ' + esc(m.fecha.slice(11, 16)) +
         (FUENTES[m.fuente] ? ' <span class="tag">' + FUENTES[m.fuente] + '</span>' : '') + '</small></span>' +
         '<span class="m' + (entra ? ' mas' : '') + '">' + signo + monto + (m.moneda === 'USD' ? '<small>≈ ' + soles(m.base) + '</small>' : '') + '</span></div>';

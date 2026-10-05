@@ -94,9 +94,13 @@ function resumenDashboard(sheetId, config, opts) {
   }).sort(function (a, b) { return b.monto - a.monto; });
 
   var porCom = {};
-  gastos.forEach(function (t) { var k = etiquetaTx_(t); var c = porCom[k] || (porCom[k] = { monto: 0, n: 0, categoria: t.categoria }); c.monto += aBase_(t, usd); c.n++; });
+  gastos.forEach(function (t) {
+    var k = etiquetaTx_(t), c = porCom[k] || (porCom[k] = { monto: 0, n: 0, categoria: '' });
+    c.monto += aBase_(t, usd); c.n++;
+    if (!c.categoria && t.categoria) c.categoria = t.categoria;   // icono/color: la primera categoría conocida
+  });
   var comercios = Object.keys(porCom).map(function (k) {
-    return { nombre: k, monto: redondear2_(porCom[k].monto), n: porCom[k].n, color: colorCategoria_(porCom[k].categoria) };
+    return { nombre: k, monto: redondear2_(porCom[k].monto), n: porCom[k].n, categoria: porCom[k].categoria, color: colorCategoria_(porCom[k].categoria) };
   }).sort(function (a, b) { return b.monto - a.monto; }).slice(0, 8);
 
   // Últimos meses y tendencia por categoría
