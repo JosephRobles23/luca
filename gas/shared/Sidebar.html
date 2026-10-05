@@ -19,6 +19,8 @@
   label.chk { display: flex; gap: 8px; align-items: flex-start; margin-top: 10px; font-size: 12px; color: #1d1a17; }
   label.chk input { width: auto; margin: 2px 0 0; flex: none; }
   .box { background: #faf7f2; border: 1px solid #eee3d5; border-radius: 6px; padding: 8px; margin-top: 8px; }
+  .paso { font-size: 12px; margin-bottom: 2px; }
+  .copiar { display: flex; gap: 6px; } .copiar button { flex: 1; }
 </style>
 </head>
 <body>
@@ -49,11 +51,28 @@
   <button class="sec" onclick="importar()">Importar desde esa fecha</button>
 
   <h3>Conectar iPhone</h3>
-  <div class="hint">Captura los yapeos recibidos (que no llegan por correo) desde el iPhone, directo a esta hoja. Requiere el Web App desplegado (Implementar → Aplicación web → ejecutar como yo, acceso: cualquiera).</div>
+  <div class="hint">Captura los yapeos recibidos (que no llegan por correo) desde el iPhone, directo a esta hoja. Tres pasos: comprobar el Web App, copiar URL y token (o el prompt completo) y crear el atajo en iOS 27.</div>
+  <div class="box">
+    <div class="paso"><b>1.</b> Web App desplegado (Implementar → Aplicación web → ejecutar como yo, acceso: cualquiera)</div>
+    <div id="iphoneWebApp" class="hint">sin comprobar</div>
+    <button class="sec" id="btnIphoneProbar" onclick="probarWebAppIphone()">Comprobar Web App</button>
+  </div>
+  <div class="box">
+    <div class="paso"><b>2.</b> Datos del atajo</div>
+    <div id="iphoneDatos" class="hint">Pulsa "Conectar iPhone" para generar el token y ver la URL.</div>
+    <button id="btnConectar" onclick="conectar()">Conectar iPhone</button>
+    <div class="copiar"><button class="sec" id="btnCopiarUrl" onclick="copiarUrlIphone()">Copiar URL</button><button class="sec" id="btnCopiarToken" onclick="copiarTokenIphone()">Copiar token</button></div>
+  </div>
+  <div class="box">
+    <div class="paso"><b>3.</b> Crear el atajo en iOS 27</div>
+    <div class="hint">Copia el prompt, pégalo en Atajos (generador en lenguaje natural) y luego activa "Permitir con el equipo bloqueado" y la automatización Notificación → Yape. No compartas ese atajo: lleva tu token.</div>
+    <button id="btnPrompt" onclick="copiarPromptIphone()">Copiar prompt para Atajos</button>
+    <div id="iphoneAtajo" class="hint"></div>
+  </div>
   <div id="iphone" class="box">cargando…</div>
-  <button id="btnConectar" onclick="conectar()">Conectar iPhone</button>
   <button class="sec" id="btnRegenerar" onclick="regenerar()">Regenerar token</button>
   <button class="danger" id="btnDesconectar" onclick="desconectar()">Desconectar iPhone</button>
+  <textarea id="clip" aria-hidden="true" style="position:absolute;left:-9999px;top:0;height:1px;width:1px;opacity:0"></textarea>
 
   <h3>Conectar con tu IA (Claude / ChatGPT)</h3>
   <div class="hint">Genera un código de un solo uso (10 min). En tu IA añade el conector con la URL que aparece y pega el código cuando te lo pida. Requiere el Web App desplegado.</div>
@@ -151,10 +170,58 @@
     }).catch(function (e) { show('Error: ' + e.message); });
   }
 
+  // --- Conectar iPhone (mini-wizard) ---
+  var iphoneDatos = { execUrl: '', eventsUrl: '', token: '', shortcutUrl: '', shortcutDisponible: false, conectado: false };
+
+  function copiarTexto(texto, etiqueta) {
+    var ta = document.getElementById('clip');
+    function fallback() {
+      ta.value = texto; ta.select(); ta.setSelectionRange(0, texto.length);
+      var ok = false; try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      show(ok ? etiqueta + ' copiado al portapapeles.' : 'No se pudo copiar automáticamente; selecciona y copia este texto:\n\n' + texto);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(texto).then(function () { show(etiqueta + ' copiado al portapapeles.'); }).catch(fallback);
+    } else fallback();
+  }
+  function copiarUrlIphone() { if (!iphoneDatos.eventsUrl) return show('Primero pulsa "Conectar iPhone".'); copiarTexto(iphoneDatos.eventsUrl, 'URL de eventos'); }
+  function copiarTokenIphone() { if (!iphoneDatos.token) return show('Primero pulsa "Conectar iPhone".'); copiarTexto(iphoneDatos.token, 'Token'); }
+  function copiarPromptIphone() {
+    show('generando prompt…');
+    run('generarPromptIphone').then(function (r) {
+      iphoneDatos = Object.assign({}, iphoneDatos, r, { conectado: !!r.token });
+      copiarTexto(r.prompt, 'Prompt para Atajos');
+      run('estadoLuca').then(function (st) { pintarIphone(iphoneDatos, st.iphone); });
+    }).catch(function (e) { show('Error: ' + e.message); });
+  }
+  function probarWebAppIphone() {
+    var el = document.getElementById('iphoneWebApp');
+    el.className = 'hint'; el.textContent = 'comprobando…';
+    run('probarWebApp').then(function (r) {
+      var ok = !!(r.challenge && r.challenge.sigOk);
+      el.className = ok ? 'ok' : 'warn';
+      el.textContent = (ok ? 'OK: ' : '') + r.veredicto;
+      show(r.veredicto + '\n\n' + JSON.stringify(r, null, 2));
+      if (ok) pintar();
+    }).catch(function (e) { el.className = 'warn'; el.textContent = 'Error: ' + e.message; });
+  }
+
   function pintarIphone(d, tele) {
     tele = tele || {};
+    if (d.token) iphoneDatos = d; else iphoneDatos = Object.assign({}, iphoneDatos, { execUrl: d.execUrl || iphoneDatos.execUrl, conectado: d.conectado });
+    var datos = document.getElementById('iphoneDatos');
+    if (!d.execUrl) {
+      datos.innerHTML = '<span class="warn">Web App no desplegado: falta la URL /exec. Completa el paso 1.</span>';
+    } else if (iphoneDatos.token) {
+      datos.innerHTML = fila('URL de eventos', '<code>' + esc(iphoneDatos.eventsUrl) + '</code>') + fila('Token', '<code>' + esc(iphoneDatos.token) + '</code>');
+    } else {
+      datos.innerHTML = fila('URL del Web App', '<code>' + esc(d.execUrl) + '</code>') + '<div class="hint">' + (d.conectado ? 'Pulsa "Ver datos del atajo" para volver a ver la URL de eventos y el token.' : 'Pulsa "Conectar iPhone" para generar el token.') + '</div>';
+    }
+    var atajo = document.getElementById('iphoneAtajo');
+    atajo.innerHTML = (iphoneDatos.shortcutDisponible && iphoneDatos.shortcutUrl)
+      ? 'Alternativa: <a href="' + esc(iphoneDatos.shortcutUrl) + '" target="_blank">Instalar atajo (iCloud)</a> y responder URL y token al importarlo.'
+      : '';
     var html = '';
-    if (!d.execUrl) html += '<div class="warn">Web App no desplegado: falta la URL /exec.</div>';
     if (!d.conectado) {
       html += fila('Estado', '<span class="muted">no conectado</span>');
     } else {
@@ -163,18 +230,15 @@
         fila('Eventos recibidos', tele.eventsCount || 0) +
         fila('Último evento', esc(fecha(tele.lastEventAt))) +
         fila('Última prueba', esc(fecha(tele.lastTestAt))) +
-        (tele.lastError ? fila('Último error', '<span class="warn">' + esc(tele.lastError) + '</span>') : '');
-      if (d.token) {
-        html += '<div class="hint" style="margin-top:8px">Pega estos datos en el atajo (las 2 preguntas al importarlo):</div>' +
-          fila('URL', '<code>' + esc(d.execUrl) + '</code>') +
-          fila('Token', '<code>' + esc(d.token) + '</code>') +
-          '<div class="hint"><a href="' + esc(d.shortcutUrl) + '" target="_blank">Instalar el atajo de iOS</a> · luego pulsa "Probar" en el atajo y revisa "Última prueba" aquí.</div>';
-      } else {
-        html += '<div class="hint">Pulsa "Conectar iPhone" para volver a ver la URL y el token.</div>';
-      }
+        (tele.lastError ? fila('Último error', '<span class="warn">' + esc(tele.lastError) + '</span>') : '') +
+        (tele.execUrl && d.execUrl && tele.execUrl !== d.execUrl ? '<div class="warn" style="margin-top:4px">La URL /exec cambió desde que generaste el atajo: vuelve a copiar el prompt (o edita la URL en el atajo).</div>' : '') +
+        '<div class="hint" style="margin-top:6px">Ejecuta "Luca – Probar iPhone" en el iPhone y revisa "Última prueba" aquí.</div>';
     }
     document.getElementById('iphone').innerHTML = html;
     document.getElementById('btnConectar').textContent = d.conectado ? 'Ver datos del atajo' : 'Conectar iPhone';
+    document.getElementById('btnCopiarUrl').disabled = !iphoneDatos.eventsUrl;
+    document.getElementById('btnCopiarToken').disabled = !iphoneDatos.token;
+    document.getElementById('btnPrompt').disabled = !d.execUrl;
     document.getElementById('btnRegenerar').disabled = !d.conectado;
     document.getElementById('btnDesconectar').disabled = !d.conectado;
   }
@@ -222,7 +286,7 @@
     show('importando…'); run('iniciarImportacion', epoch).then(function (r) { show(r); pintar(); }).catch(function (e) { show('Error: ' + e.message); });
   }
   function conectar() {
-    run('conectarIphone').then(function (d) { run('estadoLuca').then(function (st) { pintarIphone(d, st.iphone); }); show('Token listo. Cópialo en el atajo.'); })
+    run('conectarIphone').then(function (d) { run('estadoLuca').then(function (st) { pintarIphone(d, st.iphone); }); show('Token listo. Usa los botones Copiar o copia el prompt completo para Atajos.'); })
       .catch(function (e) { show('Error: ' + e.message); });
   }
   function regenerar() {
@@ -232,7 +296,7 @@
   }
   function desconectar() {
     if (!confirm('El iPhone dejará de poder enviar eventos a esta hoja. ¿Desconectar?')) return;
-    run('desconectarIphone').then(function () { pintar(); show('iPhone desconectado.'); }).catch(function (e) { show('Error: ' + e.message); });
+    run('desconectarIphone').then(function () { iphoneDatos = { execUrl: iphoneDatos.execUrl, eventsUrl: '', token: '', shortcutUrl: '', shortcutDisponible: false, conectado: false }; pintar(); show('iPhone desconectado.'); }).catch(function (e) { show('Error: ' + e.message); });
   }
   pintar();
 </script>

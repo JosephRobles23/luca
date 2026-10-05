@@ -17,7 +17,7 @@ test('Sidebar: cada run(...) apunta a una función de DISPATCH_', () => {
   const usadas = [...html.matchAll(/run\('([A-Za-z_]+)'/g)].map((m) => m[1]);
   assert.ok(usadas.length >= 7, 'el sidebar llama a varias funciones');
   for (const fn of usadas) assert.ok(h.api.DISPATCH_[fn] || (h.api.MCP_DISPATCH_ && h.api.MCP_DISPATCH_[fn]), 'falta en DISPATCH_/MCP_DISPATCH_: ' + fn);
-  for (const fn of ['estadoLuca', 'escanearAhora', 'guardarLlmKey', 'guardarAjustes', 'probarLlm', 'categorizarPendientes', 'extraerDesconocidos', 'iniciarImportacion', 'conectarIphone', 'regenerarTokenIphone', 'desconectarIphone']) {
+  for (const fn of ['estadoLuca', 'escanearAhora', 'guardarLlmKey', 'guardarAjustes', 'probarLlm', 'categorizarPendientes', 'extraerDesconocidos', 'iniciarImportacion', 'conectarIphone', 'regenerarTokenIphone', 'desconectarIphone', 'generarPromptIphone', 'probarWebApp']) {
     assert.ok(usadas.includes(fn), 'el sidebar no usa ' + fn);
   }
 });
@@ -37,9 +37,30 @@ test('Sidebar: cada onclick tiene su función definida y hay secciones Estado / 
   assert.match(html, /Reintentar desconocidos con IA/);
 });
 
+test('Sidebar: Conectar iPhone es un mini-wizard (Web App → URL/token con Copiar → prompt → estado)', () => {
+  assert.match(html, /onclick="probarWebAppIphone\(\)"/);
+  assert.match(html, /Comprobar Web App/);
+  assert.match(html, /id="btnCopiarUrl"[^>]*onclick="copiarUrlIphone\(\)"/);
+  assert.match(html, /id="btnCopiarToken"[^>]*onclick="copiarTokenIphone\(\)"/);
+  assert.match(html, /id="btnPrompt"[^>]*onclick="copiarPromptIphone\(\)"/);
+  assert.match(html, /Copiar prompt para Atajos/);
+  // Portapapeles: navigator.clipboard con fallback a textarea seleccionado + execCommand('copy').
+  assert.match(html, /navigator\.clipboard\.writeText/);
+  assert.match(html, /document\.execCommand\('copy'\)/);
+  assert.match(html, /<textarea id="clip"/);
+  // El enlace de iCloud solo se muestra si el servidor dice que el atajo está disponible (no el placeholder).
+  assert.match(html, /iphoneDatos\.shortcutDisponible && iphoneDatos\.shortcutUrl/);
+  assert.match(html, /Instalar atajo \(iCloud\)/);
+  // Estado con telemetría y acciones.
+  for (const t of ['Última prueba', 'Último evento', 'Eventos recibidos', 'Regenerar token', 'Desconectar iPhone']) assert.ok(html.includes(t), 'falta ' + t);
+  assert.match(html, /tele\.lastTestAt/); assert.match(html, /tele\.lastEventAt/);
+});
+
 test('Sidebar: el enlace del atajo placeholder lo entrega el servidor (conectarIphone), no está cableado en el HTML', () => {
   assert.doesNotMatch(html, /icloud\.com\/shortcuts/);
   const h = makeHarness({ execUrl: 'https://script.google.com/macros/s/TEST/exec', spreadsheets: { s: {} } });
   const cfg = h.api.construirConfig('s', {});
-  assert.equal(h.api.conectarIphone('s', cfg).shortcutUrl, 'https://www.icloud.com/shortcuts/PENDIENTE');
+  const d = h.api.conectarIphone('s', cfg);
+  assert.equal(d.shortcutUrl, 'https://www.icloud.com/shortcuts/PENDIENTE');
+  assert.equal(d.shortcutDisponible, false);
 });
