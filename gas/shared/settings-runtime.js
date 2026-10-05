@@ -41,6 +41,8 @@ var AJUSTES_DEFAULTS_ = {
   // Resultado de "Probar key" (sidebar); la web lo muestra. No editar a mano.
   'llm.lastTestAt': '',
   'llm.lastError': '',
+  // Opt-in (ADR-008): extraer con el LLM los correos `*_unknown` enviando el texto ENMASCARADO. Solo con key.
+  'llm.extractUnknown': 'false',
   // Tipo de cambio de respaldo para mostrar USD en PEN (ADR-005).
   'fx.usd_pen': '3.50',
   // Wiki en Drive.
@@ -143,7 +145,7 @@ function construirConfig(sheetId, staticConfig) {
   cfg.ajustes = a;
   cfg.gmail = { senders: lista_(a['gmail.senders']), cursor: int_(a['gmail.cursor'], 0), batch: int_(a['gmail.batch'], 40) };
   cfg.moneda = a['moneda'] || 'PEN';
-  cfg.llm = { provider: a['llm.provider'], model: a['llm.model'] };
+  cfg.llm = { provider: a['llm.provider'], model: a['llm.model'], extractUnknown: bool_(a['llm.extractUnknown']) };
   return cfg;
 }
 

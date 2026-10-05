@@ -83,12 +83,14 @@ function ledgerIndex_(sh) {
  * Añade transacciones al ledger, saltando las ya existentes (por id o por gmail_id), categorizándolas
  * (categorize-runtime.js) y marcando `fuzzy_dup` cuando otra fila de distinta fuente comparte la clave
  * difusa `moneda|monto|minuto` (push ↔ correo). No se descarta: el usuario decide.
+ * `ctx` (opcional): contexto de categorizeContext_ ya creado por el caller, para compartir el presupuesto
+ * del LLM entre extracción (llm-extract-runtime.js) y categorización en la misma pasada.
  * @return {{added:number, skipped:number, fuzzy:number, ids:string[]}}
  */
-function appendTransactions_(sheetId, config, txs) {
+function appendTransactions_(sheetId, config, txs, ctx) {
   var sh = ledgerSheet_(sheetId, config);
   var idx = ledgerIndex_(sh);
-  var ctx = null;
+  ctx = ctx || null;
   var nuevas = [], skipped = 0, fuzzy = 0;
   (txs || []).forEach(function (tx) {
     if (!tx || !tx.id) return;

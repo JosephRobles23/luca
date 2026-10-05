@@ -25,6 +25,7 @@ export const RUNTIME_FILES = [
   'email-parsers-runtime.js',
   'push-parsers-runtime.js',
   'categorize-runtime.js',
+  'llm-extract-runtime.js',
   'ledger-runtime.js',
   'mime-runtime.js',
   'gmail-scan-runtime.js',
