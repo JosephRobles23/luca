@@ -39,6 +39,10 @@ test("iphoneStatus: no configurado / conectado / silencio > 7 días / execUrl ca
   assert.equal(silent.silent, true);
   assert.equal(silent.silentDays, 14);
   assert.equal(iphoneStatus({ "conexiones.iphone": "1" }, NOW).silent, true); // nunca llegó nada
+  // Recién conectado: solo una prueba reciente, sin yapeos todavía → no es "sin señales".
+  const fresh = iphoneStatus({ "conexiones.iphone": "1", "conexiones.iphone.device": "iPhone", "conexiones.iphone.lastTestAt": "2026-10-04T14:50:00-05:00" }, NOW);
+  assert.equal(fresh.silent, false);
+  assert.equal(fresh.silentDays, null);
   const changed = iphoneStatus({ "conexiones.iphone": "1", "conexiones.execUrl": "https://script.google.com/macros/s/B/exec", "conexiones.iphone.execUrl": "https://script.google.com/macros/s/A/exec" }, NOW);
   assert.equal(changed.execUrlChanged, true);
 });

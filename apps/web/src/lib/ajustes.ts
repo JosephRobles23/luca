@@ -61,7 +61,7 @@ export type IphoneStatus = {
   lastTestAt: string;
   schemaVersion: string;
   silentDays: number | null;
-  /** conectado pero sin eventos en más de 7 días (ADR-003) */
+  /** conectado pero sin eventos ni pruebas en más de 7 días (ADR-003) */
   silent: boolean;
   /** la URL /exec actual difiere de la que usa el atajo → reimportar */
   execUrlChanged: boolean;
@@ -71,17 +71,21 @@ export function iphoneStatus(a: Ajustes, now = Date.now()): IphoneStatus {
   const device = a["conexiones.iphone.device"] ?? "";
   const connected = truthy(a["conexiones.iphone"]) || !!device;
   const lastEventAt = a["conexiones.iphone.lastEventAt"] ?? "";
+  const lastTestAt = a["conexiones.iphone.lastTestAt"] ?? "";
   const silentDays = daysSince(lastEventAt, now);
+  // "Sin señales" cuenta desde lo último que llegó, sea yapeo o prueba: recién conectado (solo prueba) no es silencio.
+  const lastSignal = [lastEventAt, lastTestAt].filter(Boolean).sort().pop();
+  const signalDays = daysSince(lastSignal, now);
   const execUrl = a["conexiones.execUrl"] ?? "";
   const shortcutUrl = a["conexiones.iphone.execUrl"] ?? "";
   return {
     connected, device, lastEventAt,
     eventsCount: parseInt(a["conexiones.iphone.eventsCount"] ?? "0", 10) || 0,
     lastError: a["conexiones.iphone.lastError"] ?? "",
-    lastTestAt: a["conexiones.iphone.lastTestAt"] ?? "",
+    lastTestAt,
     schemaVersion: a["conexiones.iphone.schemaVersion"] ?? "",
     silentDays,
-    silent: connected && (silentDays == null || silentDays > 7),
+    silent: connected && (signalDays == null || signalDays > 7),
     execUrlChanged: connected && !!execUrl && !!shortcutUrl && execUrl !== shortcutUrl,
   };
 }
