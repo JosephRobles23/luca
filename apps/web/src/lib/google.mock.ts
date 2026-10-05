@@ -123,9 +123,21 @@ export class GoogleMockClient implements GoogleClient {
     return this.strip(f);
   }
 
-  /** Picker simulado: la plantilla si el título la pide; si no, la primera Sheet elegible que no sea la plantilla. */
+  /**
+   * Picker simulado: con `query` (buscar la copia hecha con "Copiar a mi Drive") simula que el usuario ya copió la
+   * plantilla y devuelve esa copia, sin autorizar; si el título pide la plantilla, la plantilla; si no, la primera
+   * Sheet elegible que no sea la plantilla.
+   */
   async pickSpreadsheet(o: PickerOptions): Promise<{ id: string; name: string } | null> {
     await sleep(LATENCY * 2);
+    if (o.query) {
+      const id = `sheet-copia-usuario-${this.store.files.length}`;
+      const f: MockFile = { id, name: "Copia de Luca Template", modifiedTime: new Date().toISOString(), webViewLink: url(id), tagged: false, pickable: true, simulateAuthorize: true, ledgerReads: 0 };
+      this.store.files.push(f);
+      this.store.sheets[id] = buildFreshSheet();
+      this.save();
+      return { id, name: f.name };
+    }
     const wantsTemplate = /plantilla/i.test(o.title);
     const f = this.store.files.find((x) => x.pickable && (wantsTemplate ? x.id === "tpl-luca" : x.id !== "tpl-luca" && !x.tagged))
       ?? this.store.files.find((x) => x.pickable && !wantsTemplate && x.id !== "tpl-luca");
@@ -138,7 +150,7 @@ export class GoogleMockClient implements GoogleClient {
     const { tab, cols } = this.tab(range);
     const sheet = this.store.sheets[sheetId] ?? (this.store.sheets[sheetId] = {});
     if (!sheet[tab] && tab === "Movimientos" && f.simulateAuthorize) {
-      // Simula al usuario autorizando en el Sheet: la 2.ª lectura (tras "Ya autoricé → Actualizar") ya trae datos.
+      // Simula al usuario autorizando en el Sheet: la 2.ª lectura (la comprobación automática o "Comprobar ahora") ya trae datos.
       f.ledgerReads = (f.ledgerReads ?? 0) + 1;
       if (f.ledgerReads >= 2) { Object.assign(sheet, buildAuthorizedSheet()); f.simulateAuthorize = false; }
       this.save();

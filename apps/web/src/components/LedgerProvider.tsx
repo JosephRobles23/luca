@@ -5,8 +5,9 @@
  * lectura/escritura. Los componentes de página solo presentan; la lógica pura vive en `lib/*`.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { GoogleApiError, RANGES, TABS, getGoogleClient, type ClientConfig, type GoogleClient, type LedgerFile } from "@/lib/google-client";
+import { GoogleApiError, RANGES, TABS, getGoogleClient, type ClientConfig, type GoogleClient, type LedgerFile, type PickerOptions } from "@/lib/google-client";
 import { isoLima, rowsToTxs, type Tx } from "@/lib/ledger";
+import { COPY_QUERY } from "@/lib/onboarding";
 import { parseAjustes, parseCategorias, usdRate, type Ajustes } from "@/lib/ajustes";
 import { buildManualRow, merchantKey, planMarkTransfer, planMerchantUpsert, planRecategorize, planRowFields, type ManualInput } from "@/lib/sheets-ops";
 import { useToast } from "./Toast";
@@ -34,6 +35,7 @@ export type LedgerApi = {
   refreshing: boolean;
   sessionExpired: boolean;
   connectionsSkipped: boolean;
+  importDismissed: boolean;
   templateId: string;
   templateFolderId: string;
   libVersion: string;
@@ -45,6 +47,8 @@ export type LedgerApi = {
   refreshAjustes: () => Promise<Ajustes | null>;
   cambiarSheet: () => void;
   skipConnections: (skip: boolean) => void;
+  dismissImport: () => void;
+  elegirCopia: () => Promise<void>;
   recategorize: (tx: Tx, categoria: string) => Promise<boolean>;
   markTransfer: (tx: Tx) => Promise<boolean>;
   addManual: (input: ManualInput) => Promise<boolean>;
@@ -60,6 +64,7 @@ export function useLedger(): LedgerApi {
 
 const LS_SHEET = "luca.sheetId";
 const LS_SKIP = "luca.onboarding.skipConnections";
+const LS_IMPORT = "luca.onboarding.importDismissed";
 const ls = {
   get: (k: string) => { try { return localStorage.getItem(k); } catch { return null; } },
   set: (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* sin storage */ } },
@@ -83,6 +88,7 @@ export function LedgerProvider({ cfg, user, signOutAction, children }: Props) {
   const [refreshing, setRefreshing] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
   const [connectionsSkipped, setSkipped] = useState(false);
+  const [importDismissed, setImportDismissed] = useState(false);
 
   const fail = useCallback((e: unknown, prefix?: string) => {
     if (e instanceof GoogleApiError && e.needsReauth) { setSessionExpired(true); return; }
@@ -110,6 +116,7 @@ export function LedgerProvider({ cfg, user, signOutAction, children }: Props) {
       const data = await loadData(file.id);
       ls.set(LS_SHEET, file.id);
       setSkipped(ls.get(LS_SKIP) === file.id);
+      setImportDismissed(ls.get(LS_IMPORT) === file.id);
       setState({ phase: "ready", file, data });
     } catch (e) {
       if (e instanceof GoogleApiError && e.needsReauth) { setSessionExpired(true); return; }
@@ -154,10 +161,10 @@ export function LedgerProvider({ cfg, user, signOutAction, children }: Props) {
     }
   }, [loadLedger, toast, user.email, user.name, cfg.templateFolderId]);
 
-  const elegirExistente = useCallback(async () => {
-    setState({ phase: "nofile", busy: "Elige tu Sheet de Luca…" });
+  const conectarElegida = useCallback(async (busy: string, opts: PickerOptions) => {
+    setState({ phase: "nofile", busy });
     try {
-      const picked = await client().pickSpreadsheet({ title: "Elige tu Sheet de Luca" });
+      const picked = await client().pickSpreadsheet(opts);
       if (!picked) return setState({ phase: "nofile" });
       const file = await client().tagAsLedger(picked.id);
       await loadLedger(file);
@@ -166,6 +173,12 @@ export function LedgerProvider({ cfg, user, signOutAction, children }: Props) {
       setState({ phase: "nofile", error: (e as Error).message });
     }
   }, [loadLedger, toast]);
+
+  const elegirExistente = useCallback(
+    () => conectarElegida("Elige tu Sheet de Luca…", { title: "Elige tu Sheet de Luca" }), [conectarElegida]);
+  // La copia que el usuario hizo con "Copiar a mi Drive" (ADR-009): elegirla la mete en alcance de drive.file.
+  const elegirCopia = useCallback(
+    () => conectarElegida("Elige tu copia en el selector…", { title: 'Elige tu copia de "Luca Template"', query: COPY_QUERY, ownedByMe: true }), [conectarElegida]);
 
   const refresh = useCallback(async () => {
     if (state.phase !== "ready") return;
@@ -194,6 +207,12 @@ export function LedgerProvider({ cfg, user, signOutAction, children }: Props) {
     if (state.phase !== "ready") return;
     if (skip) ls.set(LS_SKIP, state.file.id); else ls.del(LS_SKIP);
     setSkipped(skip);
+  }, [state]);
+
+  const dismissImport = useCallback(() => {
+    if (state.phase !== "ready") return;
+    ls.set(LS_IMPORT, state.file.id);
+    setImportDismissed(true);
   }, [state]);
 
   /** Ejecuta una escritura, recarga y avisa. Devuelve true si fue bien. */
@@ -242,9 +261,9 @@ export function LedgerProvider({ cfg, user, signOutAction, children }: Props) {
     write("No pude guardar", (fileId) => client().upsertKeyValue(fileId, TABS.settings, updates), okMsg), [write]);
 
   const api = useMemo<LedgerApi>(() => ({
-    state, mode: cfg.mode, user, refreshing, sessionExpired, connectionsSkipped, templateId: cfg.templateId, templateFolderId: cfg.templateFolderId, libVersion: cfg.libVersion, signOutAction,
-    crearSheet, elegirExistente, refresh, refreshAjustes, cambiarSheet, skipConnections, recategorize, markTransfer, addManual, saveAjustes,
-  }), [state, cfg.mode, cfg.templateId, cfg.templateFolderId, cfg.libVersion, user, refreshing, sessionExpired, connectionsSkipped, signOutAction, crearSheet, elegirExistente, refresh, refreshAjustes, cambiarSheet, skipConnections, recategorize, markTransfer, addManual, saveAjustes]);
+    state, mode: cfg.mode, user, refreshing, sessionExpired, connectionsSkipped, importDismissed, templateId: cfg.templateId, templateFolderId: cfg.templateFolderId, libVersion: cfg.libVersion, signOutAction,
+    crearSheet, elegirExistente, elegirCopia, refresh, refreshAjustes, cambiarSheet, skipConnections, dismissImport, recategorize, markTransfer, addManual, saveAjustes,
+  }), [state, cfg.mode, cfg.templateId, cfg.templateFolderId, cfg.libVersion, user, refreshing, sessionExpired, connectionsSkipped, importDismissed, signOutAction, crearSheet, elegirExistente, elegirCopia, refresh, refreshAjustes, cambiarSheet, skipConnections, dismissImport, recategorize, markTransfer, addManual, saveAjustes]);
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }

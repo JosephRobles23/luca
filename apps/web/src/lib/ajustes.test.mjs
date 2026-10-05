@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { parseAjustes, parseCategorias, usdRate, versionStatus, iphoneStatus, mcpStatus, connectionsStatus, isAuthorized, importStatus, DEFAULT_CATEGORIAS } from "./ajustes.ts";
-import { currentStep } from "./onboarding.ts";
+import { currentStep, templateCopyUrl } from "./onboarding.ts";
 import { buildFullSheet, buildFreshSheet, buildAuthorizedSheet } from "./fixtures.ts";
 import { rowsToTxs } from "./ledger.ts";
 
@@ -63,12 +63,17 @@ test("isAuthorized e importStatus", () => {
   assert.deepEqual(importStatus({ "import.since": "2026-01-01", "import.status": "running" }), { since: "2026-01-01", status: "running", running: true, done: false });
 });
 
-test("onboarding: paso pendiente", () => {
-  assert.equal(currentStep({ hasFile: false, authorized: false, connectionsActive: false, connectionsSkipped: false }), 1);
-  assert.equal(currentStep({ hasFile: true, authorized: false, connectionsActive: false, connectionsSkipped: false }), 2);
-  assert.equal(currentStep({ hasFile: true, authorized: true, connectionsActive: false, connectionsSkipped: false }), 3);
-  assert.equal(currentStep({ hasFile: true, authorized: true, connectionsActive: false, connectionsSkipped: true }), null);
-  assert.equal(currentStep({ hasFile: true, authorized: true, connectionsActive: true, connectionsSkipped: false }), null);
+test("onboarding: fase pendiente (copia → autorizar → importación → conexiones)", () => {
+  const base = { hasFile: true, authorized: true, importRunning: false, importDismissed: false, connectionsActive: false, connectionsSkipped: false };
+  assert.equal(currentStep({ ...base, hasFile: false, authorized: false }), 1);
+  assert.equal(currentStep({ ...base, authorized: false }), 2);
+  assert.equal(currentStep({ ...base, importRunning: true }), 3);
+  assert.equal(currentStep({ ...base, importRunning: true, importDismissed: true }), 4, "Seguir al panel salta la importación");
+  assert.equal(currentStep(base), 4);
+  assert.equal(currentStep({ ...base, connectionsSkipped: true }), null);
+  assert.equal(currentStep({ ...base, connectionsActive: true }), null);
+  assert.equal(currentStep({ ...base, connectionsActive: true, importRunning: true }), 3, "la importación en curso se muestra antes que conexiones");
+  assert.equal(templateCopyUrl("1kQW abc"), "https://docs.google.com/spreadsheets/d/1kQW%20abc/copy");
 });
 
 test("fixtures del mock: 40–60 movimientos, 3 meses, PEN/USD, pendientes, transfer_in, internal_transfer", () => {
