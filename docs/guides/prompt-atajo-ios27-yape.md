@@ -131,7 +131,7 @@ Después de generarlo:
 2. **Editar** → **Automatización** → **Notificación** → App: **Yape** → **Ejecutar inmediatamente**.
 3. Abre Atajos y **ejecuta a mano "Luca – Captura Yape"** (▶): sin notificación entra en modo prueba y debe mostrar `{"ok":true,"test":true}` y en el sidebar aparecer "Última prueba: hace unos segundos".
 4. Pide un yapeo de S/1: en el sidebar sube "Eventos recibidos" y en `Movimientos` aparece una fila `transfer_in`.
-5. Para compartirlo: **⋯ → Compartir → Copiar enlace de iCloud**; ese enlace es el que va en el sidebar (`SHORTCUT_URL_`). Quien lo importe responderá las dos preguntas con sus propios datos.
+5. No lo compartas por iCloud: Luca ya no usa un atajo plantilla compartido (ADR-003, addendum 2026-10-05); cada usuario genera el suyo con su prompt.
 
 Seguridad en una línea: el `/exec` es público pero solo acepta tu token; el daño máximo con el token es insertar filas en tu propia hoja; "Regenerar token" lo invalida; nada de esto pasa por servidores de Luca.
 
