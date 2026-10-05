@@ -1,0 +1,130 @@
+/* Portada pública (DESIGN.md → Layout "Portada" y Motion). Solo lo que no cubren globals.css y Tailwind. */
+
+/* ---------- navegación ---------- */
+.nav {
+  position: sticky; top: 0; z-index: 30;
+  background: color-mix(in srgb, var(--canvas) 86%, transparent);
+  backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px);
+  border-bottom: 1px solid var(--line-soft);
+}
+.navLink { text-decoration: none; color: var(--body); font-size: 14px; font-weight: 500; padding: 8px 12px; border-radius: 8px; transition: background .15s, color .15s; }
+.navLink:hover { background: var(--strong); color: var(--ink); }
+@media (max-width: 719px) { .navLink { display: none; } }
+
+/* ---------- hero ---------- */
+.badge { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; padding: 0 6px 0 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-size: 13px; color: var(--body); text-decoration: none; transition: border-color .15s; max-width: 100%; }
+.badge:hover { border-color: var(--line-strong); }
+.badge b { font-weight: 600; color: var(--ink); }
+.badgeTag { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-size: 12px; font-weight: 600; }
+.h1 { font-size: clamp(40px, 7.2vw, 76px); line-height: 1; font-weight: 500; letter-spacing: -0.045em; max-width: 14ch; text-wrap: balance; }
+.h1 em { font-style: normal; color: var(--primary); }
+.lede { font-size: clamp(16px, 1.6vw, 19px); line-height: 1.6; color: var(--body); max-width: 54ch; text-wrap: pretty; }
+.trust { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 22px; font-size: 13px; color: var(--muted); }
+.trust li { display: inline-flex; align-items: center; gap: 7px; }
+.trust li::before { content: ""; width: 14px; height: 14px; border-radius: 50%; flex: none; box-shadow: inset 0 0 0 4px var(--success-soft), inset 0 0 0 7px var(--success); background: var(--success-soft); }
+
+/* Entrada escalonada del hero: más pausada que la de las tarjetas (80ms entre piezas). */
+.stagger > * { animation: heroIn .5s var(--ease-out) both; }
+.stagger > :nth-child(1) { animation-delay: 0ms; }
+.stagger > :nth-child(2) { animation-delay: 80ms; }
+.stagger > :nth-child(3) { animation-delay: 160ms; }
+.stagger > :nth-child(4) { animation-delay: 240ms; }
+.stagger > :nth-child(5) { animation-delay: 320ms; }
+.stagger > :nth-child(6) { animation-delay: 420ms; }
+@keyframes heroIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+/* ---------- captura del panel ---------- */
+.shot { width: 100%; margin-top: 24px; border-radius: 22px; border: 1px solid var(--line); background: var(--sunken); padding: 10px; box-shadow: var(--halo); text-align: left; }
+.shotBar { display: flex; align-items: center; gap: 8px; padding: 4px 6px 10px; min-width: 0; }
+.shotBar > i { width: 10px; height: 10px; border-radius: 50%; background: var(--line-strong); flex: none; }
+.shotUrl { margin-left: 8px; font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 11.5px; color: var(--muted); background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 2px 10px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shotIn { border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: var(--canvas); display: grid; gap: 12px; padding: 12px; }
+@media (min-width: 760px) { .shotIn { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); padding: 18px; gap: 14px; } }
+.paceBar { position: relative; height: 10px; border-radius: 999px; background: var(--strong); }
+.paceFill { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--primary); }
+.paceMark { position: absolute; top: -5px; bottom: -5px; width: 2px; background: var(--primary-2); border-radius: 2px; }
+.avatar { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; font-weight: 600; font-size: 13px; color: #1d1a17; flex: none; }
+
+/* ---------- camino de los datos ---------- */
+/* Escritorio: 4 columnas con un conector horizontal entre burbujas. Móvil: columna con conector vertical.
+   Un punto naranja recorre cada conector por turnos (ciclo de 4s) y cada nodo se ilumina al llegar. */
+.path { --bubble: 52px; --gap: 28px; list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gap); }
+@media (min-width: 900px) { .path { grid-template-columns: repeat(4, minmax(0, 1fr)); --gap: 20px; } }
+.step { position: relative; display: grid; grid-template-columns: var(--bubble) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (min-width: 900px) { .step { grid-template-columns: 1fr; gap: 18px; } }
+.bubble { position: relative; z-index: 1; width: var(--bubble); height: var(--bubble); border-radius: 16px; display: grid; place-items: center; background: var(--card); border: 1px solid var(--line); color: var(--body); }
+.mine .bubble { border-color: color-mix(in srgb, var(--success) 45%, var(--line)); color: var(--success); }
+.bubble::after { content: ""; position: absolute; inset: -1px; border-radius: inherit; box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 0%, transparent); animation: arrive 4s var(--ease-out) infinite; animation-delay: calc(var(--k) * 1.2s - .2s); }
+@keyframes arrive {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 55%, transparent); border: 1px solid var(--primary); }
+  18% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--primary) 0%, transparent); border: 1px solid transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; border: 1px solid transparent; }
+}
+.key { font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 11px; color: var(--muted); }
+.mine .key { color: var(--success); }
+
+/* Conector: línea que se dibuja al entrar en vista + punto que viaja. */
+.link { position: absolute; pointer-events: none; }
+.link::before { content: ""; position: absolute; inset: 0; background: var(--line-strong); border-radius: 2px; transform-origin: left top; animation: drawX .6s var(--ease-out) both; animation-delay: calc(var(--k) * 150ms + 200ms); }
+.dot { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: var(--primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 22%, transparent); opacity: 0; animation: travelY 4s linear infinite; animation-delay: calc(var(--k) * 1.2s); }
+/* móvil: vertical, del borde inferior de la burbuja a la siguiente */
+.link { left: calc(var(--bubble) / 2 - 1px); width: 2px; top: calc(var(--bubble) + 6px); bottom: calc(-1 * var(--gap) + 6px); }
+.link::before { animation-name: drawY; }
+.dot { left: -4px; top: 0; }
+@media (min-width: 900px) {
+  .link { top: calc(var(--bubble) / 2 - 1px); height: 2px; width: auto; left: calc(var(--bubble) + 10px); right: calc(-1 * var(--gap) + 10px); bottom: auto; }
+  .link::before { animation-name: drawX; }
+  .dot { top: -4px; left: 0; animation-name: travelX; }
+}
+@keyframes drawX { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes drawY { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+@keyframes travelX { 0% { left: 0; opacity: 0; } 3% { opacity: 1; } 25% { left: calc(100% - 10px); opacity: 1; } 28%, 100% { left: calc(100% - 10px); opacity: 0; } }
+@keyframes travelY { 0% { top: 0; opacity: 0; } 3% { opacity: 1; } 25% { top: calc(100% - 10px); opacity: 1; } 28%, 100% { top: calc(100% - 10px); opacity: 0; } }
+.notOnPath { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--primary-soft); color: var(--primary); font-weight: 600; font-size: 13px; flex: none; }
+
+/* ---------- mosaico ---------- */
+.bento { display: grid; gap: 12px; }
+@media (min-width: 860px) {
+  .bento { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .bA { grid-column: span 4; } .bB { grid-column: span 2; } .bC, .bD, .bE { grid-column: span 2; }
+}
+.tile { display: grid; gap: 10px; align-content: start; padding: 22px; }
+.tileIcon { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--strong); color: var(--ink); }
+.ask { justify-self: end; background: var(--primary-soft); color: var(--ink); padding: 8px 12px; border-radius: 14px 14px 4px 14px; max-width: 90%; }
+.answer { background: var(--sunken); padding: 8px 12px; border-radius: 14px 14px 14px 4px; max-width: 95%; color: var(--body); }
+.typing { display: inline-flex; gap: 4px; padding: 12px 14px; border-radius: 14px 14px 14px 4px; background: var(--sunken); justify-self: start; }
+.typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1s ease-in-out infinite; }
+.typing i:nth-child(2) { animation-delay: .15s; } .typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes blink { 0%, 100% { opacity: .3; } 50% { opacity: 1; } }
+/* Secuencia del chat: pregunta → "escribiendo…" → respuesta. El indicador se colapsa al llegar la respuesta. */
+.chatAsk { animation: chatIn .3s var(--ease-out) both; animation-delay: .2s; }
+.chatTyping { animation: typingLife 1.5s linear both; animation-delay: .5s; overflow: hidden; }
+@keyframes typingLife { 0% { opacity: 0; max-height: 0; padding-block: 0; } 8%, 92% { opacity: 1; max-height: 40px; padding-block: 12px; } 100% { opacity: 0; max-height: 0; padding-block: 0; margin-top: -8px; } }
+.chatAnswer { animation: chatIn .3s var(--ease-out) both; animation-delay: 2s; }
+@keyframes chatIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* Las animaciones de una sección esperan a que se vea (Reveal pone data-inview). */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal[data-inview="false"] *, .reveal[data-inview="false"] *::before, .reveal[data-inview="false"] *::after { animation-play-state: paused !important; }
+}
+
+/* ---------- preguntas ---------- */
+.faqItem { border-bottom: 1px solid var(--line); }
+.faqBtn { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-block: 20px; font: inherit; font-size: 16.5px; font-weight: 500; text-align: left; color: var(--ink); background: none; border: 0; cursor: pointer; }
+.faqBtn:hover { color: var(--primary); }
+.chev { flex: none; color: var(--muted); transition: transform .22s var(--ease-out); }
+.faqBtn[aria-expanded="true"] .chev { transform: rotate(180deg); }
+
+/* ---------- bloque final y CTA móvil ---------- */
+.final { border-radius: 22px; background: var(--final-bg); color: var(--final-fg); border: 1px solid var(--final-line); padding: clamp(28px, 5vw, 56px); display: grid; gap: 18px; justify-items: start; position: relative; overflow: hidden; }
+.finalSub { color: color-mix(in srgb, var(--final-fg) 72%, transparent); max-width: 52ch; }
+.finalArt { position: absolute; right: -40px; bottom: -40px; width: 260px; height: 260px; opacity: .9; pointer-events: none; }
+@media (max-width: 719px) { .finalArt { width: 180px; height: 180px; right: -60px; bottom: -60px; opacity: .5; } }
+.mobileCta { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); background: color-mix(in srgb, var(--canvas) 90%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1px solid var(--line); }
+@media (min-width: 720px) { .mobileCta { display: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .dot { display: none; }
+  .bubble::after { animation: none; }
+  .chatTyping { display: none; }
+}

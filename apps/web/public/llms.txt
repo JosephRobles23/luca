@@ -8,11 +8,17 @@
 2. Dentro de la Sheet autoriza su propio script de Apps Script para leer los correos de BCP y Yape. El permiso de Gmail se concede a ese script, no a Luca. El script importa el último mes y luego revisa el correo cada 15 minutos.
 3. La web muestra un dashboard por mes, categoría y comercio. El usuario puede recategorizar, marcar transferencias y agregar movimientos a mano.
 
+## Bancos compatibles
+
+- BCP: consumos con tarjeta, transferencias entre cuentas propias y pagos con QR, a partir de sus correos de notificación.
+- Yape: yapeos enviados, pagos de servicios y recargas, a partir de sus correos de notificación. Los yapeos recibidos se pueden sumar con el atajo opcional de iPhone.
+
 ## Privacidad
 
 - Luca no tiene base de datos. La web lee la Sheet desde el navegador del usuario con su sesión de Google.
 - La web solo pide el correo del usuario y el permiso `drive.file` (archivos que el usuario crea o elige con Luca). Nunca pide acceso a Gmail.
 - Si el usuario activa la categorización con IA, solo se envían el nombre del comercio y el monto.
+- Para dejar de usar Luca, el usuario borra su Sheet (con ella se van sus datos y el script) o revoca el acceso en su cuenta de Google (myaccount.google.com → Seguridad → Apps de terceros).
 
 ## Integraciones opcionales
 
