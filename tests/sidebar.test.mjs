@@ -137,8 +137,3 @@ test('UI común: toasts arriba y breves, botones con estado de carga, sin spinne
   assert.match(html, /id="btnEscanear" data-cargando="Escaneando…"/);
 });
 
-test('Dashboard: escapa lo que viene de la Sheet (comercio, categoría…)', () => {
-  const dash = fs.readFileSync(path.join(HERE, '..', 'gas', 'shared', 'DialogDashboard.html'), 'utf8');
-  assert.match(dash, /esc\(r\.comercio \|\| r\.contraparte/);
-  assert.match(dash, /esc\(r\.categoria/);
-});

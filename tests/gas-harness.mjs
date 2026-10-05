@@ -32,6 +32,7 @@ export const RUNTIME_FILES = [
   'mime-runtime.js',
   'gmail-scan-runtime.js',
   'webapp-runtime.js',
+  'dashboard-runtime.js',
   'ui-runtime.js',
   'mcp-runtime.js'
 ];

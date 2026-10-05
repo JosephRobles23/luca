@@ -74,6 +74,8 @@
 
 <script>
   var HTML = { Sidebar: /*@html Sidebar*/, DialogGuia: /*@html DialogGuia*/, DialogDashboard: /*@html DialogDashboard*/ };
+  // resumenDashboard real (dashboard-runtime.js) sobre un ledger sintético, calculado al generar esta página.
+  var DASHBOARD = /*@datos dashboard*/;
 
   /* ---- Puente: cada iframe recibe un google.script.run que pregunta a esta página por postMessage ---- */
   var PUENTE = '<script>(function(){var n=0,p={};window.addEventListener("message",function(e){var d=e.data||{};if(d.rpc&&p[d.rpc]){var x=p[d.rpc];delete p[d.rpc];d.ok?x.ok(d.val):x.ko(new Error(d.err));}});' +
@@ -127,6 +129,7 @@
     iniciarConexionMcp: [1000, function () { st.mcp = true; return { code: '482 913', expiresInSeconds: 600 }; }],
     desconectarMcp: [900, function () { st.mcp = false; return {}; }],
     guardarPrefUi: function (a) { avanzado = !!(a[0] && a[0].avanzado); return { avanzado: avanzado }; },
+    resumenDashboard: [600, function (a) { var m = a[0] && a[0].mes; return DASHBOARD[m] || DASHBOARD['2026-10']; }],
     leerLedger: function () {
       return [{ fecha: '2026-10-02T21:06:00-05:00', tipo: 'expense', comercio: 'CA012 AVIACION', moneda: 'PEN', monto: 53.3, categoria: 'Transporte' },
         { fecha: '2026-10-03T19:07:00-05:00', tipo: 'internal_transfer', moneda: 'PEN', monto: 30, categoria: 'Transferencias' },
