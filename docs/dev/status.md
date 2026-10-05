@@ -5,9 +5,8 @@ Skill de release: `.claude/skills/deploy-luca/SKILL.md`
 Actualizado: 2026-10-05. Fuente de verdad de qué está hecho, en curso y pendiente. Commits en `main`.
 
 ## Hecho y publicado
-- LucaLib **v3** (cuenta petter) — el sidebar ofrece el enlace de iCloud del atajo "Luca – Captura Yape"
-  (`SHORTCUT_URL_`); la web lo muestra en el paso 3 de "Conectar iPhone" (`SHORTCUT_URL`, sobreescribible con
-  `NEXT_PUBLIC_SHORTCUT_URL`). 215 tests.
+- LucaLib **v3** (cuenta petter). La opción de atajo por iCloud se retiró después (ADR-003, addendum 2026-10-05):
+  sidebar y web solo ofrecen el prompt para generar el atajo; pendiente de publicar en una LucaLib nueva. 215 tests.
 - **Onboarding por fases (ADR-009, web):** "Copiar a mi Drive" (página nativa `/copy` de la plantilla) + "Elegir mi
   copia" (Picker con búsqueda "Luca Template", solo mis archivos); autorización e importación detectadas solas
   (relectura cada 6 s); conexiones como fase 4. "Otras formas": Picker en la carpeta LUCA, "Ya tengo una", enlace a
@@ -53,7 +52,7 @@ Actualizado: 2026-10-05. Fuente de verdad de qué está hecho, en curso y pendie
 - **Worker `services/luca-mcp`** (fork de Vera-MCP): `/enroll`, `/authorize`, `/token`, `/register`, `/mcp`, `GET /meta`; TTL 24 h; tools v0; typecheck y `wrangler deploy --dry-run` OK. **Desplegado** en https://mcp.lucaa.lat (y workers.dev), D1 + KV propios. Aún **0 tenants**: falta la primera conexión real desde Claude/ChatGPT.
 - Stub en la plantilla `1FMx…` apuntando a LucaLib v17 (stub v2 con STUB_VERSION) (`lucaMenu1` pasa `setupTriggers`; `getConfig_` añade `execUrl`).
 - Parser validado contra **8 `.eml` reales** (`docs/gmails/`, ignorados por git) con `scripts/eml-check.mjs`: 100 % correctos tras ajustar el layout de Yape (una celda por fila), `PLIN-<nombre>` y avisos de seguridad. 40 tests.
-- **Asistente Conectar iPhone** en la web (`/app/conexiones/iphone`): 5 pasos, QR, copiar URL/token/prompt (idéntico al del sidebar, test de paridad), espera de la prueba en vivo. Falta `NEXT_PUBLIC_SHORTCUT_URL` cuando exista el enlace de iCloud.
+- **Asistente Conectar iPhone** en la web (`/app/conexiones/iphone`): 5 pasos, QR, copiar URL/token/prompt (idéntico al del sidebar, test de paridad), espera de la prueba en vivo.
 - **Web completa** (`apps/web`): landing, onboarding de 3 pasos, dashboard (4 KPIs incl. Recibido por Yape, USD con TC), movimientos con filtros/recategorizar/marcar transferencia/detalle, agregar manual, ajustes, conexiones (iPhone/IA/Web App con telemetría), `/privacidad`, `/terminos`, tema claro/oscuro, 360 px. Modo `LUCA_MOCK=1` y **17 e2e Playwright** en verde. `merchantKey` alineada con GAS. **No probada aún contra Google real** por el usuario.
 - Infra: GCP `luca-510610` (APIs, API key Picker, cliente OAuth con orígenes 5173/3000), dominio `lucaa.lat` comprado.
 - Spikes S1–S5, S7 resueltos (ver `spikes/README.md`). S6 (`.eml` reales) pendiente del usuario.
@@ -72,7 +71,7 @@ Integrados en `main`: `agent/mcp-m5`, `agent/gas-m1`, `agent/web-m2`, `agent/gas
 - Writes (24h) de `OAUTH_KV` (opcional).
 
 ## Siguiente (M3/M4/M6)
-- M4: atajo definitivo de iOS compartido por iCloud (reemplazar `SHORTCUT_URL_` placeholder); capturas reales de "app no verificada" en el paso 2 de la web.
+- M4: capturas reales de "app no verificada" en el paso 2 de la web.
 - M6: skill de release; aviso de versión ya implementado en web y sidebar.
 
 ## Bloqueos conocidos

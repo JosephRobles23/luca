@@ -10,7 +10,6 @@
  * Sin import/export: runtime de Apps Script.
  */
 
-var SHORTCUT_URL_ = 'https://www.icloud.com/shortcuts/4466a87c439a40b1a3e193d6777ccd38';
 var IPHONE_TOKEN_KEY_ = 'conexiones.iphone.token';
 
 /** `<execUrl>?events=1`: la URL exacta a la que el atajo hace POST (webapp-runtime.js). */
@@ -71,8 +70,7 @@ function datosIphoneFor_(sheetId, config) {
   var token = iphoneToken_(sheetId, config);
   var url = execUrl_(config);
   return {
-    execUrl: url, eventsUrl: eventsUrl_(url), token: token, shortcutUrl: SHORTCUT_URL_,
-    shortcutDisponible: SHORTCUT_URL_.indexOf('PENDIENTE') < 0, conectado: !!token
+    execUrl: url, eventsUrl: eventsUrl_(url), token: token, conectado: !!token
   };
 }
 
@@ -90,7 +88,7 @@ function generarPromptIphone(sheetId, config) {
   }
   var d = conectarIphone(sheetId, config);
   if (!d.execUrl) throw new Error('Despliega primero el Web App (Implementar → Aplicación web → ejecutar como yo, acceso: cualquiera) para obtener la URL /exec.');
-  return { prompt: promptIphone_(d.execUrl, d.token), execUrl: d.execUrl, token: d.token, shortcutUrl: d.shortcutUrl, eventsUrl: d.eventsUrl };
+  return { prompt: promptIphone_(d.execUrl, d.token), execUrl: d.execUrl, token: d.token, eventsUrl: d.eventsUrl };
 }
 
 /**

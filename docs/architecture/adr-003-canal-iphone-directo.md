@@ -53,3 +53,10 @@ borra la propiedad; `eventsAction_` acepta la propiedad antigua como respaldo so
 vieja sigue recibiendo eventos hasta que el usuario vuelva a abrir "Conectar iPhone". `Regenerar token` y `Desconectar` escriben
 en `Ajustes` (y limpian la propiedad). La URL `/exec` **viva** (`ScriptApp.getService().getUrl()` desde el stub) siempre gana sobre
 `Ajustes.conexiones.execUrl`, que se refresca al vuelo y solo sirve de respaldo cuando la viva no está disponible.
+
+## Addendum — Sin enlace de iCloud del atajo (2026-10-05)
+Se retira la opción de instalar un atajo plantilla compartido por iCloud ("Instalar atajo (iCloud)" en el sidebar y en
+el paso 3 de "Conectar iPhone" de la web). El atajo se crea siempre con el prompt que genera Luca (URL + token del
+usuario). Se eliminan `SHORTCUT_URL_` (LucaLib), `SHORTCUT_URL` y `NEXT_PUBLIC_SHORTCUT_URL` (web); `conectarIphone` ya
+no devuelve `shortcutUrl` ni `shortcutDisponible`. Donde el Diseño dice "muestra el enlace de iCloud del atajo", léase:
+muestra URL + token + el prompt para generar el atajo.

@@ -49,7 +49,7 @@ function useCopy() {
   }, [toast]);
 }
 
-export default function ConectarIphone({ requestedStep, shortcutUrl }: { requestedStep: WizardStep; shortcutUrl: string }) {
+export default function ConectarIphone({ requestedStep }: { requestedStep: WizardStep }) {
   const { state, mode, refresh, refreshing, refreshAjustes, saveAjustes } = useLedger();
   const router = useRouter();
   const copy = useCopy();
@@ -142,7 +142,7 @@ export default function ConectarIphone({ requestedStep, shortcutUrl }: { request
         )}
 
         {step === 3 && (
-          <Step3Install token={token} execUrl={c.execUrl} shortcutUrl={shortcutUrl} onBack={back} onNext={next} copy={copy}
+          <Step3Install token={token} execUrl={c.execUrl} onBack={back} onNext={next} copy={copy}
             ensureToken={() => saveAjustes(tokenWrites(newToken(), c.execUrl), "Token del iPhone generado y guardado en tu Sheet")} />
         )}
 
@@ -290,8 +290,8 @@ function QrForStep3() {
   );
 }
 
-function Step3Install({ token, execUrl, shortcutUrl, ensureToken, copy, onBack, onNext }: {
-  token: string; execUrl: string; shortcutUrl: string; ensureToken: () => Promise<boolean>;
+function Step3Install({ token, execUrl, ensureToken, copy, onBack, onNext }: {
+  token: string; execUrl: string; ensureToken: () => Promise<boolean>;
   copy: (text: string, what: string) => Promise<boolean>; onBack: () => void; onNext: () => void;
 }) {
   const [show, setShow] = useState(false);
@@ -317,28 +317,14 @@ function Step3Install({ token, execUrl, shortcutUrl, ensureToken, copy, onBack, 
       </div>
       <p className="text-xs text-muted">El token solo sirve para escribir en <i>tu</i> hoja. Puedes regenerarlo o desconectar el iPhone cuando quieras.</p>
 
-      {shortcutUrl ? (
-        <div className="grid gap-1.5">
-          <a className="btn primary lg" href={shortcutUrl} target="_blank" rel="noreferrer" data-testid="install-shortcut" aria-disabled={!ready}>Instalar atajo (iCloud) <IconExterno size={16} /></a>
-          <p className="text-xs text-muted">Al importarlo, pega la URL y el token cuando los pida. Incluye el mini-atajo <b className="font-medium text-ink">Luca – Probar iPhone</b>.</p>
+      <section className="grid gap-2 rounded-[14px] border border-line px-4 pb-4 pt-3" data-testid="ai-prompt">
+        <h3 className="text-sm font-medium text-ink">Genera el atajo con IA</h3>
+        <p className="text-xs text-muted">Pega este prompt en ChatGPT, Claude o Gemini (en el iPhone) y sigue sus instrucciones. Ya lleva tu URL y tu token: no compartas el atajo que generes.</p>
+        <textarea className="input h-48 resize-y font-mono !text-[11px] leading-snug" readOnly value={prompt} data-testid="prompt-text" aria-label="Prompt para generar el atajo" />
+        <div className="flex flex-wrap gap-2">
+          <button className="btn sm" data-testid="copy-prompt" onClick={() => copy(prompt, "Prompt")} disabled={!prompt}><IconCopiar size={15} />Copiar prompt</button>
         </div>
-      ) : (
-        <Notice kind="info">El enlace de iCloud del atajo aún no está disponible: genera el atajo con una IA (abajo) en un minuto.</Notice>
-      )}
-
-      <details className="group overflow-hidden rounded-[14px] border border-line" open={!shortcutUrl} data-testid="ai-prompt">
-        <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-medium text-ink [&::-webkit-details-marker]:hidden">
-          Generarlo con IA
-          <span className="size-2 rotate-45 border-b-[1.5px] border-r-[1.5px] border-muted transition-transform group-open:rotate-[225deg]" aria-hidden />
-        </summary>
-        <div className="grid gap-2 border-t border-line-soft px-4 pb-4 pt-3">
-          <p className="text-xs text-muted">Pega este prompt en ChatGPT, Claude o Gemini (en el iPhone) y sigue sus instrucciones. Ya lleva tu URL y tu token.</p>
-          <textarea className="input h-48 resize-y font-mono !text-[11px] leading-snug" readOnly value={prompt} data-testid="prompt-text" aria-label="Prompt para generar el atajo" />
-          <div className="flex flex-wrap gap-2">
-            <button className="btn sm" data-testid="copy-prompt" onClick={() => copy(prompt, "Prompt")} disabled={!prompt}><IconCopiar size={15} />Copiar prompt</button>
-          </div>
-        </div>
-      </details>
+      </section>
       <Nav onBack={onBack} onNext={onNext} nextLabel="Ya lo instalé" nextDisabled={!ready} />
     </StepCard>
   );

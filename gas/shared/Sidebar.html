@@ -145,7 +145,6 @@
         <p class="lead">Los yapeos recibidos no llegan por correo: un atajo los envía directo a esta hoja.</p>
       </div>
       <div class="box pasos" id="pasos"></div>
-      <div id="iphoneAtajo" class="hint"></div>
       <div class="box" id="iphone" hidden></div>
       <div class="avz">
         <div class="avz-h"><i data-icon="terminal"></i>Mantenimiento</div>
@@ -369,7 +368,7 @@
   }
 
   /* ---- iPhone: tres pasos (Web App → datos del atajo → crear el atajo) ---- */
-  var iphoneDatos = { execUrl: '', eventsUrl: '', token: '', shortcutUrl: '', shortcutDisponible: false, conectado: false };
+  var iphoneDatos = { execUrl: '', eventsUrl: '', token: '', conectado: false };
   var teleIphone = {};
 
   function copiarTexto(texto, etiqueta) {
@@ -421,10 +420,6 @@
       pasoHtml(1, hechos, 'Datos del atajo', 'Genera tu token: el atajo lo usa para escribir solo en esta hoja.', p2) +
       pasoHtml(2, hechos, 'Crear el atajo en iOS 27', 'Pega el prompt en Atajos (generador en lenguaje natural), activa "Permitir con el equipo bloqueado" y la automatización Notificación → Yape. No compartas ese atajo: lleva tu token.', p3);
 
-    $('iphoneAtajo').innerHTML = (iphoneDatos.shortcutDisponible && iphoneDatos.shortcutUrl)
-      ? 'Alternativa: <a href="' + esc(iphoneDatos.shortcutUrl) + '" target="_blank">Instalar atajo (iCloud)</a> y responder URL y token al importarlo.'
-      : '';
-
     if (hechos === 3) ponerPill('ipPill', 'ok', 'Conectado');
     else ponerPill('ipPill', 'warn', 'Paso ' + (hechos + 1) + ' de 3');
 
@@ -467,7 +462,7 @@
   }
   function desconectar() {
     if (!confirm('El iPhone dejará de poder enviar eventos a esta hoja. ¿Desconectar?')) return;
-    run('desconectarIphone').then(function () { iphoneDatos = { execUrl: iphoneDatos.execUrl, eventsUrl: '', token: '', shortcutUrl: '', shortcutDisponible: false, conectado: false }; pintar(); toast('iPhone desconectado.'); }).catch(fallo);
+    run('desconectarIphone').then(function () { iphoneDatos = { execUrl: iphoneDatos.execUrl, eventsUrl: '', token: '', conectado: false }; pintar(); toast('iPhone desconectado.'); }).catch(fallo);
   }
 
   /* ---- MCP: conector + código de un solo uso con cuenta atrás ---- */

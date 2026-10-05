@@ -10,7 +10,7 @@ Worker en https://mcp.lucaa.lat. Falta la validación con Google real por el usu
 | M1 correo → Sheet | ✅ |
 | M2 web | ✅ código y desplegada en https://lucaa.lat · ⏳ validación con Google real (cliente OAuth "Luca Web" con URIs de producción) |
 | M3 LLM opcional | ✅ código (más extractor opt-in, ADR-008) |
-| M4 conexiones | ◐ UI de Conectar iPhone y Web App listas · ⏳ atajo iOS definitivo compartido por iCloud (`SHORTCUT_URL_`) |
+| M4 conexiones | ◐ UI de Conectar iPhone y Web App listas · atajo generado con el prompt (sin enlace de iCloud: ADR-003, addendum 2026-10-05) |
 | M5 MCP | ✅ infra en https://mcp.lucaa.lat (D1 + KV) · ⏳ 0 tenants: falta la primera conexión desde Claude/ChatGPT |
 | M6 lanzamiento | ◐ skill de release `.claude/skills/deploy-luca` y aviso de versión hechos · ⏳ publicar consentimiento OAuth, rotar secretos, invitar amigos |
 
@@ -40,7 +40,7 @@ Leyenda: 🤖 lo hago yo · 🧑 lo haces tú (consola, dispositivo, cuentas) ·
 ## M4 — Conexiones: Web App, iPhone directo ◐
 - 🤖 Paso "Activar conexiones": validación de `/exec` desde el sidebar, `deviceToken`, pantalla con enlace del atajo + QR; `eventsAction_` con token por dispositivo, `LockService`, `schema_version` y dedupe (ADR-003).
 - 🤖 Telemetría del canal en `Ajustes.conexiones.iphone.*` + tarjeta de estado (Probar / Regenerar token / Desconectar) en web y sidebar; aviso de URL cambiada y de silencio > 7 días.
-- 🧑 Crear el atajo definitivo en iOS 27 (prompt de la guía con URL y token como preguntas de importación), compartirlo por enlace de iCloud y probar con un yapeo recibido.
+- 🧑 Probar el atajo generado con el prompt en iOS 27 con un yapeo recibido (sin enlace de iCloud: ADR-003, addendum 2026-10-05).
 - 🤖 Guía visual del despliegue del Web App (video de 40 s lo grabas 🧑).
 
 ## M5 — MCP `luca-mcp` ✅ infra · ⏳ primer tenant

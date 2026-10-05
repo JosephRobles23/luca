@@ -87,20 +87,19 @@ test('Sidebar: Conectar iPhone son tres pasos (Web App → URL/token con Copiar 
   assert.match(html, /navigator\.clipboard\.writeText/);
   assert.match(html, /document\.execCommand\('copy'\)/);
   assert.match(html, /<textarea id="clip"/);
-  // El enlace de iCloud solo se muestra si el servidor dice que el atajo está disponible (no el placeholder).
-  assert.match(html, /iphoneDatos\.shortcutDisponible && iphoneDatos\.shortcutUrl/);
-  assert.match(html, /Instalar atajo \(iCloud\)/);
+  // Sin opción de atajo por iCloud: el atajo se crea con el prompt.
+  assert.doesNotMatch(html, /iCloud|shortcutUrl/);
   for (const t of ['Última prueba', 'Último evento', 'Eventos recibidos', 'Regenerar token', 'Desconectar iPhone']) assert.ok(html.includes(t), 'falta ' + t);
   assert.match(html, /tele\.lastTestAt/); assert.match(html, /tele\.lastEventAt/);
 });
 
-test('Sidebar: el enlace del atajo placeholder lo entrega el servidor (conectarIphone), no está cableado en el HTML', () => {
+test('Sidebar: conectarIphone no ofrece enlace de iCloud del atajo', () => {
   assert.doesNotMatch(html, /icloud\.com\/shortcuts/);
   const h = makeHarness({ execUrl: 'https://script.google.com/macros/s/TEST/exec', spreadsheets: { s: {} } });
   const cfg = h.api.construirConfig('s', {});
   const d = h.api.conectarIphone('s', cfg);
-  assert.equal(d.shortcutUrl, 'https://www.icloud.com/shortcuts/4466a87c439a40b1a3e193d6777ccd38');
-  assert.equal(d.shortcutDisponible, true);
+  assert.equal(d.shortcutUrl, undefined);
+  assert.equal(d.shortcutDisponible, undefined);
 });
 
 test('Parciales: buildSidebar y buildDialog insertan _Estilos y _Ui en el servidor (sin marcadores sueltos)', () => {

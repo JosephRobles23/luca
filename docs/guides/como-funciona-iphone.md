@@ -76,7 +76,9 @@ Sidebar o web → "Copiar prompt" (ya trae TU URL y TU token)
 - No se comparte. No hay enlace. Cada usuario lo genera para sí mismo.
 - Inconveniente: depende de que el generador de Atajos interprete bien el prompt; puede variar entre personas.
 
-### B) Atajo plantilla (para que tus amigos no tengan que generar nada)
+### B) Atajo plantilla por iCloud — retirado (2026-10-05)
+
+> Luca ya no ofrece esta opción (ADR-003, addendum 2026-10-05): ni la web ni el sidebar muestran un enlace de iCloud. El atajo se crea siempre con el prompt (camino A). Se conserva la explicación como referencia.
 
 Lo construyes **tú una sola vez**, sin datos personales, con **dos preguntas al importar** ("URL de tu Luca" y "Token de tu iPhone"). Es el "Prompt 1 (producción)" de la guía.
 
@@ -101,12 +103,6 @@ CADA USUARIO (en su iPhone):
 > Corrección: antes te pedí "compártelo por iCloud y pásame el enlace" refiriéndome al atajo generado con *Copiar prompt*. Ese atajo tiene tu token dentro: **no lo compartas**. El enlace que sirve es el del atajo **plantilla** (B).
 
 ## 6. ¿Para qué sirven las variables de entorno?
-
-### `NEXT_PUBLIC_SHORTCUT_URL`
-Es el enlace de iCloud del **atajo plantilla** (B).
-- Si existe, el asistente muestra el botón **"Instalar atajo"** (camino fácil) y deja el prompt como alternativa.
-- Si está vacía, el asistente solo ofrece **"Copiar prompt"** (camino A).
-- Se configura una vez y solo cambia si rehaces la plantilla. No cambia con las versiones de Luca.
 
 ### `NEXT_PUBLIC_LUCA_LIB_VERSION`
 Le dice a la web cuál es **la última versión publicada de LucaLib**. La web la compara con `Ajustes → luca.version` de la Sheet del usuario y, si la del usuario es menor, muestra *"Hay una versión nueva de Luca: actualiza la biblioteca en tu hoja"*.
