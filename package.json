@@ -8,9 +8,9 @@
     "test": "node --test tests/*.test.mjs apps/web/src/lib/*.test.mjs services/luca-mcp/test/*.test.mjs",
     "mcp:typecheck": "npm --prefix services/luca-mcp run typecheck",
     "mcp:deploy": "npm --prefix services/luca-mcp run deploy",
-    "lib:push": "clasp push --project gas/shared",
+    "lib:push": "clasp push --project gas/shared --force",
     "lib:version": "clasp create-version --project gas/shared",
-    "stub:push": "clasp push --project gas/stub",
+    "stub:push": "clasp push --project gas/stub --force",
     "web:dev": "npm --prefix apps/web run dev",
     "web:build": "npm --prefix apps/web run build",
     "release:check": "node scripts/release-check.mjs"

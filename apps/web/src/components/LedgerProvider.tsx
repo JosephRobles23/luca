@@ -35,6 +35,7 @@ export type LedgerApi = {
   sessionExpired: boolean;
   connectionsSkipped: boolean;
   templateId: string;
+  templateFolderId: string;
   libVersion: string;
   signOutAction: () => Promise<void>;
   crearSheet: () => Promise<void>;
@@ -66,7 +67,7 @@ const ls = {
 };
 
 type Props = {
-  cfg: ClientConfig & { templateId: string; libVersion: string };
+  cfg: ClientConfig & { templateId: string; templateFolderId: string; libVersion: string };
   user: { name: string; email: string; image: string };
   signOutAction: () => Promise<void>;
   children: ReactNode;
@@ -142,7 +143,7 @@ export function LedgerProvider({ cfg, user, signOutAction, children }: Props) {
     setState({ phase: "nofile", busy: "Elige la plantilla de Luca en el selector…" });
     try {
       // Elegir la plantilla en el Picker la mete en alcance de drive.file (validado en S1).
-      const picked = await client().pickSpreadsheet({ title: 'Elige "Luca — Plantilla" para crear tu copia' });
+      const picked = await client().pickSpreadsheet({ title: 'Elige "Luca Template" para crear tu copia', parentId: cfg.templateFolderId || undefined });
       if (!picked) return setState({ phase: "nofile" });
       setState({ phase: "nofile", busy: "Creando tu Sheet…" });
       const file = await client().copyTemplate(picked.id, `Luca Ledger — ${user.name || user.email}`);
@@ -151,7 +152,7 @@ export function LedgerProvider({ cfg, user, signOutAction, children }: Props) {
     } catch (e) {
       setState({ phase: "nofile", error: (e as Error).message });
     }
-  }, [loadLedger, toast, user.email, user.name]);
+  }, [loadLedger, toast, user.email, user.name, cfg.templateFolderId]);
 
   const elegirExistente = useCallback(async () => {
     setState({ phase: "nofile", busy: "Elige tu Sheet de Luca…" });
@@ -241,9 +242,9 @@ export function LedgerProvider({ cfg, user, signOutAction, children }: Props) {
     write("No pude guardar", (fileId) => client().upsertKeyValue(fileId, TABS.settings, updates), okMsg), [write]);
 
   const api = useMemo<LedgerApi>(() => ({
-    state, mode: cfg.mode, user, refreshing, sessionExpired, connectionsSkipped, templateId: cfg.templateId, libVersion: cfg.libVersion, signOutAction,
+    state, mode: cfg.mode, user, refreshing, sessionExpired, connectionsSkipped, templateId: cfg.templateId, templateFolderId: cfg.templateFolderId, libVersion: cfg.libVersion, signOutAction,
     crearSheet, elegirExistente, refresh, refreshAjustes, cambiarSheet, skipConnections, recategorize, markTransfer, addManual, saveAjustes,
-  }), [state, cfg.mode, cfg.templateId, cfg.libVersion, user, refreshing, sessionExpired, connectionsSkipped, signOutAction, crearSheet, elegirExistente, refresh, refreshAjustes, cambiarSheet, skipConnections, recategorize, markTransfer, addManual, saveAjustes]);
+  }), [state, cfg.mode, cfg.templateId, cfg.templateFolderId, cfg.libVersion, user, refreshing, sessionExpired, connectionsSkipped, signOutAction, crearSheet, elegirExistente, refresh, refreshAjustes, cambiarSheet, skipConnections, recategorize, markTransfer, addManual, saveAjustes]);
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }

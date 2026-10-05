@@ -57,13 +57,18 @@ los usuarios no se actualizan solas (ADR-006 §5).
 | Guías de usuario/operador (GCP, iOS 27) | `docs/guides/` |
 
 ## Infraestructura (no es del usuario final)
-- **GCP** `luca-510610` (cuenta `gavynenita@gmail.com`; clasp ya autenticado). Dos clientes OAuth: **"Luca Web"**
+- **GCP** `luca-510610` (cuenta `gavynenita@gmail.com`). Dos clientes OAuth: **"Luca Web"**
   (producción: `AUTH_GOOGLE_ID/SECRET` de `apps/web/.env.local` y de Vercel; URIs de lucaa.lat, luca-sand.vercel.app
   y localhost:3000) y "Luca Web (spikes)" (solo la página de spikes del puerto 5173; no tocar).
-- **Apps Script**: LucaLib `1gU08ZAJ0EAmi59WgPSWHVjzQ-FZAhBWMxb01XXjaYsdH06Td19z27tuU` · plantilla Sheet
-  `1FMxSE00KcD68JdClICcWayMxdqvSROYr6tuL-va5KWA` (stub `1UmA2ZK8Ho7X9V3nR1qb8udDURa6dkojCW7gY5nGOx1OLYq9LmM6oXMoK`).
+- **Apps Script** (dueño `petter.chuquipiondo.r@gmail.com`, la sesión de clasp; carpeta Drive "LUCA"
+  `18aQXOYlyznY6xZm3ViRdVrFWILLXsHQL`, cualquiera con el enlace = lector): LucaLib
+  `1DI_WQYKlD2hw0_18sIHOwd-exl8F5i4Y2-YFSr-WJRfl3Z2NaYm0gUGa` · plantilla Sheet "Luca Template"
+  `1kQWNaj9J29LRK-LsdCAxrplW06heaTvS3Hje3NV1htg` (stub `1J1OqLSkpbWQu6gD3nKrFM0BeciUKv3H3A8C4mD4Q33x42ebvyUkNfp5M`).
+  La numeración de LucaLib se reinició en esta librería (v1 sin usar; v2 = código de la v22 anterior). La librería
+  y la plantilla antiguas de gavynenita (`1gU08…`, `1FMx…`, hasta v22) siguen vivas para las copias existentes; ya
+  no reciben releases.
 - **Web**: https://lucaa.lat → Vercel proyecto `luca-sand` (https://luca-sand.vercel.app, Root Directory `apps/web`).
 - **Worker**: https://mcp.lucaa.lat (respaldo https://luca-mcp.chif-of-staff.workers.dev), cuenta de Cloudflare de
   CoS-Agent; D1 `luca-mcp` id `6fa4bc8d-628c-4b4a-85e5-f98cb07f19bb`; KV `LUCA_OAUTH_KV` (binding `OAUTH_KV`).
 - **Dominio** `lucaa.lat`: DNS en Cloudflare. Guía: `docs/guides/guia-dns-vercel-oauth.md`.
-- Cuenta de prueba "usuario final": `petter.chuquipiondo.r@gmail.com`.
+- Cuenta de prueba "usuario final": `petter.chuquipiondo.r@gmail.com` (también dueña de LucaLib y la plantilla).

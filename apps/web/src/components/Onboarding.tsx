@@ -111,12 +111,13 @@ function SheetCopyArt() {
 }
 
 export function Step1Sheet() {
-  const { state, crearSheet, elegirExistente, mode } = useLedger();
+  const { state, crearSheet, elegirExistente, mode, templateFolderId } = useLedger();
+  const carpeta = `https://drive.google.com/drive/folders/${templateFolderId || "18aQXOYlyznY6xZm3ViRdVrFWILLXsHQL"}?usp=sharing`;
   const busy = state.phase === "nofile" ? state.busy : undefined;
   const error = state.phase === "nofile" ? state.error : undefined;
   const pasos: ReactNode[] = [
-    <>Pulsa <b className="font-semibold text-ink">Crear mi Sheet</b>. Se abre el selector de Google: elige <b className="font-semibold text-ink">&quot;Luca — Plantilla&quot;</b> (está en &quot;Compartidos conmigo&quot; o búscala por nombre).</>,
-    <>Hacemos una copia a tu nombre con el script de Luca incluido.</>,
+    <>Abre la <a className="font-semibold text-ink underline underline-offset-2" href={carpeta} target="_blank" rel="noopener noreferrer" data-testid="template-folder-link">carpeta LUCA</a>: ahí está la plantilla <b className="font-semibold text-ink">&quot;Luca Template&quot;</b>.</>,
+    <>Pulsa <b className="font-semibold text-ink">Crear mi Sheet</b>: el selector de Google se abre en esa carpeta; elige &quot;Luca Template&quot; y hacemos una copia a tu nombre con el script de Luca incluido. (También puedes abrirla y hacer <b className="font-semibold text-ink">Archivo → Hacer una copia</b>, y luego pulsar &quot;Ya tengo una&quot;.)</>,
     <>En la copia, menú <b className="font-semibold text-ink">Luca → Autorizar</b>: le das permiso a <i>tu propio</i> script para leer tus correos de BCP/Yape. No a nosotros.</>,
   ];
   return (
@@ -138,6 +139,7 @@ export function Step1Sheet() {
       <div className="flex flex-wrap gap-3">
         <button className="btn primary lg" onClick={crearSheet} disabled={!!busy}>Crear mi Sheet</button>
         <button className="btn lg" onClick={elegirExistente} disabled={!!busy}>Ya tengo una</button>
+        <a className="btn lg ghost" href={carpeta} target="_blank" rel="noopener noreferrer">Abrir carpeta LUCA ↗</a>
       </div>
       {busy && <p className="flex items-center gap-2 text-sm text-muted" role="status"><i className="dot warn skeleton" aria-hidden /> {busy}</p>}
       {error && <p className="notice warn" role="alert">Error: {error}</p>}

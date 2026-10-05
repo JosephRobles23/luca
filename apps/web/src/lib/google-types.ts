@@ -5,7 +5,8 @@ export const LUCA_APP_PROP = { key: "luca", value: "ledger" } as const;
 
 export type LedgerFile = { id: string; name: string; modifiedTime: string; webViewLink?: string };
 export type CellWrite = { range: string; values: string[][] };
-export type PickerOptions = { title: string };
+/** `parentId`: abre el selector dentro de esa carpeta (la carpeta "LUCA" con la plantilla). */
+export type PickerOptions = { title: string; parentId?: string };
 
 export class GoogleApiError extends Error {
   status: number;

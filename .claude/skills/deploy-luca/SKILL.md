@@ -20,7 +20,7 @@ fotografía el HEAD del servidor, así que siempre `lib:push` → `lib:version`.
 
 ## Pre-release (verificar antes de tocar nada)
 - [ ] `npm test` en verde. Si falla, detente y reporta.
-- [ ] `clasp show-authorized-user` muestra sesión (si no: `clasp login`).
+- [ ] `clasp show-authorized-user` muestra `petter.chuquipiondo.r@gmail.com` (dueño de LucaLib y la plantilla; si no: `clasp login`).
 - [ ] `git status --short` sin ruido inesperado; cambios de `gas/shared` ya commiteados o en este commit.
 - [ ] Si cambió algo en `gas/stub/*.js` (no solo el manifiesto): subir `STUB_VERSION` en `gas/stub/config.js`.
 - [ ] `docs/dev/status.md` actualizado con lo que entra en esta release (versión, tests, pendientes).
@@ -34,13 +34,14 @@ npm test
 
 # 2) Librería: subir LUCA_VERSION a N y publicar
 sed -i "s/^var LUCA_VERSION = '[0-9]*';/var LUCA_VERSION = 'N';/" gas/shared/settings-runtime.js
-npm run lib:push                                   # clasp push --project gas/shared
+npm run lib:push                                   # clasp push --project gas/shared --force (sin --force, clasp se SALTA el push si el manifiesto cambió)
 npm run lib:version -- "vN — <resumen del cambio>" # clasp create-version; anota el número que asigna
 clasp list-versions --project gas/shared | head -3 # debe ser N; si no, corrige los 4 sitios con el real
 
 # 3) Stub de la plantilla: apuntar a la versión N
 #    gas/stub/appsscript.json → "version": "N"
-npm run stub:push                                  # clasp push --project gas/stub
+npm run stub:push                                  # clasp push --project gas/stub --force
+#    Verifica que se subió: clasp pull en una carpeta temporal con el scriptId del stub y diff contra gas/stub.
 
 # 4) Versión anunciada por Worker y web
 #    services/luca-mcp/wrangler.toml → LUCA_LIB_VERSION = "N"

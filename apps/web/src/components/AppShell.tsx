@@ -13,7 +13,7 @@ import ThemeToggle from "./ThemeToggle";
 import { IconActualizar, IconAjustes, IconBuscar, IconConexiones, IconExterno, IconLista, IconMas, IconResumen, IconSalir } from "./icons";
 
 type Props = {
-  cfg: ClientConfig & { templateId: string; libVersion: string };
+  cfg: ClientConfig & { templateId: string; templateFolderId: string; libVersion: string };
   user: { name: string; email: string; image: string };
   signOutAction: () => Promise<void>;
   children: ReactNode;
