@@ -1,11 +1,12 @@
 /** Mosaico "Qué hace". Ejemplos con datos ficticios. */
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { IconIA, IconIphone, IconLista, IconSheet } from "@/components/icons";
 import { catColor } from "@/lib/categorias";
 import { SectionHead } from "./DataPath";
 import { GlyphTag } from "./glyphs";
 import { Reveal } from "./Reveal";
 import { AiChatDemo } from "./AiChatDemo";
+import { MovesFeed } from "./MovesFeed";
 import s from "./portada.module.css";
 
 function Tile({ className, icon, title, children, extra }: { className: string; icon: ReactNode; title: string; children: ReactNode; extra?: ReactNode }) {
@@ -19,24 +20,13 @@ function Tile({ className, icon, title, children, extra }: { className: string; 
   );
 }
 
-const i = (n: number) => ({ "--i": n }) as CSSProperties;
-
 export function Features() {
   return (
     <section id="que-hace" aria-labelledby="que-h" className="scroll-mt-24 pt-20 sm:pt-[88px]">
       <SectionHead eyebrow="Qué hace" id="que-h" title="Lo que hacías en Excel cada fin de mes, hecho solo." />
       <Reveal className={`${s.bento} mt-9`}>
         <Tile className={s.bA} icon={<IconLista size={18} />} title="Movimientos que llegan solos"
-          extra={
-            <ul className="mt-1.5 grid gap-2 text-[13.5px]" aria-label="Ejemplo de movimientos">
-              {[["APP STORE", "−$ 3.86", "≈ S/ 13.32"], ["Yape a Juan P*", "−S/ 20.00", ""], ["CLOUD HOSTING", "−S/ 17.08", ""]].map(([w, a, p], n) => (
-                <li key={w} className="rise sunken flex justify-between gap-3 rounded-[10px] px-3 py-2.5" style={i(n * 2 + 2)}>
-                  <span className="min-w-0 truncate">{w}</span>
-                  <span className="num whitespace-nowrap">{a} {p && <span className="cur">{p}</span>}</span>
-                </li>
-              ))}
-            </ul>
-          }>
+          extra={<MovesFeed />}>
           Consumos con tarjeta, transferencias y yapeos, con el comercio y la moneda original. Los dólares se convierten a soles con tu tipo de cambio.
         </Tile>
 
@@ -57,10 +47,10 @@ export function Features() {
           }>
           Lo que no reconoce queda en &quot;Por categorizar&quot;. Eliges y aprende del comercio.
         </Tile>
-        <Tile className={s.bD} icon={<IconIphone size={18} />} title="Yapeos del iPhone">
+        <Tile className={s.bD} icon={<IconIphone size={18} />} title="Yapeos del iPhone" extra={<a className="text-[13px] font-medium text-primary underline-offset-2 hover:underline" href="#iphone">Ver cómo funciona →</a>}>
           Un atajo registra lo que recibes por Yape, directo de tu teléfono a tu script.
         </Tile>
-        <Tile className={s.bE} icon={<IconSheet size={18} />} title="Tu Sheet, tus reglas">
+        <Tile className={s.bE} icon={<IconSheet size={18} />} title="Tu Sheet, tus reglas" extra={<a className="text-[13px] font-medium text-primary underline-offset-2 hover:underline" href="#en-tu-sheet">Ver el panel de la Sheet →</a>}>
           Ábrela, edítala, expórtala o bórrala cuando quieras. Es un archivo tuyo.
         </Tile>
       </Reveal>

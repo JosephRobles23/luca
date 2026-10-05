@@ -9,6 +9,8 @@ import { EntrarButton } from "@/components/portada/EntrarButton";
 import { Faq } from "@/components/portada/Faq";
 import { Features } from "@/components/portada/Features";
 import { PanelShot } from "@/components/portada/PanelShot";
+import { SheetSection } from "@/components/portada/SheetSection";
+import { YapeSection } from "@/components/portada/YapeSection";
 import s from "@/components/portada/portada.module.css";
 import { FAQ, jsonLdScript } from "@/lib/seo";
 
@@ -34,6 +36,7 @@ export default async function Home() {
           <nav aria-label="Portada" className="flex items-center gap-1">
             <a className={s.navLink} href="#camino">Cómo funciona</a>
             <a className={s.navLink} href="#que-hace">Qué hace</a>
+            <a className={s.navLink} href="#en-tu-sheet">Tu Sheet</a>
             <a className={s.navLink} href="#faq">Preguntas</a>
             <ThemeToggle />
             <EntrarButton action={entrar} label="Entrar" size="sm" className="ml-1" />
@@ -61,6 +64,8 @@ export default async function Home() {
 
         <DataPath />
         <Features />
+        <YapeSection />
+        <SheetSection />
 
         <section id="faq" aria-labelledby="faq-h" className="scroll-mt-24 pt-20 sm:pt-[88px]">
           <SectionHead eyebrow="Preguntas frecuentes" id="faq-h" title="Antes de entrar." />
@@ -68,15 +73,12 @@ export default async function Home() {
         </section>
 
         <section className={`${s.final} mt-20 sm:mt-[88px]`} aria-labelledby="final-h">
-          <div className={s.finalArt} aria-hidden>
-            <span className={s.ringGlow} />
-            <span className={s.ringDash} style={{ "--inset": "18%", "--ring-c": "var(--cat-gold)", "--dur": "22s", "--dir": "reverse" } as React.CSSProperties} />
-            <span className={s.ringDash} style={{ "--inset": "32%", "--ring-c": "var(--cat-lavender)", "--dur": "16s" } as React.CSSProperties} />
-            <span className={s.ringSat} style={{ "--inset": "6%", "--ring-c": "var(--primary-2)", "--dur": "9s" } as React.CSSProperties} />
-            <span className={s.ringSat} style={{ "--inset": "18%", "--ring-c": "var(--cat-mint)", "--dur": "13s", "--dir": "reverse" } as React.CSSProperties} />
-            <span className={s.ringSat} style={{ "--inset": "32%", "--ring-c": "var(--cat-blue)", "--dur": "7s" } as React.CSSProperties} />
-            <span className={s.ringCore} />
-          </div>
+          <svg className={s.finalArt} viewBox="0 0 200 200" aria-hidden>
+            {[90, 66, 42].map((r, n) => (
+              <circle key={r} cx="100" cy="100" r={r} fill="none" stroke="var(--primary)" strokeOpacity={0.25 + n * 0.25} strokeWidth="1.5" strokeDasharray="4 7" />
+            ))}
+            <circle cx="100" cy="100" r="9" fill="var(--primary)" />
+          </svg>
           <h2 id="final-h" className="max-w-[20ch] text-[clamp(26px,3.6vw,38px)] font-medium leading-[1.1] tracking-[-0.03em]">Empieza con el último mes de tus correos.</h2>
           <p className={s.finalSub}>En un par de minutos tienes tu Sheet creada y tus gastos del último mes ordenados por categoría.</p>
           <EntrarButton action={entrar} />

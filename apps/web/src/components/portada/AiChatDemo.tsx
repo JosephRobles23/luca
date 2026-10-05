@@ -21,7 +21,9 @@ type Step = typeof FULL;
 function ClaudeMark({ size = 18 }: { size?: number }) {
   const rays = Array.from({ length: 12 }, (_, i) => {
     const a = (i * 30 * Math.PI) / 180, r = i % 2 ? 7.2 : 10;
-    return <line key={i} x1={12 + Math.cos(a) * 2.2} y1={12 + Math.sin(a) * 2.2} x2={12 + Math.cos(a) * r} y2={12 + Math.sin(a) * r} />;
+    // Redondeado: servidor y navegador difieren en el último decimal y React marcaría error de hidratación.
+    const p = (n: number) => Math.round(n * 100) / 100;
+    return <line key={i} x1={p(12 + Math.cos(a) * 2.2)} y1={p(12 + Math.sin(a) * 2.2)} x2={p(12 + Math.cos(a) * r)} y2={p(12 + Math.sin(a) * r)} />;
   });
   return <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden stroke="#d97757" strokeWidth="2.4" strokeLinecap="round">{rays}</svg>;
 }
