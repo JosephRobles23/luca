@@ -315,7 +315,7 @@
 
   var SERVIDOR = {
     estadoLuca: function () {
-      return { version: '20', stubVersion: st.stub ? '1' : '2', stubUpdate: st.stub ? 'Tu script necesita actualizarse (stub v1 < v2): haz una copia nueva de la plantilla o reemplaza los archivos del stub (Extensiones → Apps Script).' : '',
+      return { version: '21', stubVersion: st.stub ? '1' : '2', stubUpdate: st.stub ? 'Tu script necesita actualizarse (stub v1 < v2): haz una copia nueva de la plantilla o reemplaza los archivos del stub (Extensiones → Apps Script).' : '',
         autorizado: st.autorizado, cursorIso: st.autorizado ? iso(st.minScan) : '', lastRunAt: st.autorizado ? iso(st.minScan) : '', lastStats: st.autorizado ? { added: 0 } : null,
         triggerInstaladoEn: st.trigger ? '2026-09-05T00:24:00Z' : '', importacion: { status: st.autorizado ? 'done' : '' },
         ledger: { total: st.total, sinCategoria: st.sinCat, recibidoYape: st.yape }, secretos: { llmKey: st.key, mcp: st.mcp, iphone: st.iphone },

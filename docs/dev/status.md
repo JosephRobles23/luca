@@ -5,6 +5,8 @@ Skill de release: `.claude/skills/deploy-luca/SKILL.md`
 Actualizado: 2026-10-05. Fuente de verdad de qué está hecho, en curso y pendiente. Commits en `main`.
 
 ## Hecho y publicado
+- LucaLib **v21** — iconos SVG de categoría en los avatares del Dashboard (`iconoCategoria` en `_Ui`: fijos para la
+  taxonomía por defecto, palabras clave para categorías propias, etiqueta por defecto). 214 tests.
 - LucaLib **v20** — **Dashboard de la Sheet** rediseñado: `dashboard-runtime.js` (`resumenDashboard`, paridad con `summarize` de la web)
   + `DialogDashboard` con pestañas Resumen / Categorías / Tendencias / Movimientos, selector de mes y gráficos SVG
   (dona, barras de 6 meses, líneas por categoría, barras apiladas, ritmo del mes). Vista previa: botón Dashboard en
