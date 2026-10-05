@@ -4,13 +4,11 @@ Skill de release: `.claude/skills/deploy-luca/SKILL.md`
 
 Actualizado: 2026-10-05. Fuente de verdad de qué está hecho, en curso y pendiente. Commits en `main`.
 
-## Listo en la rama, sin publicar (próxima LucaLib)
-- **Dashboard de la Sheet** rediseñado: `dashboard-runtime.js` (`resumenDashboard`, paridad con `summarize` de la web)
+## Hecho y publicado
+- LucaLib **v20** — **Dashboard de la Sheet** rediseñado: `dashboard-runtime.js` (`resumenDashboard`, paridad con `summarize` de la web)
   + `DialogDashboard` con pestañas Resumen / Categorías / Tendencias / Movimientos, selector de mes y gráficos SVG
   (dona, barras de 6 meses, líneas por categoría, barras apiladas, ritmo del mes). Vista previa: botón Dashboard en
   `docs/html/preview-sidebar.html` (datos calculados con el `resumenDashboard` real). 213 tests.
-
-## Hecho y publicado
 - LucaLib **v19** — fix: en v18 el sidebar llegaba sin estilos ni `_Ui` (se quedaba en "cargando…"). Los
   marcadores de parciales eran comentarios HTML y HtmlService los elimina; ahora son `<luca-parcial nombre="_X">`
   y los archivos se leen sin procesar (`createTemplateFromFile(...).getRawContent()`). El harness ya elimina los

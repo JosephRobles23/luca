@@ -21,7 +21,7 @@ workers_dev = true
 [vars]
 # Versión de LucaLib fijada en el stub de la plantilla (gas/stub/appsscript.json → "version").
 # GET /meta la expone para que la web y el sidebar avisen "tu copia usa vN, hay vN+1".
-LUCA_LIB_VERSION = "19"
+LUCA_LIB_VERSION = "20"
 # Versión mínima del payload del atajo iOS (ADR-003); también en GET /meta.
 MIN_SHORTCUT_SCHEMA = "1"
 
