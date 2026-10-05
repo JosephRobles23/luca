@@ -12,7 +12,7 @@
  * Versión de LucaLib que se escribe en `Ajustes.luca.version` en cada pasada (ADR-006 §5): la web y el
  * sidebar comparan con la última publicada para avisar "hay una versión nueva". Subirla en cada release.
  */
-var LUCA_VERSION = '21';
+var LUCA_VERSION = '22';
 // Versión mínima del stub que esta librería necesita (stub v2 = pasa setupTriggers y execUrl/stubVersion).
 var STUB_MIN_VERSION_ = '2';
 

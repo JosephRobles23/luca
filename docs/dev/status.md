@@ -5,6 +5,8 @@ Skill de release: `.claude/skills/deploy-luca/SKILL.md`
 Actualizado: 2026-10-05. Fuente de verdad de qué está hecho, en curso y pendiente. Commits en `main`.
 
 ## Hecho y publicado
+- LucaLib **v22** — logo del sidebar más grande: `_Logo.html` lo genera ahora `apps/web/scripts/brand-assets.py`, que
+  recorta el halo casi transparente del PNG fuente y reduce el margen (mismo cambio en favicon, iconos PWA y og:image). 215 tests.
 - LucaLib **v21** — iconos SVG de categoría en los avatares del Dashboard (`iconoCategoria` en `_Ui`: fijos para la
   taxonomía por defecto, palabras clave para categorías propias, etiqueta por defecto). 214 tests.
 - LucaLib **v20** — **Dashboard de la Sheet** rediseñado: `dashboard-runtime.js` (`resumenDashboard`, paridad con `summarize` de la web)

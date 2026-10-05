@@ -3,8 +3,11 @@
 
 Uso (desde la raíz del repo): python3 apps/web/scripts/brand-assets.py
 Requiere Pillow. Descarga Geist de jsDelivr (fontsource); sin red usa DejaVu.
+También reescribe gas/shared/_Logo.html (logo del sidebar de la Sheet, PNG en base64).
 Fuentes: public/Luca-favicon.png (isotipo) y public/luca-logo.webp (isotipo + wordmark).
 """
+import base64
+import io
 import os
 import tempfile
 import urllib.request
@@ -14,6 +17,7 @@ from PIL import Image, ImageDraw, ImageFont
 WEB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 PUBLIC = os.path.join(WEB, "public")
 APP = os.path.join(WEB, "src", "app")
+GAS_LOGO = os.path.join(WEB, "..", "..", "gas", "shared", "_Logo.html")
 
 BG = (244, 239, 232, 255)      # --bg tema claro (#f4efe8)
 TEXT = (29, 26, 23, 255)       # --text (#1d1a17)
@@ -34,8 +38,9 @@ def font(weight, size):
 
 
 def trimmed(path):
+    """Recorta al contenido visible: ignora el halo casi transparente (alpha ≤ 16) que traen los PNG fuente."""
     im = Image.open(path).convert("RGBA")
-    return im.crop(im.getbbox())
+    return im.crop(im.getchannel("A").point(lambda a: 255 if a > 16 else 0).getbbox())
 
 
 def fit(im, box):
@@ -81,14 +86,23 @@ def main():
     mark = trimmed(os.path.join(PUBLIC, "Luca-favicon.png"))
     logo = trimmed(os.path.join(PUBLIC, "luca-logo.webp"))
 
-    tile(mark, 256, 0.12, 56).save(os.path.join(APP, "favicon.ico"), sizes=[(16, 16), (32, 32), (48, 48)])
-    tile(mark, 512, 0.12, 112).save(os.path.join(APP, "icon.png"), optimize=True)
+    tile(mark, 256, 0.06, 56).save(os.path.join(APP, "favicon.ico"), sizes=[(16, 16), (32, 32), (48, 48)])
+    tile(mark, 512, 0.08, 112).save(os.path.join(APP, "icon.png"), optimize=True)
     # iOS redondea solo las esquinas y no admite transparencia: cuadrado lleno.
-    tile(mark, 180, 0.14, 0).save(os.path.join(APP, "apple-icon.png"), optimize=True)
+    tile(mark, 180, 0.12, 0).save(os.path.join(APP, "apple-icon.png"), optimize=True)
     for s in (192, 512):
-        tile(mark, s, 0.12, round(s * 0.22)).save(os.path.join(PUBLIC, f"icon-{s}.png"), optimize=True)
+        tile(mark, s, 0.08, round(s * 0.22)).save(os.path.join(PUBLIC, f"icon-{s}.png"), optimize=True)
     # Maskable: Android recorta a círculo/squircle; el contenido va dentro de la zona segura (80 %).
-    tile(mark, 512, 0.22, 0).save(os.path.join(PUBLIC, "icon-maskable-512.png"), optimize=True)
+    tile(mark, 512, 0.20, 0).save(os.path.join(PUBLIC, "icon-maskable-512.png"), optimize=True)
+
+    # Sidebar de la Sheet: 64 px (2× de los 30 px que muestra); las esquinas las redondea el CSS (.logo).
+    buf = io.BytesIO()
+    tile(mark, 64, 0.08, 0).save(buf, "PNG", optimize=True)
+    with open(GAS_LOGO, "w") as f:
+        f.write("<!-- _Logo — logo de Luca (el de la web), para la cabecera del panel y la guía."
+                " Generado por apps/web/scripts/brand-assets.py. -->\n")
+        f.write('<img class="logo" alt="" src="data:image/png;base64,'
+                + base64.b64encode(buf.getvalue()).decode() + '">\n')
 
     # X/Twitter usa og:image cuando no hay twitter:image, así que basta una sola imagen.
     og_image(logo).save(os.path.join(APP, "opengraph-image.png"), optimize=True)
