@@ -124,13 +124,13 @@ export class GoogleMockClient implements GoogleClient {
   }
 
   /**
-   * Picker simulado: con `query` (buscar la copia hecha con "Copiar a mi Drive") simula que el usuario ya copió la
+   * Picker simulado: con `intent: "copia"` (elegir la copia hecha con "Copiar a mi Drive") simula que el usuario ya copió la
    * plantilla y devuelve esa copia, sin autorizar; si el título pide la plantilla, la plantilla; si no, la primera
    * Sheet elegible que no sea la plantilla.
    */
   async pickSpreadsheet(o: PickerOptions): Promise<{ id: string; name: string } | null> {
     await sleep(LATENCY * 2);
-    if (o.query) {
+    if (o.intent === "copia") {
       const id = `sheet-copia-usuario-${this.store.files.length}`;
       const f: MockFile = { id, name: "Copia de Luca Template", modifiedTime: new Date().toISOString(), webViewLink: url(id), tagged: false, pickable: true, simulateAuthorize: true, ledgerReads: 0 };
       this.store.files.push(f);

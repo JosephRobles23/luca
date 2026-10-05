@@ -7,9 +7,10 @@ export type LedgerFile = { id: string; name: string; modifiedTime: string; webVi
 export type CellWrite = { range: string; values: string[][] };
 /**
  * `parentId`: abre el selector dentro de esa carpeta (la carpeta "LUCA" con la plantilla).
- * `query`: búsqueda inicial (p. ej. "Luca Template" para encontrar la copia). `ownedByMe`: solo archivos del usuario.
+ * `query`: búsqueda inicial. `ownedByMe`: solo archivos del usuario. `intent`: para qué se abre (lo usa el mock
+ * para simular la copia hecha con "Copiar a mi Drive"; el Picker real lo ignora).
  */
-export type PickerOptions = { title: string; parentId?: string; query?: string; ownedByMe?: boolean };
+export type PickerOptions = { title: string; parentId?: string; query?: string; ownedByMe?: boolean; intent?: "copia" };
 
 export class GoogleApiError extends Error {
   status: number;
