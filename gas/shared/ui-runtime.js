@@ -30,12 +30,19 @@ function htmlConParciales_(archivo) {
   return html.replace(PARCIAL_RE_, function (m, nombre) { return HtmlService.createHtmlOutputFromFile(nombre).getContent(); });
 }
 
-function buildSidebar() {
-  return HtmlService.createHtmlOutput(htmlConParciales_('Sidebar')).setTitle('Luca — Configuración');
+var PESTANAS_SIDEBAR_ = ['estado', 'ia', 'iphone', 'mcp'];
+
+/** Panel lateral. `tab` (opcional) abre directamente esa pestaña (la usa la Guía: "Abrir IA en el panel"). */
+function buildSidebar(tab) {
+  var html = htmlConParciales_('Sidebar');
+  if (PESTANAS_SIDEBAR_.indexOf(tab) > -1) html = html.replace('<body>', '<body data-tab="' + tab + '">');
+  return HtmlService.createHtmlOutput(html).setTitle('Luca — Configuración');
 }
 
 var DIALOGOS_ = {
-  dashboard: { archivo: 'DialogDashboard', titulo: 'Luca — Dashboard', ancho: 1100, alto: 760 }
+  dashboard: { archivo: 'DialogDashboard', titulo: 'Luca — Dashboard', ancho: 1100, alto: 760 },
+  // Modeless: la hoja sigue usable detrás (patrón "Guía del CoS" de CoS-Agent).
+  guia: { archivo: 'DialogGuia', titulo: 'Luca — Guía', ancho: 460, alto: 640, modeless: true }
 };
 
 function buildDialog(nombre) {
@@ -43,6 +50,30 @@ function buildDialog(nombre) {
   if (!d) throw new Error('Diálogo desconocido: ' + nombre);
   var html = HtmlService.createHtmlOutput(htmlConParciales_(d.archivo)).setWidth(d.ancho).setHeight(d.alto);
   return { html: html, titulo: d.titulo };
+}
+
+/**
+ * Muestra un diálogo desde una llamada de la UI (lucaRun). google.script.run se ejecuta en el contexto del stub,
+ * así que SpreadsheetApp.getUi() es el de la Sheet del usuario. Sheets muestra un diálogo a la vez.
+ */
+function mostrarDialogo_(nombre) {
+  var d = buildDialog(nombre);
+  var ui = SpreadsheetApp.getUi();
+  if (DIALOGOS_[nombre].modeless) ui.showModelessDialog(d.html, d.titulo);
+  else ui.showModalDialog(d.html, d.titulo);
+  return { ok: true };
+}
+
+// Preferencias de interfaz por usuario (UserProperties: nunca en la librería ni en la hoja compartida).
+var PREF_UI_AVANZADO_ = 'luca.ui.avanzado';
+
+function leerPrefUi_() {
+  return { avanzado: PropertiesService.getUserProperties().getProperty(PREF_UI_AVANZADO_) === 'true' };
+}
+
+function guardarPrefUi(sheetId, config, prefs) {
+  PropertiesService.getUserProperties().setProperty(PREF_UI_AVANZADO_, prefs && prefs.avanzado ? 'true' : 'false');
+  return leerPrefUi_();
 }
 
 var AUTORIZAR_DIAS_ = 30;
@@ -129,7 +160,11 @@ var DISPATCH_ = {
   desconectarIphone: function (sid, cfg, a) { return desconectarIphone(sid, cfg); },
   generarPromptIphone: function (sid, cfg, a) { return generarPromptIphone(sid, cfg); },
   estadoLuca:        function (sid, cfg, a) { return estadoLuca(sid, cfg); },
-  aplicarEstiloHojas: function (sid, cfg, a) { return aplicarEstiloHojas(sid, cfg); }
+  aplicarEstiloHojas: function (sid, cfg, a) { return aplicarEstiloHojas(sid, cfg); },
+  guardarPrefUi:     function (sid, cfg, a) { return guardarPrefUi(sid, cfg, a[0] || {}); },
+  abrirGuia:         function (sid, cfg, a) { return mostrarDialogo_('guia'); },
+  abrirDashboard:    function (sid, cfg, a) { return mostrarDialogo_('dashboard'); },
+  abrirSidebar:      function (sid, cfg, a) { SpreadsheetApp.getUi().showSidebar(buildSidebar(String(a[0] || ''))); return { ok: true }; }
 };
 
 /** Estado completo para el sidebar en una sola llamada (versión, cursor, último escaneo, conexiones). */
@@ -160,7 +195,8 @@ function estadoLuca(sheetId, config) {
       extractUnknown: llmExtractEnabled_(config), desconocidos: contarDesconocidos_(sheetId, config)
     },
     execUrl: syncExecUrl_(sheetId, config),
-    iphone: telemetriaIphone_(a)
+    iphone: telemetriaIphone_(a),
+    ui: leerPrefUi_()
   };
 }
 

@@ -4,178 +4,49 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Sidebar de Luca</title>
-<!-- Prototipo del sidebar "Luca — Configuración" (paso 3). Generado por scripts/build-previews.mjs a partir de
-     este archivo + los parciales reales gas/shared/_Estilos.html y _Ui.html: no editar el .html de docs/html. -->
+<!-- Vista previa del panel "Luca — Configuración" REAL: scripts/build-previews.mjs incrusta gas/shared/Sidebar.html,
+     DialogGuia.html y DialogDashboard.html (con sus parciales) y aquí se montan en iframes; sus lucaRun(...) los
+     responde un servidor simulado. No editar docs/html/preview-sidebar.html: se regenera. -->
 <!-- @incluir _Estilos -->
 <style>
-  /* ---- Escenario del prototipo (no forma parte del sidebar) ---- */
   html, body { background: #e9e4dc; }
-  body.demo { padding: 24px 16px; display: flex; gap: 28px; justify-content: center; align-items: flex-start; flex-wrap: wrap; min-height: 100vh; }
+  body { padding: 24px 16px; display: flex; gap: 28px; justify-content: center; align-items: flex-start; flex-wrap: wrap; min-height: 100vh; }
   .demo-panel { width: 280px; font-size: 13px; color: var(--body); }
   .demo-panel h1 { font: 500 24px/1.1 var(--sans); letter-spacing: -0.03em; color: var(--ink); margin: 4px 0 6px; }
   .demo-panel p { margin: 0 0 14px; }
   .demo-panel .grupo { margin-bottom: 16px; }
   .demo-panel .grupo > b { display: block; font: 600 11px/1.2 var(--sans); letter-spacing: .88px; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
   .demo-panel ul { margin: 0; padding-left: 18px; } .demo-panel li { margin: 3px 0; }
-
-  /* Marco que imita el panel lateral de Google Sheets (300px). transform: los position:fixed quedan dentro. */
+  .demo-panel .seg { margin-top: 0; }
   .gs-frame { width: 300px; height: min(860px, calc(100vh - 48px)); background: #fff; border-radius: 16px; overflow: hidden;
-    box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 12px 40px -12px rgba(0,0,0,.25); display: flex; flex-direction: column; transform: translateZ(0); }
-  .gs-title { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; font: 400 16px/1 'Google Sans', Roboto, Arial, sans-serif; color: #1f1f1f; background: #fff; }
+    box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 12px 40px -12px rgba(0,0,0,.25); display: flex; flex-direction: column; }
+  .gs-title { flex: none; display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; font: 400 16px/1 'Google Sans', Roboto, Arial, sans-serif; color: #1f1f1f; }
   .gs-title span:last-child { font-size: 20px; color: #444; }
-  .gs-body { flex: 1; min-height: 0; position: relative; }
-  .sb { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--canvas); }
-  @media (max-width: 680px) { body.demo { padding: 12px; } .gs-frame { width: 100%; max-width: 360px; } .demo-panel { width: 100%; max-width: 360px; } }
-
-  /* ---- Sidebar ---- */
-  .sb-head { flex: none; display: flex; align-items: center; gap: 10px; padding: 12px 14px 10px; }
-  .sb-head img { width: 30px; height: 30px; border-radius: 8px; border: 1px solid var(--line); }
-  .sb-head .t { flex: 1; min-width: 0; }
-  .sb-head .t b { display: block; font: 600 15px/1.1 var(--sans); letter-spacing: -.2px; }
-  .sb-head .t b i { font-style: normal; color: var(--primary); }
-  .sb-head .t small { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  button.guia { width: auto; min-height: 32px; margin: 0; padding: 0 10px; gap: 5px; font-size: 13px; }
-  button.guia svg { width: 15px; height: 15px; }
-
-  .tabs { flex: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin: 0 14px; padding: 3px; background: var(--strong); border-radius: 11px; }
-  .tabs button { position: relative; flex-direction: column; gap: 3px; min-height: 48px; margin: 0; padding: 6px 0 5px; border-radius: 8px;
-    background: transparent; color: var(--muted); font-size: 11.5px; font-weight: 500; }
-  .tabs button:hover:not(:disabled) { background: transparent; color: var(--ink); }
-  .tabs button[aria-selected="true"] { background: var(--raised); color: var(--ink); box-shadow: 0 1px 2px rgba(29,26,23,.1); }
-  .tabs button svg { width: 17px; height: 17px; }
-  .tabs .dot { position: absolute; top: 6px; right: calc(50% - 15px); width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid var(--strong); }
-  .tabs button[aria-selected="true"] .dot { border-color: var(--raised); }
-  .dot.warn { background: var(--warning); } .dot.err { background: var(--error); }
-
-  .sb-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 14px 16px; scrollbar-width: thin; }
-  .panel { display: none; } .panel.on { display: block; animation: subir var(--base) var(--ease-out); }
-  @keyframes subir { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-
-  .sb-foot { flex: none; display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--line); background: var(--card); }
-  .sb-foot .t { flex: 1; font-size: 12.5px; color: var(--ink); line-height: 1.3; }
-  .sb-foot .t small { display: block; color: var(--muted); font-size: 11.5px; }
-
-  /* interruptor */
-  .switch { position: relative; flex: none; width: 36px; height: 22px; }
-  .switch input { position: absolute; inset: 0; opacity: 0; margin: 0; width: 100%; height: 100%; cursor: pointer; z-index: 1; }
-  .switch span { position: absolute; inset: 0; border-radius: 99px; background: var(--line-strong); transition: background var(--fast); }
-  .switch span::after { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff;
-    box-shadow: 0 1px 2px rgba(0,0,0,.2); transition: transform var(--base) cubic-bezier(.34, 1.4, .64, 1); }
-  .switch input:checked + span { background: var(--primary-strong); }
-  .switch input:checked + span::after { transform: translateX(14px); }
-  .switch input:focus-visible + span { outline: 2px solid var(--primary); outline-offset: 2px; }
-
-  /* tarjetas del sidebar */
-  .card { padding: 14px; }
-  .card-h { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-  .card-h .ico { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: var(--sunken); color: var(--ink); flex: none; }
-  .card-h .ico svg { width: 16px; height: 16px; }
-  .card-h b { flex: 1; font-size: 15px; letter-spacing: -.1px; }
-  .lead { font-size: 13px; color: var(--body); margin: 0; }
-  .big { font: 500 34px/1 var(--mono); letter-spacing: -0.04em; color: var(--ink); font-variant-numeric: tabular-nums; }
-  .trio { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
-  .trio div { background: var(--sunken); border-radius: 12px; padding: 9px 10px; }
-  .trio small { display: block; font-size: 11.5px; color: var(--muted); }
-  .trio b { font: 500 17px/1.3 var(--mono); font-variant-numeric: tabular-nums; }
-
-  .lista { margin-top: 8px; padding: 4px; }
-  .item { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 48px; margin: 0; padding: 6px 8px; border-radius: 10px;
-    background: transparent; color: var(--ink); border: 0; text-align: left; font-weight: 400; font-size: 13.5px; }
-  .item:hover:not(:disabled) { background: var(--sunken); }
-  .item > svg:first-child { color: var(--muted); }
-  .item .t { flex: 1; min-width: 0; line-height: 1.25; }
-  .item .t small { display: block; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .item .chev { width: 14px; height: 14px; color: var(--line-strong); }
-  .acciones { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .acciones button { font-size: 13px; padding: 0 8px; }
-
-  .seg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 3px; background: var(--strong); border-radius: 11px; margin-top: 10px; }
-  .seg button { min-height: 32px; margin: 0; background: transparent; color: var(--muted); font-size: 12.5px; border-radius: 8px; padding: 0 4px; }
-  .seg button:hover:not(:disabled) { background: transparent; color: var(--ink); }
-  .seg button[aria-pressed="true"] { background: var(--raised); color: var(--ink); box-shadow: 0 1px 2px rgba(29,26,23,.1); }
-  .fila-switch { display: flex; gap: 10px; align-items: flex-start; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
-  .fila-switch .t { flex: 1; font-size: 13px; color: var(--ink); line-height: 1.35; }
-  .fila-switch .t small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
-
-  /* pasos (iPhone) */
-  .pasos { margin-top: 8px; padding: 6px; }
-  .pas { border-radius: 12px; }
-  .pas + .pas { margin-top: 2px; }
-  .pas-h { display: flex; align-items: center; gap: 10px; padding: 8px; }
-  .pas-n { width: 26px; height: 26px; border-radius: 50%; flex: none; display: grid; place-items: center; font: 500 12px/1 var(--mono);
-    background: var(--strong); color: var(--muted); }
-  .pas.hecho .pas-n { background: var(--success); color: #fff; }
-  .pas.hecho .pas-n svg { width: 14px; height: 14px; stroke-dasharray: 24; animation: trazo var(--slow) var(--ease-out); }
-  @keyframes trazo { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
-  .pas.activo { background: var(--sunken); }
-  .pas.activo .pas-n { background: var(--primary-strong); color: #fff; }
-  .pas-h .t { flex: 1; font-size: 13.5px; color: var(--ink); line-height: 1.25; }
-  .pas-h .t small { display: block; font-size: 12px; color: var(--muted); }
-  .pas-c { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--base) var(--ease-out); }
-  .pas.activo .pas-c { grid-template-rows: 1fr; }
-  .pas-c > div { overflow: hidden; padding: 0 8px 0 44px; }
-  .pas.activo .pas-c > div { padding-bottom: 10px; }
-  .pas-c button { margin-top: 8px; }
-  .dato { display: flex; align-items: center; gap: 6px; margin-top: 6px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 6px 6px 6px 10px; }
-  .dato small { display: block; font-size: 11px; color: var(--muted); }
-  .dato code { background: none; padding: 0; font-size: 11.5px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .dato > div { flex: 1; min-width: 0; }
-  button.icono { width: 32px; min-height: 32px; margin: 0; padding: 0; flex: none; }
-
-  .codigo { display: flex; align-items: center; gap: 14px; margin-top: 12px; padding: 14px; background: var(--sunken); border-radius: 12px; }
-  .codigo .big { font-size: 28px; letter-spacing: .12em; }
-  .anillo { width: 50px; height: 50px; flex: none; position: relative; }
-  .anillo svg { width: 50px; height: 50px; transform: rotate(-90deg); }
-  .anillo span { position: absolute; inset: 0; display: grid; place-items: center; font: 500 10px/1 var(--mono); color: var(--ink); letter-spacing: -.02em; }
-
-  /* avanzado */
-  .avz { display: none; }
-  .sb.avanzado .avz { display: block; }
-  .avz-h { display: flex; align-items: center; gap: 6px; margin: 22px 0 8px; font: 600 11px/1.2 var(--sans); letter-spacing: .88px; text-transform: uppercase; color: var(--muted); }
-  .avz-h svg { width: 13px; height: 13px; }
-  details.box { padding: 0; }
-  details.box summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 11px 14px; color: var(--ink); font-size: 13.5px; }
-  details.box summary::-webkit-details-marker { display: none; }
-  details.box summary svg { width: 14px; height: 14px; color: var(--muted); margin-left: auto; transition: transform var(--fast); }
-  details.box[open] summary svg { transform: rotate(90deg); }
-  details.box > div { padding: 0 14px 12px; }
-  details.box + details.box { margin-top: 6px; }
-
-  /* notice descartable */
-  .notice { display: flex; gap: 8px; align-items: flex-start; margin: 0 14px 10px; }
-  .notice .ico { color: var(--primary-strong); flex: none; margin-top: 1px; }
-  .notice span:nth-child(2) { flex: 1; }
-  .notice button { width: auto; min-height: 0; margin: 0; padding: 0 2px; background: none; color: var(--muted); font-size: 16px; }
-  .notice button:hover:not(:disabled) { background: none; color: var(--ink); }
-
-  /* Guía (simula el diálogo modeless de 460×640) */
+  .gs-frame iframe, .dlg iframe { flex: 1; width: 100%; border: 0; display: block; background: var(--canvas); }
   .velo { position: fixed; inset: 0; background: rgba(29,26,23,.28); display: none; align-items: center; justify-content: center; z-index: 40; padding: 16px; }
-  .velo.on { display: flex; animation: bajar var(--base) var(--ease-out); }
-  .guia-dlg { width: 420px; max-width: 100%; max-height: min(640px, calc(100vh - 32px)); background: var(--canvas); border-radius: 16px; box-shadow: var(--halo); display: flex; flex-direction: column; overflow: hidden; }
-  .guia-h { display: flex; gap: 14px; align-items: center; padding: 16px 18px 14px; border-bottom: 1px solid var(--line); background: var(--card); }
-  .guia-h .t { flex: 1; } .guia-h b { font: 500 19px/1.15 var(--sans); letter-spacing: -.02em; display: block; }
-  .guia-h small { color: var(--muted); font-size: 12.5px; }
-  .guia-h .anillo, .guia-h .anillo svg { width: 52px; height: 52px; }
-  .guia-h .anillo span { font-size: 12px; }
-  .guia-b { overflow-y: auto; padding: 10px 12px 14px; }
-  .guia-f { padding: 10px 18px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); background: var(--card); }
-  .guia-dlg .cerrar { width: 32px; min-height: 32px; margin: 0; padding: 0; background: none; color: var(--muted); border: 0; font-size: 20px; align-self: flex-start; }
-  .guia-dlg .cerrar:hover:not(:disabled) { background: var(--strong); color: var(--ink); }
+  .velo.on { display: flex; }
+  .velo.modeless { background: transparent; pointer-events: none; justify-content: flex-start; padding-left: 4vw; }
+  .dlg { pointer-events: auto; background: #fff; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;
+    box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 24px 60px -16px rgba(0,0,0,.35); max-width: 100%; max-height: calc(100vh - 32px); }
+  .dlg .gs-title button { width: auto; min-height: 0; margin: 0; padding: 0 4px; background: none; color: #444; font-size: 20px; }
+  @media (max-width: 680px) { body { padding: 12px; } .gs-frame, .demo-panel { width: 100%; max-width: 360px; } .velo.modeless { justify-content: center; padding-left: 16px; } }
 </style>
 </head>
-<body class="demo">
-
+<body>
 <aside class="demo-panel">
   <h1>Sidebar de Luca</h1>
-  <p>Prototipo navegable con datos de ejemplo. Usa los mismos estilos y utilidades que el sidebar real
-  (<code>_Estilos</code> y <code>_Ui</code>).</p>
+  <p>El panel <b>real</b> de <code>gas/shared/Sidebar.html</code> con un servidor simulado. Los botones, las pestañas, la Guía y el Dashboard funcionan con datos de ejemplo.</p>
   <div class="grupo">
     <b>Escenario</b>
-    <div class="seg" style="margin-top:0" id="escenarios">
+    <div class="seg" id="escenarios">
       <button aria-pressed="false" data-esc="nuevo">Nuevo</button>
       <button aria-pressed="true" data-esc="ok">Conectado</button>
       <button aria-pressed="false" data-esc="avisos">Con avisos</button>
     </div>
+  </div>
+  <div class="grupo">
+    <b>Simular</b>
+    <button class="sec" onclick="simularPruebaIphone()">Llega la prueba del iPhone</button>
   </div>
   <div class="grupo">
     <b>Qué probar</b>
@@ -183,7 +54,7 @@
       <li>Pestañas con icono y punto de aviso.</li>
       <li>"Modo avanzado" abajo: versiones, diagnóstico y mantenimiento.</li>
       <li>Botones con estado de carga y toasts arriba.</li>
-      <li>"Guía" en la cabecera: pasos con progreso.</li>
+      <li>"Guía" en la cabecera (diálogo modeless).</li>
       <li>iPhone: pasos que se completan; MCP: código con cuenta atrás.</li>
     </ul>
   </div>
@@ -191,365 +62,114 @@
 
 <div class="gs-frame" role="region" aria-label="Panel lateral de Google Sheets (simulado)">
   <div class="gs-title"><span>Luca — Configuración</span><span aria-hidden="true">×</span></div>
-  <div class="gs-body">
-  <div class="sb" id="sb">
-    <header class="sb-head">
-      <img alt="" src="__LOGO__">
-      <div class="t"><b>luca<i>.</i></b><small id="subtitulo">v17 · escaneado hace 8 min</small></div>
-      <button class="sec guia" onclick="abrirGuia()" title="Guía paso a paso (no bloquea la hoja)"><i data-icon="brujula"></i>Guía</button>
-    </header>
-
-    <div class="notice" id="avisoStub" hidden>
-      <span class="ico" data-icon="alerta"></span>
-      <span>Tu script necesita actualizarse (stub v1 &lt; v2). <a href="#" onclick="toast('Abriría la guía de actualización.', 'info');return false">Cómo actualizar</a></span>
-      <button aria-label="Ocultar aviso" onclick="this.parentNode.hidden = true">×</button>
-    </div>
-
-    <nav class="tabs" role="tablist" aria-label="Secciones">
-      <button role="tab" aria-selected="true" data-tab="estado"><i data-icon="actividad"></i>Estado<span class="dot" hidden></span></button>
-      <button role="tab" aria-selected="false" data-tab="ia"><i data-icon="chispas"></i>IA<span class="dot" hidden></span></button>
-      <button role="tab" aria-selected="false" data-tab="iphone"><i data-icon="iphone"></i>iPhone<span class="dot" hidden></span></button>
-      <button role="tab" aria-selected="false" data-tab="mcp"><i data-icon="enchufe"></i>MCP<span class="dot" hidden></span></button>
-    </nav>
-
-    <div class="sb-scroll">
-      <!-- ESTADO -->
-      <section class="panel on" id="p-estado" role="tabpanel">
-        <h3>Resumen</h3>
-        <div class="card" id="resumen"></div>
-
-        <h3>Conexiones</h3>
-        <div class="box lista" id="conexiones"></div>
-
-        <div class="acciones" style="margin-top:4px">
-          <button class="sec" onclick="toast('Abriría el diálogo del dashboard.', 'info')"><i data-icon="grafico"></i>Dashboard</button>
-          <button class="sec" onclick="toast('Abriría lucaa.lat en otra pestaña.', 'info')"><i data-icon="externo"></i>lucaa.lat</button>
-        </div>
-
-        <div class="avz">
-          <div class="avz-h"><i data-icon="terminal"></i>Detalles técnicos</div>
-          <div class="box" id="tecnico"></div>
-          <details class="box" style="margin-top:8px">
-            <summary>Importar historial<i data-icon="chevron"></i></summary>
-            <div>
-              <div class="hint" style="margin-top:0">Autorizar ya importó el último mes. Elige desde cuándo traer más; sigue por lotes.</div>
-              <input type="date" value="2026-01-01">
-              <button class="sec" data-cargando="Importando…" onclick="simular(1200, 'Importación iniciada: 120 correos en cola.')">Importar desde esa fecha</button>
-            </div>
-          </details>
-          <details class="box">
-            <summary>URL del Web App<i data-icon="chevron"></i></summary>
-            <div>
-              <div class="hint" style="margin-top:0">Solo si tienes varias implementaciones: pega la de tipo "Aplicación web" (termina en <code>/exec</code>).</div>
-              <input placeholder="https://script.google.com/macros/s/…/exec">
-              <button class="sec" data-cargando="Verificando…" onclick="simular(1000, 'URL verificada y guardada.')">Verificar y guardar</button>
-            </div>
-          </details>
-          <details class="box">
-            <summary>Diagnosticar un correo<i data-icon="chevron"></i></summary>
-            <div>
-              <div class="hint" style="margin-top:0">Pega un <code>gmail_id</code> de <code>_Procesados</code>. Muestra la estructura, no el contenido.</div>
-              <input placeholder="gmail_id" value="1a105d722e556abc">
-              <button class="sec" data-cargando="Diagnosticando…" onclick="diagnosticar()">Diagnosticar</button>
-              <pre id="out"></pre>
-            </div>
-          </details>
-        </div>
-      </section>
-
-      <!-- IA -->
-      <section class="panel" id="p-ia" role="tabpanel">
-        <h3>Categorización con IA</h3>
-        <div class="card">
-          <div class="card-h"><span class="ico" data-icon="chispas"></span><b>Proveedor</b><span class="pill" id="iaPill">—</span></div>
-          <p class="lead">Categoriza comercios nuevos. Solo viajan comercio, monto, moneda y canal.</p>
-          <div class="seg" id="proveedor" role="group" aria-label="Proveedor">
-            <button aria-pressed="true" data-p="gemini">Gemini</button>
-            <button aria-pressed="false" data-p="openai">OpenAI</button>
-            <button aria-pressed="false" data-p="anthropic">Anthropic</button>
-          </div>
-          <input id="iaKey" type="password" placeholder="Pega tu API key">
-          <div class="hint" id="iaKeyHint"><i class="ico" data-icon="escudo" style="display:inline-flex;vertical-align:-3px;width:14px"></i> Se guarda en tu cuenta de Google, nunca en la hoja.</div>
-          <button data-cargando="Guardando…" onclick="guardarKey()">Guardar</button>
-          <div class="acciones">
-            <button class="sec" id="btnProbar" data-cargando="Probando…" onclick="probarKey()">Probar key</button>
-            <button class="sec" id="btnCategorizar" data-cargando="Categorizando…" onclick="simular(1600, 'Categorizadas 3 de 3 · quedan 0.')">Categorizar</button>
-          </div>
-          <div class="fila-switch">
-            <div class="t">Leer con IA los correos que Luca no reconoce<small>Envía el texto con nombres y números enmascarados. <span id="desconocidos"></span></small></div>
-            <label class="switch"><input type="checkbox" id="iaExtraer" onchange="toast(this.checked ? 'Lectura con IA activada.' : 'Lectura con IA desactivada.')"><span></span></label>
-          </div>
-        </div>
-        <div class="avz">
-          <div class="avz-h"><i data-icon="terminal"></i>Avanzado</div>
-          <div class="box">
-            <div class="row"><span>Modelo</span><span><code id="iaModelo">gemini-3.7-flash</code></span></div>
-            <div class="row"><span>Última prueba</span><span id="iaPrueba">—</span></div>
-            <div class="row"><span>No reconocidos</span><span class="num">4</span></div>
-          </div>
-          <input placeholder="Modelo (vacío = por defecto)">
-          <button class="sec" data-cargando="Extrayendo…" onclick="simular(1500, 'Revisados 4 · extraídos 3 · descartados 1.')">Reintentar no reconocidos</button>
-        </div>
-      </section>
-
-      <!-- iPHONE -->
-      <section class="panel" id="p-iphone" role="tabpanel">
-        <h3>Yapeos desde el iPhone</h3>
-        <div class="card">
-          <div class="card-h"><span class="ico" data-icon="iphone"></span><b>Atajo de iOS</b><span class="pill" id="ipPill">—</span></div>
-          <p class="lead">Los yapeos recibidos no llegan por correo: un atajo los envía a esta hoja.</p>
-        </div>
-        <div class="box pasos" id="pasos"></div>
-        <div class="box" id="ipTele" hidden></div>
-        <div class="avz">
-          <div class="avz-h"><i data-icon="terminal"></i>Mantenimiento</div>
-          <div class="box">
-            <div class="row"><span>Token</span><span><code id="ipToken">—</code></span></div>
-            <div class="row"><span>Dispositivo</span><span>iPhone 17</span></div>
-          </div>
-          <button class="sec" data-cargando="Regenerando…" onclick="regenerar()">Regenerar token</button>
-          <button class="danger" data-cargando="Desconectando…" onclick="desconectarIphone()">Desconectar iPhone</button>
-        </div>
-      </section>
-
-      <!-- MCP -->
-      <section class="panel" id="p-mcp" role="tabpanel">
-        <h3>Claude o ChatGPT</h3>
-        <div class="card">
-          <div class="card-h"><span class="ico" data-icon="enchufe"></span><b>Conector</b><span class="pill" id="mcpPill">—</span></div>
-          <p class="lead">Pregúntale a tu IA por tus gastos. Lee tu hoja a través de tu propio Web App.</p>
-          <div class="dato"><div><small>URL del conector</small><code>https://mcp.lucaa.lat/mcp</code></div>
-            <button class="sec icono" aria-label="Copiar URL" onclick="toast('URL del conector copiada.')"><i data-icon="copiar"></i></button></div>
-          <div id="codigo"></div>
-          <button id="btnCodigo" data-cargando="Generando código…" onclick="generarCodigo()">Generar código de conexión</button>
-          <div class="hint">En tu IA: añade un conector con esa URL y pega el código cuando lo pida.</div>
-        </div>
-        <div class="avz">
-          <div class="avz-h"><i data-icon="terminal"></i>Mantenimiento</div>
-          <button class="sec" data-cargando="Probando…" onclick="simular(1100, 'Web App OK: responde y firma correctamente.')">Probar Web App</button>
-          <button class="danger" id="btnMcpOff" data-cargando="Desconectando…" onclick="desconectarMcp()">Desconectar IA</button>
-        </div>
-      </section>
-    </div>
-
-    <footer class="sb-foot">
-      <div class="t">Modo avanzado<small>Versiones, diagnóstico y mantenimiento</small></div>
-      <label class="switch"><input type="checkbox" id="avanzado" aria-label="Modo avanzado"><span></span></label>
-    </footer>
-  </div>
-  </div>
-
-<!-- @incluir _Ui -->
+  <iframe id="fSidebar" title="Luca — Configuración"></iframe>
 </div>
 
-  <!-- Guía de Luca (en la Sheet sería un diálogo modeless aparte: la hoja sigue libre) -->
-  <div class="velo" id="velo" onclick="if (event.target === this) cerrarGuia()">
-    <div class="guia-dlg" role="dialog" aria-modal="true" aria-labelledby="guiaTit">
-      <div class="guia-h">
-        <div class="anillo" id="guiaAnillo"></div>
-        <div class="t"><b id="guiaTit">Guía de Luca</b><small id="guiaSub"></small></div>
-        <button class="cerrar" aria-label="Cerrar" onclick="cerrarGuia()">×</button>
-      </div>
-      <div class="guia-b"><div class="box pasos" id="guiaPasos" style="margin-top:0"></div></div>
-      <div class="guia-f">Ciérrala cuando quieras: vuelve desde el botón <b>Guía</b> del panel o el menú <b>Luca</b>.</div>
-    </div>
+<div class="velo" id="velo" onclick="if (event.target === this) cerrarDialogo()">
+  <div class="dlg" id="dlg" role="dialog" aria-modal="true">
+    <div class="gs-title"><span id="dlgTitulo"></span><button aria-label="Cerrar" onclick="cerrarDialogo()">×</button></div>
+    <iframe id="fDialogo" title="Diálogo"></iframe>
   </div>
-
+</div>
 
 <script>
-  /* ---- Datos de ejemplo por escenario (en la Sheet vendrían de run('estadoLuca'), run('cargarMcp')…) ---- */
-  var ESCENARIOS = {
-    nuevo:  { autorizado: false, trigger: false, total: 0, sinCat: 0, yape: 0, hace: '', key: false, prueba: '', iphone: 0, mcp: false, stub: false },
-    ok:     { autorizado: true, trigger: true, total: 93, sinCat: 3, yape: 1, hace: 'hace 8 min', key: true, prueba: 'ok', iphone: 3, mcp: true, stub: false },
-    avisos: { autorizado: true, trigger: false, total: 93, sinCat: 12, yape: 1, hace: 'hace 3 h', key: true, prueba: 'error', iphone: 1, mcp: false, stub: true }
+  var HTML = { Sidebar: /*@html Sidebar*/, DialogGuia: /*@html DialogGuia*/, DialogDashboard: /*@html DialogDashboard*/ };
+
+  /* ---- Puente: cada iframe recibe un google.script.run que pregunta a esta página por postMessage ---- */
+  var PUENTE = '<script>(function(){var n=0,p={};window.addEventListener("message",function(e){var d=e.data||{};if(d.rpc&&p[d.rpc]){var x=p[d.rpc];delete p[d.rpc];d.ok?x.ok(d.val):x.ko(new Error(d.err));}});' +
+    'function mk(ok,ko){return{withSuccessHandler:function(f){return mk(f,ko)},withFailureHandler:function(f){return mk(ok,f)},' +
+    'lucaRun:function(m,a){var id=++n;p[id]={ok:ok||function(){},ko:ko||function(){}};parent.postMessage({rpc:id,m:m,args:JSON.parse(a||"[]")},"*");}}}' +
+    'window.google={script:{run:mk()}};})();<\/script>';
+  function montar(iframe, nombre, tab) {
+    var html = HTML[nombre].replace('<head>', '<head>' + PUENTE);
+    if (tab) html = html.replace('<body>', '<body data-tab="' + tab + '">');
+    iframe.srcdoc = html;
+  }
+
+  /* ---- Servidor simulado ---- */
+  var BASE = {
+    nuevo:  { autorizado: false, trigger: false, total: 0, sinCat: 0, yape: 0, minScan: 0, key: false, llmError: '', desconocidos: 0, extract: false, iphone: false, ipProbado: false, mcp: false, stub: false },
+    ok:     { autorizado: true, trigger: true, total: 93, sinCat: 3, yape: 1, minScan: 8, key: true, llmError: '', desconocidos: 4, extract: false, iphone: true, ipProbado: true, mcp: true, stub: false },
+    avisos: { autorizado: true, trigger: false, total: 93, sinCat: 12, yape: 1, minScan: 190, key: true, llmError: '401 · key rechazada', desconocidos: 4, extract: true, iphone: false, ipProbado: false, mcp: false, stub: true }
   };
-  var st = JSON.parse(JSON.stringify(ESCENARIOS.ok));
+  var st, avanzado = false, provider = 'gemini', model = 'gemini-3.7-flash';
+  var EXEC = 'https://script.google.com/macros/s/AKfy…demo/exec', TOKEN = 'lk_7f3a2c…c91e';
+  function iso(minAtras) { return new Date(Date.now() - minAtras * 60000).toISOString(); }
+  function datosIphone() { return { execUrl: EXEC, eventsUrl: EXEC + '?events=1', token: TOKEN, conectado: true, shortcutUrl: 'https://www.icloud.com/shortcuts/PENDIENTE', shortcutDisponible: false }; }
 
-  function $(id) { return document.getElementById(id); }
-  function pill(tipo, txt) { return '<span class="pill ' + tipo + '">' + esc(txt) + '</span>'; }
-
-  /* Simula una llamada: el botón pulsado queda en carga (cargando de _Ui) y al final sale un toast. */
-  function simular(ms, msg, tipo) {
-    var btn = btnActivo_; btnActivo_ = null;
-    cargando(btn, true);
-    return new Promise(function (ok) { setTimeout(function () { cargando(btn, false); if (msg) toast(msg, tipo); ok(); }, ms); });
-  }
-
-  /* ---- Pestañas ---- */
-  function irA(tab) {
-    document.querySelectorAll('.tabs button').forEach(function (b) { b.setAttribute('aria-selected', String(b.dataset.tab === tab)); });
-    document.querySelectorAll('.panel').forEach(function (p) { p.classList.toggle('on', p.id === 'p-' + tab); });
-  }
-  document.querySelectorAll('.tabs button').forEach(function (b) { b.onclick = function () { irA(b.dataset.tab); }; });
-  function punto(tab, tipo) {
-    var d = document.querySelector('.tabs [data-tab="' + tab + '"] .dot');
-    d.hidden = !tipo; d.className = 'dot ' + (tipo || '');
-  }
-
-  /* ---- Modo avanzado (en la Sheet: UserProperties vía guardarAjustes por usuario) ---- */
-  $('avanzado').onchange = function () {
-    $('sb').classList.toggle('avanzado', this.checked);
-    try { localStorage.setItem('luca.sb.avanzado', this.checked ? '1' : ''); } catch (e) {}
+  var SERVIDOR = {
+    estadoLuca: function () {
+      return { version: '18', stubVersion: st.stub ? '1' : '2', stubUpdate: st.stub ? 'Tu script necesita actualizarse (stub v1 < v2): haz una copia nueva de la plantilla o reemplaza los archivos del stub (Extensiones → Apps Script).' : '',
+        autorizado: st.autorizado, cursorIso: st.autorizado ? iso(st.minScan) : '', lastRunAt: st.autorizado ? iso(st.minScan) : '', lastStats: st.autorizado ? { added: 0 } : null,
+        triggerInstaladoEn: st.trigger ? '2026-09-05T00:24:00Z' : '', importacion: { status: st.autorizado ? 'done' : '' },
+        ledger: { total: st.total, sinCategoria: st.sinCat, recibidoYape: st.yape }, secretos: { llmKey: st.key, mcp: st.mcp, iphone: st.iphone },
+        llm: { provider: provider, model: model, lastTestAt: st.key ? '2026-10-04T22:45:00' : '', lastError: st.llmError, extractUnknown: st.extract, desconocidos: st.desconocidos,
+          defaults: { gemini: 'gemini-3.7-flash', openai: 'gpt-5-mini', anthropic: 'claude-haiku-4-5-20251001' } },
+        execUrl: st.autorizado ? EXEC : '',
+        iphone: st.iphone ? { device: 'iPhone', eventsCount: st.ipProbado ? 27 : 0, lastEventAt: st.ipProbado ? iso(35) : '', lastTestAt: st.ipProbado ? '2026-10-04T22:10:00' : '', lastError: '' } : {},
+        ui: { avanzado: avanzado } };
+    },
+    cargarMcp: function () { return { connected: st.mcp, connectorUrl: 'https://mcp.lucaa.lat/mcp', webApp: st.autorizado ? { ready: true } : { ready: false, message: 'Primero autoriza Luca y despliega el Web App.' } }; },
+    escanearAhora: [1500, function () { st.total += 2; st.minScan = 0; return { added: 2, skipped: 40, ignored: 1, unknown: 0 }; }],
+    iniciarImportacion: [1200, function () { return { added: 120, skipped: 0, ignored: 3, unknown: 1, done: false }; }],
+    guardarExecUrl: [900, function (a) { return { url: a[0] }; }],
+    diagnosticarCorreo: [900, function (a) { return { gmail_id: a[0], remitente: 'notificaciones@yape.pe', partes: ['text/html'], parser: 'yape_p2p', extraido: { monto: 10, moneda: 'PEN', contraparte: 'Nolberto R***' } }; }],
+    guardarAjustes: [700, function (a) { var o = a[0] || {}; if (o['llm.provider']) provider = o['llm.provider']; if (o['llm.model']) model = o['llm.model']; if (o['llm.extractUnknown']) st.extract = o['llm.extractUnknown'] === 'true'; return {}; }],
+    guardarLlmKey: [600, function () { st.key = true; st.llmError = ''; return {}; }],
+    probarLlm: [1100, function () { return st.llmError ? { ok: false, mensaje: 'La key fue rechazada por el proveedor (401).' } : { ok: true, mensaje: 'Key OK', ms: 640 }; }],
+    categorizarPendientes: [1600, function () { var n = st.sinCat; st.sinCat = 0; return { procesadas: n, categorizadas: n, llmCalls: n, llmErrores: 0, restantes: 0 }; }],
+    extraerDesconocidos: [1500, function () { var n = st.desconocidos; st.desconocidos = 0; st.total += n - 1; return { procesados: n, extraidos: n - 1, ignorados: 1, llmCalls: n, llmErrores: 0, restantes: 0 }; }],
+    probarWebApp: [1100, function () { return st.autorizado ? { veredicto: 'Web App OK: responde y firma correctamente.', challenge: { sigOk: true } } : { veredicto: 'No hay Web App desplegado.', challenge: { sigOk: false } }; }],
+    conectarIphone: [1000, function () { st.iphone = true; return datosIphone(); }],
+    generarPromptIphone: [1000, function () { st.iphone = true; var d = datosIphone(); d.prompt = 'Crea un atajo "Luca – Captura Yape"… (URL ' + d.eventsUrl + ', token ' + TOKEN + ')'; return d; }],
+    regenerarTokenIphone: [900, function () { return datosIphone(); }],
+    desconectarIphone: [900, function () { st.iphone = false; st.ipProbado = false; return {}; }],
+    iniciarConexionMcp: [1000, function () { st.mcp = true; return { code: '482 913', expiresInSeconds: 600 }; }],
+    desconectarMcp: [900, function () { st.mcp = false; return {}; }],
+    guardarPrefUi: function (a) { avanzado = !!(a[0] && a[0].avanzado); return { avanzado: avanzado }; },
+    leerLedger: function () {
+      return [{ fecha: '2026-10-02T21:06:00-05:00', tipo: 'expense', comercio: 'CA012 AVIACION', moneda: 'PEN', monto: 53.3, categoria: 'Transporte' },
+        { fecha: '2026-10-03T19:07:00-05:00', tipo: 'internal_transfer', moneda: 'PEN', monto: 30, categoria: 'Transferencias' },
+        { fecha: '2026-10-04T16:05:00-05:00', tipo: 'expense', comercio: 'SPACESHIP.COM* OJF3CV', moneda: 'USD', monto: 1.24, categoria: 'Suscripciones' }];
+    },
+    abrirGuia: [500, function () { setTimeout(function () { abrirDialogo('DialogGuia', 'Luca — Guía', 460, 640, true); }, 0); return { ok: true }; }],
+    abrirDashboard: [500, function () { setTimeout(function () { abrirDialogo('DialogDashboard', 'Luca — Dashboard', 1100, 760, false); }, 0); return { ok: true }; }],
+    abrirSidebar: [400, function (a) { setTimeout(function () { montar(document.getElementById('fSidebar'), 'Sidebar', a[0]); }, 0); return { ok: true }; }]
   };
-  try { if (localStorage.getItem('luca.sb.avanzado')) { $('avanzado').checked = true; $('sb').classList.add('avanzado'); } } catch (e) {}
-
-  /* ---- Estado ---- */
-  function pintarEstado() {
-    $('subtitulo').textContent = 'v17 · ' + (st.autorizado ? 'escaneado ' + st.hace : 'sin autorizar');
-    $('avisoStub').hidden = !st.stub;
-    if (!st.autorizado) {
-      $('resumen').innerHTML = '<div class="card-h"><span class="ico" data-icon="correo"></span><b>Empieza autorizando</b></div>' +
-        '<p class="lead">Luca leerá tus correos del BCP y Yape, importará el último mes y escaneará cada 15 minutos.</p>' +
-        '<button data-cargando="Autorizando…" onclick="autorizar()">Autorizar Luca</button>' +
-        '<div class="hint">Todo queda en tu Google: tu Gmail y esta hoja.</div>';
-    } else {
-      var salud = !st.trigger ? pill('warn', 'Escaneo manual') : pill('ok', 'Al día · ' + st.hace);
-      $('resumen').innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center"><small class="muted">Movimientos</small>' + salud + '</div>' +
-        '<div class="big" style="margin-top:6px">' + st.total + '</div>' +
-        '<div class="trio"><div><small>Por categorizar</small><b>' + st.sinCat + '</b></div><div><small>Yape recibido</small><b>' + st.yape + '</b></div></div>' +
-        '<button id="btnEscanear" data-cargando="Escaneando…" onclick="escanear()"><i data-icon="refrescar"></i>Escanear Gmail ahora</button>';
-    }
-    var filas = [
-      ['correo', 'Gmail', st.autorizado ? (st.trigger ? 'Cada 15 min' : 'Escaneo automático no instalado') : 'Sin autorizar', st.autorizado ? (st.trigger ? 'ok' : 'warn') : 'warn', 'estado'],
-      ['chispas', 'IA para categorizar', st.key ? (st.prueba === 'error' ? 'La última prueba falló' : 'Gemini · key guardada') : 'Opcional', st.key ? (st.prueba === 'error' ? 'err' : 'ok') : '', 'ia'],
-      ['iphone', 'iPhone', st.iphone >= 3 ? 'Conectado · último yapeo hoy' : 'No conectado', st.iphone >= 3 ? 'ok' : 'warn', 'iphone'],
-      ['enchufe', 'Claude / ChatGPT', st.mcp ? 'Conectado' : 'No conectado', st.mcp ? 'ok' : '', 'mcp']
-    ];
-    $('conexiones').innerHTML = filas.map(function (f) {
-      var etiqueta = { ok: 'Listo', warn: 'Pendiente', err: 'Revisar', '': 'Opcional' }[f[3]];
-      return '<button class="item" onclick="irA(\'' + f[4] + '\')"' + (f[4] === 'estado' ? ' disabled style="opacity:1;cursor:default"' : '') + '>' + icono(f[0]) +
-        '<span class="t">' + esc(f[1]) + '<small>' + esc(f[2]) + '</small></span>' + pill(f[3], etiqueta) +
-        (f[4] === 'estado' ? '' : '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>') + '</button>';
-    }).join('');
-    $('tecnico').innerHTML = [['Versión LucaLib', 'v17 · stub v' + (st.stub ? '1' : '2')], ['Cursor de Gmail', st.autorizado ? '2026-10-05 08:14' : '—'],
-      ['Último escaneo', st.autorizado ? '2026-10-05 08:14 (+0)' : '—'], ['Importación', st.autorizado ? 'done' : '—'],
-      ['Trigger', st.trigger ? 'instalado 2026-09-05' : 'no instalado']]
-      .map(function (r) { return '<div class="row"><span>' + r[0] + '</span><span class="num" style="font-size:12.5px">' + esc(r[1]) + '</span></div>'; }).join('');
-    punto('estado', st.autorizado && st.trigger ? '' : 'warn');
-    iconos($('sb'));
-  }
-  function autorizar() { simular(1800, 'Luca quedó activado: 93 movimientos importados.').then(function () { st = JSON.parse(JSON.stringify(ESCENARIOS.ok)); st.iphone = 0; st.mcp = false; st.key = false; pintarTodo(); }); }
-  function escanear() { simular(1500, 'Escaneo listo. Nuevos: 2 · Ya existentes: 40').then(function () { st.total += 2; st.hace = 'hace un momento'; pintarEstado(); }); }
-  function diagnosticar() { simular(900).then(function () { $('out').textContent = JSON.stringify({ gmail_id: '1a105d722e556abc', remitente: 'notificaciones@yape.pe', partes: ['text/html'], parser: 'yape_p2p', extraido: { monto: 10, moneda: 'PEN', contraparte: 'Nolberto R***' } }, null, 2); }); }
-
-  /* ---- IA ---- */
-  var proveedor = 'gemini';
-  var MODELOS = { gemini: 'gemini-3.7-flash', openai: 'gpt-5-mini', anthropic: 'claude-haiku-4-5-20251001' };
-  document.querySelectorAll('#proveedor button').forEach(function (b) {
-    b.onclick = function () { proveedor = b.dataset.p; document.querySelectorAll('#proveedor button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); }); $('iaModelo').textContent = MODELOS[proveedor]; };
+  window.addEventListener('message', function (e) {
+    var d = e.data || {};
+    if (!d.rpc) return;
+    var h = SERVIDOR[d.m], ms = 300;
+    if (Array.isArray(h)) { ms = h[0]; h = h[1]; }
+    setTimeout(function () {
+      try {
+        if (!h) throw new Error('Función no permitida vía lucaRun: ' + d.m);
+        e.source.postMessage({ rpc: d.rpc, ok: true, val: JSON.parse(JSON.stringify(h(d.args) || null)) }, '*');
+      } catch (err) { e.source.postMessage({ rpc: d.rpc, ok: false, err: err.message }, '*'); }
+    }, ms);
   });
-  function pintarIa() {
-    $('iaPill').outerHTML = st.key ? (st.prueba === 'error' ? '<span class="pill err" id="iaPill">Revisar</span>' : '<span class="pill ok" id="iaPill">Activa</span>') : '<span class="pill" id="iaPill">Opcional</span>';
-    $('iaKey').placeholder = st.key ? '•••••••• guardada · pega otra para cambiarla' : 'Pega tu API key';
-    $('btnProbar').disabled = !st.key;
-    $('btnCategorizar').disabled = !st.key || !st.sinCat;
-    $('btnCategorizar').innerHTML = 'Categorizar' + (st.sinCat ? ' (' + st.sinCat + ')' : '');
-    $('iaExtraer').disabled = !st.key;
-    $('desconocidos').textContent = st.key ? '4 sin reconocer.' : '';
-    $('iaPrueba').innerHTML = st.prueba === 'ok' ? '2026-10-04 22:45 <span class="ok">ok</span>' : st.prueba === 'error' ? '<span class="err">401 · key rechazada</span>' : '—';
-    punto('ia', st.key && st.prueba === 'error' ? 'err' : '');
-  }
-  function guardarKey() {
-    var k = $('iaKey').value.trim();
-    simular(900, k ? 'Proveedor, modelo y key guardados.' : 'Proveedor y modelo guardados (la key no cambió).').then(function () { if (k) { st.key = true; st.prueba = ''; $('iaKey').value = ''; } pintarIa(); pintarEstado(); });
-  }
-  function probarKey() {
-    var falla = st.prueba === 'error';
-    simular(1100, falla ? 'La key fue rechazada por el proveedor (401).' : 'Key OK · respondió en 640 ms.', falla ? 'error' : 'ok').then(function () { pintarIa(); });
-  }
 
-  /* ---- iPhone: pasos ---- */
-  var PASOS_IP = [
-    ['Web App desplegado', 'Implementar → Aplicación web → ejecutar como yo, acceso: cualquiera.', 'Comprobar Web App', 'Comprobando…', 'Web App OK.'],
-    ['Datos del atajo', 'Genera tu token: el atajo lo usa para escribir solo en esta hoja.', 'Conectar iPhone', 'Generando…', 'Token listo.'],
-    ['Crear el atajo en iOS 27', 'Pega el prompt en Atajos y activa la automatización Notificación → Yape. No compartas ese atajo.', 'Copiar prompt para Atajos', 'Generando prompt…', 'Prompt copiado al portapapeles.']
-  ];
-  function pintarPasos(cont, pasos, hechos, onPaso) {
-    cont.innerHTML = pasos.map(function (p, i) {
-      var cls = i < hechos ? 'hecho' : i === hechos ? 'activo' : '';
-      var extra = (cont.id === 'pasos' && i === 1 && hechos >= 1) ?
-        '<div class="dato"><div><small>URL de eventos</small><code>…/exec?events=1</code></div><button class="sec icono" aria-label="Copiar URL" onclick="toast(\'URL de eventos copiada.\')">' + icono('copiar') + '</button></div>' +
-        '<div class="dato"><div><small>Token</small><code>lk_7f3a…c91e</code></div><button class="sec icono" aria-label="Copiar token" onclick="toast(\'Token copiado.\')">' + icono('copiar') + '</button></div>' : '';
-      return '<div class="pas ' + cls + '"><div class="pas-h"><span class="pas-n">' + (i < hechos ? icono('check') : i + 1) + '</span>' +
-        '<span class="t">' + esc(p[0]) + '<small>' + (i < hechos ? 'Hecho' : i === hechos ? 'Siguiente paso' : 'Pendiente') + '</small></span></div>' +
-        '<div class="pas-c"><div><div class="hint" style="margin-top:0">' + esc(p[1]) + '</div>' + (i === hechos ? extra : '') +
-        '<button data-cargando="' + esc(p[3]) + '" onclick="' + onPaso + '(' + i + ')">' + esc(p[2]) + '</button></div></div></div>';
-    }).join('');
+  /* ---- Diálogos (en Sheets: showModelessDialog / showModalDialog) ---- */
+  function abrirDialogo(nombre, titulo, ancho, alto, modeless) {
+    var dlg = document.getElementById('dlg');
+    dlg.style.width = ancho + 'px'; dlg.style.height = alto + 'px';
+    document.getElementById('dlgTitulo').textContent = titulo;
+    document.getElementById('velo').className = 'velo on' + (modeless ? ' modeless' : '');
+    montar(document.getElementById('fDialogo'), nombre);
   }
-  function pasoIphone(i) { simular(1100, PASOS_IP[i][4]).then(function () { st.iphone = Math.max(st.iphone, i + 1); pintarIphone(); pintarEstado(); pintarGuia(); }); }
-  function pintarIphone() {
-    pintarPasos($('pasos'), PASOS_IP, st.iphone, 'pasoIphone');
-    $('ipPill').outerHTML = st.iphone >= 3 ? '<span class="pill ok" id="ipPill">Conectado</span>' : '<span class="pill warn" id="ipPill">Paso ' + (st.iphone + 1) + ' de 3</span>';
-    $('ipTele').hidden = st.iphone < 3;
-    $('ipTele').innerHTML = '<div class="row"><span>Eventos recibidos</span><span class="num">27</span></div><div class="row"><span>Último yapeo</span><span class="num">hoy 00:20</span></div><div class="row"><span>Última prueba</span><span class="num">2026-10-04 22:10</span></div>';
-    $('ipToken').textContent = st.iphone >= 2 ? 'lk_7f3a…c91e' : '—';
-    punto('iphone', st.autorizado && st.iphone < 3 ? 'warn' : '');
-  }
-  function regenerar() { if (!confirm('El token anterior dejará de funcionar y tendrás que actualizarlo en el atajo. ¿Continuar?')) return; simular(900, 'Token regenerado. Actualízalo en el atajo.'); }
-  function desconectarIphone() { if (!confirm('El iPhone dejará de poder enviar eventos a esta hoja. ¿Desconectar?')) return; simular(900, 'iPhone desconectado.').then(function () { st.iphone = 1; pintarIphone(); pintarEstado(); pintarGuia(); }); }
-
-  /* ---- MCP ---- */
-  var cuenta = null;
-  function anillo(frac, texto, size) {
-    var r = 18, c = 2 * Math.PI * r;
-    return '<svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="' + r + '" fill="none" stroke="var(--strong)" stroke-width="4"/>' +
-      '<circle cx="22" cy="22" r="' + r + '" fill="none" stroke="var(--primary)" stroke-width="4" stroke-linecap="round" stroke-dasharray="' + c + '" stroke-dashoffset="' + (c * (1 - frac)) + '" style="transition:stroke-dashoffset var(--slow) var(--ease-out)"/></svg><span>' + texto + '</span>';
-  }
-  function generarCodigo() {
-    simular(1000, 'Código generado. Pégalo en tu IA.').then(function () {
-      var seg = 600; clearInterval(cuenta);
-      function tic() {
-        var m = Math.floor(seg / 60), s = ('0' + (seg % 60)).slice(-2);
-        $('codigo').innerHTML = '<div class="codigo"><div class="anillo">' + anillo(seg / 600, m + ':' + s) + '</div><div><small class="muted">Código de un solo uso</small><div class="big">482 913</div></div></div>';
-        if (--seg < 0) { clearInterval(cuenta); $('codigo').innerHTML = ''; toast('El código caducó: genera otro.', 'info'); }
-      }
-      tic(); cuenta = setInterval(tic, 1000);
-    });
-  }
-  function pintarMcp() {
-    $('mcpPill').outerHTML = st.mcp ? '<span class="pill ok" id="mcpPill">Conectado</span>' : '<span class="pill" id="mcpPill">No conectado</span>';
-    $('btnMcpOff').disabled = !st.mcp;
-    $('btnCodigo').textContent = st.mcp ? 'Generar otro código' : 'Generar código de conexión';
-  }
-  function desconectarMcp() { if (!confirm('¿Desconectar la IA? Tus conectores dejarán de funcionar hasta que generes un código nuevo.')) return; simular(900, 'IA desconectada.').then(function () { st.mcp = false; pintarMcp(); pintarEstado(); pintarGuia(); }); }
-
-  /* ---- Guía ---- */
-  function pasosGuia() {
-    return [
-      ['Autorizar Luca', 'Importa el último mes de BCP y Yape y deja el escaneo cada 15 minutos.', st.autorizado && st.trigger, 'Autorizar ahora', function () { autorizar(); }],
-      ['Revisar tus movimientos', 'Abre el dashboard o lucaa.lat y categoriza lo pendiente.', st.autorizado && st.sinCat === 0, 'Abrir lucaa.lat', function () { toast('Abriría lucaa.lat.', 'info'); }],
-      ['IA para categorizar (opcional)', 'Pega una API key gratuita de Google AI Studio.', st.key, 'Ir a IA', function () { cerrarGuia(); irA('ia'); }],
-      ['Conectar el iPhone', 'Para los yapeos recibidos, que no llegan por correo.', st.iphone >= 3, 'Ir a iPhone', function () { cerrarGuia(); irA('iphone'); }],
-      ['Claude o ChatGPT (opcional)', 'Pregúntale a tu IA por tus gastos.', st.mcp, 'Ir a MCP', function () { cerrarGuia(); irA('mcp'); }]
-    ];
-  }
-  var accionesGuia = [];
-  function pintarGuia() {
-    var pasos = pasosGuia(), hechos = pasos.filter(function (p) { return p[2]; }).length;
-    var primero = pasos.findIndex(function (p) { return !p[2]; });
-    accionesGuia = pasos.map(function (p) { return p[4]; });
-    $('guiaAnillo').innerHTML = anillo(hechos / pasos.length, hechos + '/' + pasos.length);
-    $('guiaSub').textContent = hechos === pasos.length ? 'Todo listo. Puedes cerrar esta guía.' : 'Te quedan ' + (pasos.length - hechos) + ' pasos. Tu avance se guarda solo.';
-    $('guiaPasos').innerHTML = pasos.map(function (p, i) {
-      var cls = p[2] ? 'hecho' : i === primero ? 'activo' : '';
-      return '<div class="pas ' + cls + '" onclick="if(!this.classList.contains(\'hecho\')){document.querySelectorAll(\'#guiaPasos .pas\').forEach(function(x){x.classList.remove(\'activo\')});this.classList.add(\'activo\')}">' +
-        '<div class="pas-h"><span class="pas-n">' + (p[2] ? icono('check') : i + 1) + '</span><span class="t">' + esc(p[0]) + '<small>' + (p[2] ? 'Hecho' : 'Pendiente') + '</small></span></div>' +
-        '<div class="pas-c"><div><div class="hint" style="margin-top:0">' + esc(p[1]) + '</div><button class="' + (i === primero ? '' : 'sec') + '" onclick="event.stopPropagation();accionesGuia[' + i + ']()">' + esc(p[3]) + '</button></div></div></div>';
-    }).join('');
-  }
-  function abrirGuia() { pintarGuia(); $('velo').classList.add('on'); }
-  function cerrarGuia() { $('velo').classList.remove('on'); }
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') cerrarGuia(); });
+  function cerrarDialogo() { document.getElementById('velo').className = 'velo'; document.getElementById('fDialogo').srcdoc = ''; }
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') cerrarDialogo(); });
 
   /* ---- Escenarios ---- */
-  function pintarTodo() { pintarEstado(); pintarIa(); pintarIphone(); pintarMcp(); pintarGuia(); iconos(); }
-  document.querySelectorAll('#escenarios button').forEach(function (b) {
-    b.onclick = function () {
-      document.querySelectorAll('#escenarios button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
-      st = JSON.parse(JSON.stringify(ESCENARIOS[b.dataset.esc])); clearInterval(cuenta); $('codigo').innerHTML = ''; pintarTodo();
-    };
-  });
-  pintarTodo();
+  function escenario(nombre) {
+    st = JSON.parse(JSON.stringify(BASE[nombre]));
+    document.querySelectorAll('#escenarios button').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.esc === nombre)); });
+    cerrarDialogo();
+    montar(document.getElementById('fSidebar'), 'Sidebar');
+  }
+  function simularPruebaIphone() { st.iphone = true; st.ipProbado = true; montar(document.getElementById('fSidebar'), 'Sidebar', 'iphone'); }
+  document.querySelectorAll('#escenarios button').forEach(function (b) { b.onclick = function () { escenario(b.dataset.esc); }; });
+  escenario('ok');
 </script>
 </body>
 </html>

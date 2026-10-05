@@ -247,6 +247,7 @@ export function makeHarness(opts = {}) {
       getUi: () => ({
         alert: (...a) => { state.alerts.push(a); },
         showModalDialog: (html, titulo) => { state.uiCalls.push({ kind: 'modal', html, titulo }); },
+        showModelessDialog: (html, titulo) => { state.uiCalls.push({ kind: 'modeless', html, titulo }); },
         showSidebar: (html) => { state.uiCalls.push({ kind: 'sidebar', html }); },
         createMenu: () => { const m = { addItem: () => m, addSeparator: () => m, addToUi: () => {} }; return m; },
         ButtonSet: { OK: 'OK' }
