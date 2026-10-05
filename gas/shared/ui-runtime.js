@@ -92,7 +92,7 @@ function menuAction(slot, sheetId, config, extra) {
 var DISPATCH_ = {
   cargarConfig:      function (sid, cfg, a) { return cargarConfig(sid, cfg); },
   estadoLedger:      function (sid, cfg, a) { return estadoLedger(sid, cfg); },
-  estadoSecretos:    function (sid, cfg, a) { return estadoSecretos_(); },
+  estadoSecretos:    function (sid, cfg, a) { return estadoSecretos_(cfg); },
   guardarLlmKey:     function (sid, cfg, a) { return guardarLlmKey(sid, cfg, a[0]); },
   guardarAjustes:    function (sid, cfg, a) { setAjustes_(sid, cfg, a[0] || {}); return cargarConfig(sid, construirConfig(sid, cfg)); },
   escanearAhora:     function (sid, cfg, a) { return escanearAhora(sid, cfg); },
@@ -107,6 +107,7 @@ var DISPATCH_ = {
   conectarIphone:    function (sid, cfg, a) { return conectarIphone(sid, cfg); },
   regenerarTokenIphone: function (sid, cfg, a) { return regenerarTokenIphone(sid, cfg); },
   desconectarIphone: function (sid, cfg, a) { return desconectarIphone(sid, cfg); },
+  generarPromptIphone: function (sid, cfg, a) { return generarPromptIphone(sid, cfg); },
   estadoLuca:        function (sid, cfg, a) { return estadoLuca(sid, cfg); }
 };
 
@@ -129,7 +130,7 @@ function estadoLuca(sheetId, config) {
     triggerInstaladoEn: a['triggers.installedAt'] || '',
     importacion: { status: a['import.status'] || '', since: int_(a['import.since'], 0) },
     ledger: ledger,
-    secretos: estadoSecretos_(),
+    secretos: estadoSecretos_(config),
     llm: {
       provider: (config.llm && config.llm.provider) || a['llm.provider'] || '',
       model: (config.llm && config.llm.model) || a['llm.model'] || '',
@@ -137,7 +138,7 @@ function estadoLuca(sheetId, config) {
       proveedores: llmProveedores_(), defaults: LLM_DEFAULT_MODELS_,
       extractUnknown: llmExtractEnabled_(config), desconocidos: contarDesconocidos_(sheetId, config)
     },
-    execUrl: a['conexiones.execUrl'] || execUrl_(config),
+    execUrl: syncExecUrl_(sheetId, config),
     iphone: telemetriaIphone_(a)
   };
 }

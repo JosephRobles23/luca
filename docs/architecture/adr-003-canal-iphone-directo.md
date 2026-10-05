@@ -39,3 +39,17 @@ S7 validó (2026-10-04) que en iOS 27 una automatización "Notificación → Yap
 | Soporte a ciegas | Botón **Probar** (evento `source:test` que no toca el ledger) y aviso suave si `lastEventAt` > 7 días |
 
 Camino de vuelta si el soporte se vuelve pesado: opción (a) (Worker como relevo) cambiando solo la URL destino del atajo.
+
+## Addendum — Token en Ajustes (2026-10-05)
+
+El `deviceToken` deja de vivir en `UserProperties` y pasa a la pestaña `Ajustes` como `conexiones.iphone.token` (fuente de verdad),
+junto a `conexiones.iphone.execUrl` (URL con la que se generó el atajo). Motivo: la web (ADR-006) solo puede **leer la Sheet** —no
+tiene backend ni acceso a las propiedades del script—, y queremos que muestre URL + token y genere el prompt del atajo sin obligar
+al usuario a abrir el sidebar. Trade-off aceptado: el token queda visible para cualquiera que pueda leer esa Sheet, pero esa misma
+persona ya puede escribir filas directamente; el token **solo** autoriza insertar filas en esa misma Sheet vía `/exec?events=1`, no
+da acceso a Gmail, a la key del LLM ni al secreto MCP (que siguen en `UserProperties`). Por tanto no baja la superficie de riesgo
+real y sí simplifica el producto. Migración: `conectarIphone` copia una vez el token antiguo de `UserProperties` a `Ajustes` y
+borra la propiedad; `eventsAction_` acepta la propiedad antigua como respaldo solo mientras `Ajustes` no tenga token, así una copia
+vieja sigue recibiendo eventos hasta que el usuario vuelva a abrir "Conectar iPhone". `Regenerar token` y `Desconectar` escriben
+en `Ajustes` (y limpian la propiedad). La URL `/exec` **viva** (`ScriptApp.getService().getUrl()` desde el stub) siempre gana sobre
+`Ajustes.conexiones.execUrl`, que se refresca al vuelo y solo sirve de respaldo cuando la viva no está disponible.
