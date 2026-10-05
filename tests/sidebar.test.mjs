@@ -99,8 +99,8 @@ test('Sidebar: el enlace del atajo placeholder lo entrega el servidor (conectarI
   const h = makeHarness({ execUrl: 'https://script.google.com/macros/s/TEST/exec', spreadsheets: { s: {} } });
   const cfg = h.api.construirConfig('s', {});
   const d = h.api.conectarIphone('s', cfg);
-  assert.equal(d.shortcutUrl, 'https://www.icloud.com/shortcuts/PENDIENTE');
-  assert.equal(d.shortcutDisponible, false);
+  assert.equal(d.shortcutUrl, 'https://www.icloud.com/shortcuts/4466a87c439a40b1a3e193d6777ccd38');
+  assert.equal(d.shortcutDisponible, true);
 });
 
 test('Parciales: buildSidebar y buildDialog insertan _Estilos y _Ui en el servidor (sin marcadores sueltos)', () => {

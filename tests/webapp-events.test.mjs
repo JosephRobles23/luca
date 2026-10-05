@@ -29,8 +29,8 @@ test('conectarIphone genera el token en Ajustes (conexiones.iphone.token), no en
   assert.equal(r.execUrl, 'https://script.google.com/macros/s/TEST/exec');
   assert.equal(r.eventsUrl, 'https://script.google.com/macros/s/TEST/exec?events=1');
   assert.equal(r.token, 'uuid-1');
-  assert.equal(r.shortcutUrl, 'https://www.icloud.com/shortcuts/PENDIENTE');
-  assert.deepEqual([r.shortcutDisponible, r.conectado], [false, true]);
+  assert.equal(r.shortcutUrl, 'https://www.icloud.com/shortcuts/4466a87c439a40b1a3e193d6777ccd38');
+  assert.deepEqual([r.shortcutDisponible, r.conectado], [true, true]);
   const a = configFor(h, SID).ajustes;
   assert.equal(a['conexiones.iphone.token'], 'uuid-1');
   assert.equal(a['conexiones.execUrl'], 'https://script.google.com/macros/s/TEST/exec');
@@ -86,7 +86,7 @@ test('generarPromptIphone: prompt con la URL ?events=1 y el token literales, sin
   assert.equal(r.execUrl, 'https://script.google.com/macros/s/TEST/exec');
   assert.equal(r.eventsUrl, 'https://script.google.com/macros/s/TEST/exec?events=1');
   assert.equal(r.token, 'uuid-1');
-  assert.equal(r.shortcutUrl, 'https://www.icloud.com/shortcuts/PENDIENTE');
+  assert.equal(r.shortcutUrl, 'https://www.icloud.com/shortcuts/4466a87c439a40b1a3e193d6777ccd38');
   assert.ok(r.prompt.includes('https://script.google.com/macros/s/TEST/exec?events=1'));
   assert.ok(r.prompt.includes('"token": "uuid-1"'));
   assert.ok(r.prompt.includes('Luca – Captura Yape'));

@@ -27,11 +27,16 @@ export function currentStep(i: OnboardingInput): OnboardingStep {
 export const STEP_TITLES: Record<1 | 2 | 3 | 4, string> = { 1: "Tu copia", 2: "Autorizar", 3: "Importación", 4: "Conexiones" };
 export const STEP_OPTIONAL = 4;
 
-/** Página nativa de Google "¿Hacer una copia?" de la plantilla: la copia la hace el propio usuario, en su Drive. */
-export const templateCopyUrl = (templateId: string) => `https://docs.google.com/spreadsheets/d/${encodeURIComponent(templateId)}/copy`;
+/**
+ * Página nativa de Google "¿Hacer una copia?" de la plantilla: la copia la hace el propio usuario, en su Drive.
+ * `authuser=<correo>` fija la cuenta: sin él, Google usa la cuenta predeterminada del navegador y, con varias
+ * sesiones abiertas, la copia acaba en otro Drive que el selector (token de la sesión de la web) no ve.
+ */
+export const templateCopyUrl = (templateId: string, email?: string) =>
+  `https://docs.google.com/spreadsheets/d/${encodeURIComponent(templateId)}/copy${email ? `?authuser=${encodeURIComponent(email)}` : ""}`;
 
-/** Búsqueda del selector para encontrar la copia ("Copia de Luca Template" / "Copy of Luca Template"). */
-export const COPY_QUERY = "Luca Template";
+/** Nombre con el que Google crea la copia (solo para mostrarlo; el selector no lleva búsqueda precargada). */
+export const COPY_NAME = "Copia de Luca Template";
 
 /** Cada cuánto se vuelve a leer la Sheet mientras se espera la autorización o la importación. */
 export const POLL_MS = 6000;

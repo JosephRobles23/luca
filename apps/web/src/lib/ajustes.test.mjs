@@ -74,6 +74,7 @@ test("onboarding: fase pendiente (copia → autorizar → importación → conex
   assert.equal(currentStep({ ...base, connectionsActive: true }), null);
   assert.equal(currentStep({ ...base, connectionsActive: true, importRunning: true }), 3, "la importación en curso se muestra antes que conexiones");
   assert.equal(templateCopyUrl("1kQW abc"), "https://docs.google.com/spreadsheets/d/1kQW%20abc/copy");
+  assert.equal(templateCopyUrl("1kQW", "ana+luca@gmail.com"), "https://docs.google.com/spreadsheets/d/1kQW/copy?authuser=ana%2Bluca%40gmail.com", "authuser fija la cuenta de la sesión");
 });
 
 test("fixtures del mock: 40–60 movimientos, 3 meses, PEN/USD, pendientes, transfer_in, internal_transfer", () => {

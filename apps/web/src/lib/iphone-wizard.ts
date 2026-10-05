@@ -4,6 +4,9 @@
  */
 import type { Ajustes } from "./ajustes.ts";
 
+/** Enlace de iCloud del atajo "Luca – Captura Yape" (ADR-003); `NEXT_PUBLIC_SHORTCUT_URL` lo sobreescribe. */
+export const SHORTCUT_URL = "https://www.icloud.com/shortcuts/4466a87c439a40b1a3e193d6777ccd38";
+
 export const WIZARD_STEPS = [
   { n: 1, title: "Tu hoja responde", short: "Hoja" },
   { n: 2, title: "Ábrelo en tu iPhone", short: "iPhone" },

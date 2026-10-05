@@ -9,7 +9,7 @@
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { connectionsStatus, importStatus, isAuthorized } from "@/lib/ajustes";
-import { COPY_QUERY, currentStep, POLL_MS, STEP_OPTIONAL, STEP_TITLES, templateCopyUrl, type OnboardingStep } from "@/lib/onboarding";
+import { COPY_NAME, currentStep, POLL_MS, STEP_OPTIONAL, STEP_TITLES, templateCopyUrl, type OnboardingStep } from "@/lib/onboarding";
 import { IconChevron, IconCopiar, IconExterno } from "./icons";
 import { useLedger } from "./LedgerProvider";
 
@@ -151,7 +151,7 @@ function Fase({ n, title, done, active, children, actions }: { n: number; title:
 }
 
 export function Step1Sheet() {
-  const { state, crearSheet, elegirExistente, elegirCopia, mode, templateId, templateFolderId } = useLedger();
+  const { state, crearSheet, elegirExistente, elegirCopia, mode, templateId, templateFolderId, user } = useLedger();
   const busy = state.phase === "nofile" ? state.busy : undefined;
   const error = state.phase === "nofile" ? state.error : undefined;
   const plantilla = templateId || "1kQWNaj9J29LRK-LsdCAxrplW06heaTvS3Hje3NV1htg";
@@ -180,17 +180,18 @@ export function Step1Sheet() {
       <ol className="grid gap-2.5">
         <Fase n={1} title="Haz tu copia" done={copiado} active={!copiado}
           actions={
-            <a className={`btn lg ${copiado ? "" : "primary"}`} href={templateCopyUrl(plantilla)} target="_blank" rel="noopener noreferrer" onClick={marcarCopiado} data-testid="copy-template">
+            <a className={`btn lg ${copiado ? "" : "primary"}`} href={templateCopyUrl(plantilla, user.email)} target="_blank" rel="noopener noreferrer" onClick={marcarCopiado} data-testid="copy-template">
               <IconCopiar size={16} />{copiado ? "Copiar otra vez" : "Copiar a mi Drive"}<IconExterno size={15} />
             </a>
           }>
           Se abre Google Sheets: pulsa <b className="font-semibold text-ink">Hacer una copia</b>. Queda a tu nombre, con el script de Luca incluido.
+          {user.email && <span className="mt-1.5 block text-[13px] text-muted" data-testid="copy-account">Se abrirá con tu cuenta <b className="font-semibold text-body">{user.email}</b>. Si Google muestra otra cuenta arriba a la derecha, cámbiala antes de copiar.</span>}
         </Fase>
         <Fase n={2} title="Elige tu copia" active={copiado}
           actions={<button className={`btn lg ${copiado ? "primary" : ""}`} onClick={elegirCopia} disabled={!!busy} data-testid="pick-copy">Elegir mi copia</button>}>
           {copiado && volvio
-            ? <>¿Ya tienes tu copia? Elígela en el selector de Google: se llama <b className="font-semibold text-ink">&quot;Copia de {COPY_QUERY}&quot;</b>.</>
-            : <>Vuelve aquí y elígela en el selector de Google: se llama <b className="font-semibold text-ink">&quot;Copia de {COPY_QUERY}&quot;</b>. Así Luca solo puede abrir ese archivo.</>}
+            ? <>¿Ya tienes tu copia? Elígela en el selector de Google: se llama <b className="font-semibold text-ink">&quot;{COPY_NAME}&quot;</b>.</>
+            : <>Vuelve aquí y elígela en el selector de Google: se llama <b className="font-semibold text-ink">&quot;{COPY_NAME}&quot;</b>. Así Luca solo puede abrir ese archivo.</>}
         </Fase>
       </ol>
       {busy && <p className="flex items-center gap-2 text-sm text-muted" role="status"><i className="dot warn skeleton" aria-hidden /> {busy}</p>}

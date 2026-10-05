@@ -9,7 +9,8 @@ test.describe("Onboarding por fases (sin Sheet)", () => {
     await expect(step1).toBeVisible();
     await expect(step1.locator("ol[aria-label='Progreso del onboarding'] li[aria-current='step']")).toContainText("1. Tu copia");
     // La copia la hace el usuario con la página nativa de Google (ADR-009).
-    await expect(step1.getByTestId("copy-template")).toHaveAttribute("href", /docs\.google\.com\/spreadsheets\/d\/[^/]+\/copy$/);
+    await expect(step1.getByTestId("copy-template")).toHaveAttribute("href", /docs\.google\.com\/spreadsheets\/d\/[^/]+\/copy\?authuser=[^&]+%40/);
+    await expect(step1.getByTestId("copy-account")).toContainText("@");
     await expect(step1.getByTestId("copy-template")).toHaveAttribute("target", "_blank");
     await page.screenshot({ path: `${SHOTS}/06-onboarding-1.png`, fullPage: true });
 

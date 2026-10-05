@@ -78,8 +78,9 @@ test.describe("Asistente Conectar iPhone", () => {
     await expect(toast(page)).toContainText("Token copiado");
     expect(await clipboard(page)).toBe(token);
 
-    await expect(page.getByTestId("install-shortcut")).toHaveCount(0); // NEXT_PUBLIC_SHORTCUT_URL vacío → sin botón de iCloud
-    await expect(page.getByTestId("ai-prompt")).toHaveAttribute("open", "");
+    await expect(page.getByTestId("install-shortcut")).toHaveAttribute("href", /^https:\/\/www\.icloud\.com\/shortcuts\/4466a87c/);
+    await expect(page.getByTestId("ai-prompt")).not.toHaveAttribute("open", ""); // con enlace de iCloud, el prompt queda como alternativa plegada
+    await page.getByTestId("ai-prompt").locator("summary").click();
     const prompt = await page.getByTestId("prompt-text").inputValue();
     expect(prompt).toContain(`${EXEC}?events=1`);
     expect(prompt).toContain(token);

@@ -7,7 +7,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { GoogleApiError, RANGES, TABS, getGoogleClient, type ClientConfig, type GoogleClient, type LedgerFile, type PickerOptions } from "@/lib/google-client";
 import { isoLima, rowsToTxs, type Tx } from "@/lib/ledger";
-import { COPY_QUERY } from "@/lib/onboarding";
 import { parseAjustes, parseCategorias, usdRate, type Ajustes } from "@/lib/ajustes";
 import { buildManualRow, merchantKey, planMarkTransfer, planMerchantUpsert, planRecategorize, planRowFields, type ManualInput } from "@/lib/sheets-ops";
 import { useToast } from "./Toast";
@@ -178,7 +177,7 @@ export function LedgerProvider({ cfg, user, signOutAction, children }: Props) {
     () => conectarElegida("Elige tu Sheet de Luca…", { title: "Elige tu Sheet de Luca" }), [conectarElegida]);
   // La copia que el usuario hizo con "Copiar a mi Drive" (ADR-009): elegirla la mete en alcance de drive.file.
   const elegirCopia = useCallback(
-    () => conectarElegida("Elige tu copia en el selector…", { title: 'Elige tu copia de "Luca Template"', query: COPY_QUERY, ownedByMe: true }), [conectarElegida]);
+    () => conectarElegida("Elige tu copia en el selector…", { title: "Elige tu copia de Luca", ownedByMe: true, intent: "copia" }), [conectarElegida]);
 
   const refresh = useCallback(async () => {
     if (state.phase !== "ready") return;
