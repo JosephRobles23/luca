@@ -5,6 +5,9 @@ Skill de release: `.claude/skills/deploy-luca/SKILL.md`
 Actualizado: 2026-10-05. Fuente de verdad de qué está hecho, en curso y pendiente. Commits en `main`.
 
 ## Hecho y publicado
+- LucaLib **v3** (cuenta petter) — el sidebar ofrece el enlace de iCloud del atajo "Luca – Captura Yape"
+  (`SHORTCUT_URL_`); la web lo muestra en el paso 3 de "Conectar iPhone" (`SHORTCUT_URL`, sobreescribible con
+  `NEXT_PUBLIC_SHORTCUT_URL`). 215 tests.
 - **Onboarding por fases (ADR-009, web):** "Copiar a mi Drive" (página nativa `/copy` de la plantilla) + "Elegir mi
   copia" (Picker con búsqueda "Luca Template", solo mis archivos); autorización e importación detectadas solas
   (relectura cada 6 s); conexiones como fase 4. "Otras formas": Picker en la carpeta LUCA, "Ya tengo una", enlace a
