@@ -16,6 +16,8 @@
   code, pre { background: #f4efe8; font-size: 11px; }
   code { padding: 1px 4px; border-radius: 3px; word-break: break-all; }
   pre { padding: 8px; white-space: pre-wrap; margin-top: 10px; }
+  label.chk { display: flex; gap: 8px; align-items: flex-start; margin-top: 10px; font-size: 12px; color: #1d1a17; }
+  label.chk input { width: auto; margin: 2px 0 0; flex: none; }
   .box { background: #faf7f2; border: 1px solid #eee3d5; border-radius: 6px; padding: 8px; margin-top: 8px; }
 </style>
 </head>
@@ -38,6 +40,8 @@
   <button onclick="guardarKey()">Guardar proveedor, modelo y key</button>
   <button class="sec" id="btnProbarKey" onclick="probarKey()">Probar key</button>
   <button class="sec" id="btnCategorizar" onclick="categorizarPendientes()">Categorizar pendientes ahora</button>
+  <label class="chk"><input type="checkbox" id="llmExtract" onchange="guardarExtraer()"><span>Extraer con IA los correos que Luca no reconoce (envía el texto del correo con nombres y números enmascarados)</span></label>
+  <button class="sec" id="btnExtraer" onclick="extraerDesconocidos()">Reintentar desconocidos con IA</button>
 
   <h3>Importar historial</h3>
   <div class="hint">Autorizar ya importó el último mes. Para traer más atrás, elige una fecha; el trigger continúa por lotes.</div>
@@ -105,12 +109,31 @@
       fila('Key', tieneKey ? '<span class="ok">configurada</span>' : '<span class="warn">falta</span>') +
       fila('Proveedor / modelo', esc(llm.provider || '') + ' · <code>' + esc(llm.model || '') + '</code>') +
       fila('Última prueba', esc(fecha(llm.lastTestAt)) + (llm.lastError ? ' <span class="warn">' + esc(llm.lastError) + '</span>' : (llm.lastTestAt ? ' <span class="ok">ok</span>' : ''))) +
-      fila('Por categorizar', st.ledger && st.ledger.sinCategoria || 0);
+      fila('Por categorizar', st.ledger && st.ledger.sinCategoria || 0) +
+      fila('Correos no reconocidos', llm.desconocidos || 0);
     var sel = document.getElementById('llmProvider');
     if (llm.provider) sel.value = llm.provider;
     document.getElementById('llmModel').value = llm.model || '';
     document.getElementById('btnProbarKey').disabled = !tieneKey;
     document.getElementById('btnCategorizar').disabled = !tieneKey || !(st.ledger && st.ledger.sinCategoria);
+    var chk = document.getElementById('llmExtract');
+    chk.checked = !!llm.extractUnknown;
+    chk.disabled = !tieneKey;
+    document.getElementById('btnExtraer').disabled = !tieneKey || !llm.extractUnknown || !llm.desconocidos;
+  }
+  function guardarExtraer() {
+    var on = document.getElementById('llmExtract').checked;
+    show('guardando…');
+    run('guardarAjustes', { 'llm.extractUnknown': on ? 'true' : 'false' })
+      .then(function () { pintar(); show(on ? 'Extracción con IA activada: el escaneo probará con el LLM los correos no reconocidos.' : 'Extracción con IA desactivada.'); })
+      .catch(function (e) { show('Error: ' + e.message); });
+  }
+  function extraerDesconocidos() {
+    show('reintentando con IA…');
+    run('extraerDesconocidos', { limit: 20 }).then(function (r) {
+      show('Revisados: ' + r.procesados + ' · Extraídos: ' + r.extraidos + ' · Descartados: ' + r.ignorados + ' · Llamadas al LLM: ' + r.llmCalls + (r.llmErrores ? ' · Errores: ' + r.llmErrores : '') + ' · Siguen sin reconocer: ' + r.restantes);
+      pintar();
+    }).catch(function (e) { show('Error: ' + e.message); });
   }
   function cambiarProveedor() {
     document.getElementById('llmModel').value = llmDefaults[document.getElementById('llmProvider').value] || '';
