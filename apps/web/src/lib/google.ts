@@ -118,6 +118,9 @@ export class GoogleRealClient implements GoogleClient {
     const token = this.token, picker = this.picker;
     return new Promise((resolve) => {
       const view = new g.picker.DocsView(g.picker.ViewId.SPREADSHEETS).setIncludeFolders(false).setMode(g.picker.DocsViewMode.LIST);
+      if (o.parentId) view.setParent(o.parentId);
+      if (o.query) view.setQuery(o.query);
+      if (o.ownedByMe) view.setOwnedByMe(true);
       new g.picker.PickerBuilder()
         .setTitle(o.title)
         .setAppId(picker.appId)

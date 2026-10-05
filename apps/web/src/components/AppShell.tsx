@@ -6,14 +6,14 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { ClientConfig } from "@/lib/google-client";
 import { LedgerProvider, useLedger } from "./LedgerProvider";
 import { ToastProvider } from "./Toast";
-import { Step1Sheet, Step2Authorize, Step3Connections, useOnboardingStep } from "./Onboarding";
+import { Step1Sheet, Step2Authorize, Step3Import, Step4Connections, useOnboardingStep } from "./Onboarding";
 import { Notice } from "./ui";
 import VersionNotice from "./VersionNotice";
 import ThemeToggle from "./ThemeToggle";
 import { IconActualizar, IconAjustes, IconBuscar, IconConexiones, IconExterno, IconLista, IconMas, IconResumen, IconSalir } from "./icons";
 
 type Props = {
-  cfg: ClientConfig & { templateId: string; libVersion: string };
+  cfg: ClientConfig & { templateId: string; templateFolderId: string; libVersion: string };
   user: { name: string; email: string; image: string };
   signOutAction: () => Promise<void>;
   children: ReactNode;
@@ -112,7 +112,8 @@ function Shell({ children, signOutAction }: { children: ReactNode; signOutAction
             {ready && (
               <>
                 {step === 2 && <Step2Authorize />}
-                {step === 3 && <Step3Connections />}
+                {step === 3 && <Step3Import />}
+                {step === 4 && <Step4Connections />}
                 {state.error && <Notice kind="warn">No pude leer la hoja: {state.error}</Notice>}
                 {/* En el Resumen el aviso va debajo del saludo (lo pinta Dashboard). */}
                 {path !== "/app" && <VersionNotice />}

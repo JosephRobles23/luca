@@ -27,6 +27,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     pickerKey: process.env.NEXT_PUBLIC_GOOGLE_PICKER_KEY ?? "",
     appId: process.env.NEXT_PUBLIC_GOOGLE_APP_ID ?? "",
     templateId: process.env.NEXT_PUBLIC_TEMPLATE_SHEET_ID ?? "",
+    templateFolderId: process.env.NEXT_PUBLIC_TEMPLATE_FOLDER_ID ?? "",
     libVersion: process.env.NEXT_PUBLIC_LUCA_LIB_VERSION ?? "",
   };
 

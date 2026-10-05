@@ -1,19 +1,20 @@
 "use client";
 
 /**
- * Onboarding en 3 pasos (ADR-006 §3): persistente arriba del dashboard hasta completar.
- * Pasos 1 y 2: tarjetas centradas con anillo de progreso, stepper e ilustración. Paso 3: la "configuración
- * plegable" de DESIGN.md (anillo n/3 + checklist), que desaparece al completar u omitir.
+ * Onboarding por fases (ADR-009, sustituye ADR-006 §3): persistente arriba del dashboard hasta completar.
+ * 1 Tu copia ("Copiar a mi Drive" + "Elegir mi copia") · 2 Autorizar (se detecta solo) · 3 Importación (en vivo,
+ * solo mientras corre) · 4 Conexiones (opcional): la "configuración plegable" de DESIGN.md, que desaparece al
+ * completar u omitir. Cada fase avanza sola leyendo la Sheet; el estado se deduce de ella (se retoma donde quedó).
  */
 import Link from "next/link";
-import { useId, useMemo, useState, type CSSProperties, type ReactNode } from "react";
-import { connectionsStatus, isAuthorized } from "@/lib/ajustes";
-import { currentStep, STEP_TITLES, type OnboardingStep } from "@/lib/onboarding";
-import { IconChevron, IconExterno } from "./icons";
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { connectionsStatus, importStatus, isAuthorized } from "@/lib/ajustes";
+import { COPY_QUERY, currentStep, POLL_MS, STEP_OPTIONAL, STEP_TITLES, templateCopyUrl, type OnboardingStep } from "@/lib/onboarding";
+import { IconChevron, IconCopiar, IconExterno } from "./icons";
 import { useLedger } from "./LedgerProvider";
 
 export function useOnboardingStep(): OnboardingStep {
-  const { state, connectionsSkipped } = useLedger();
+  const { state, connectionsSkipped, importDismissed } = useLedger();
   return useMemo(() => {
     if (state.phase === "loading") return null;
     if (state.phase === "nofile") return 1;
@@ -21,14 +22,31 @@ export function useOnboardingStep(): OnboardingStep {
     return currentStep({
       hasFile: true,
       authorized: isAuthorized(state.data.ajustes, state.data.hasMovimientos),
+      importRunning: importStatus(state.data.ajustes).running,
+      importDismissed,
       connectionsActive: c.webAppReady || c.iphone.connected || c.mcp.connected,
       connectionsSkipped,
     });
-  }, [state, connectionsSkipped]);
+  }, [state, connectionsSkipped, importDismissed]);
 }
 
+/** Vuelve a leer la Sheet cada POLL_MS (solo con la pestaña visible) y al volver a ella: así cada fase avanza sola. */
+function usePoll(fn: () => void, on: boolean) {
+  const ref = useRef(fn);
+  useEffect(() => { ref.current = fn; });
+  useEffect(() => {
+    if (!on) return;
+    const tick = () => { if (document.visibilityState === "visible") ref.current(); };
+    const id = window.setInterval(tick, POLL_MS);
+    window.addEventListener("focus", tick);
+    return () => { window.clearInterval(id); window.removeEventListener("focus", tick); };
+  }, [on]);
+}
+
+const TOTAL = 4;
+
 /** Anillo de progreso n/3; el arco se dibuja al aparecer. */
-function ProgressRing({ done, total = 3, size = 44 }: { done: number; total?: number; size?: number }) {
+function ProgressRing({ done, total = TOTAL, size = 44 }: { done: number; total?: number; size?: number }) {
   const pct = Math.round((done / total) * 1000) / 10;
   return (
     <svg width={size} height={size} viewBox="0 0 38 38" role="img" aria-label={`${done} de ${total} pasos completados`} className="flex-none">
@@ -49,10 +67,10 @@ const CheckDisc = ({ size = 16, label }: { size?: number; label?: string }) => (
   </svg>
 );
 
-export function Stepper({ step }: { step: 1 | 2 | 3 }) {
+export function Stepper({ step }: { step: 1 | 2 | 3 | 4 }) {
   return (
-    <ol className="grid grid-cols-3 gap-2" aria-label="Progreso del onboarding">
-      {([1, 2, 3] as const).map((n) => {
+    <ol className="grid grid-cols-4 gap-2" aria-label="Progreso del onboarding">
+      {([1, 2, 3, 4] as const).map((n) => {
         const st = n < step ? "done" : n === step ? "now" : "next";
         return (
           <li key={n} className="grid min-w-0 gap-2" aria-current={n === step ? "step" : undefined}>
@@ -61,7 +79,7 @@ export function Stepper({ step }: { step: 1 | 2 | 3 }) {
             </span>
             <span className={`flex min-w-0 items-start gap-1.5 text-[12.5px] [&>i]:mt-[3px] [&>svg]:mt-px ${st === "next" ? "text-muted" : "text-ink"} ${st === "now" ? "font-semibold" : ""}`}>
               {st === "done" ? <CheckDisc /> : <i aria-hidden className={`block size-3 flex-none rounded-full border-2 ${st === "now" ? "border-primary bg-primary-soft" : "border-line-strong"}`} />}
-              <span className="min-w-0 leading-snug">{n}. {STEP_TITLES[n]}{n === 3 ? " (opcional)" : ""}</span>
+              <span className="min-w-0 leading-snug">{n}. {STEP_TITLES[n]}{n === STEP_OPTIONAL ? <span className="hidden sm:inline"> (opcional)</span> : ""}</span>
             </span>
           </li>
         );
@@ -70,13 +88,13 @@ export function Stepper({ step }: { step: 1 | 2 | 3 }) {
   );
 }
 
-/** Cabecera común de los pasos 1 y 2: anillo + "Paso n de 3" + título. */
+/** Cabecera común de las fases 1 a 3: anillo + "Paso n de 4" + título. */
 function StepHead({ done, title, children }: { done: number; title: string; children: ReactNode }) {
   return (
     <div className="flex items-start gap-4">
       <ProgressRing done={done} />
       <div className="min-w-0">
-        <p className="eyebrow">Paso {done + 1} de 3</p>
+        <p className="eyebrow">Paso {done + 1} de {TOTAL}</p>
         <h2 className="page-title mt-1">{title}</h2>
         <p className="mt-2 text-sm leading-relaxed text-body">{children}</p>
       </div>
@@ -110,37 +128,88 @@ function SheetCopyArt() {
   );
 }
 
+const LS_COPIADO = "luca.onboarding.copiado";
+const leerCopiado = () => { try { return !!localStorage.getItem(LS_COPIADO); } catch { return false; } };
+
+/** Una sub-fase numerada del paso 1: número → check al completarse; resaltada si es la siguiente acción. */
+function Fase({ n, title, done, active, children, actions }: { n: number; title: string; done?: boolean; active?: boolean; children: ReactNode; actions: ReactNode }) {
+  return (
+    <li className={`sunken grid grid-cols-[28px_minmax(0,1fr)] items-start gap-3 px-4 py-3.5 transition-shadow duration-200 ${active ? "shadow-[0_0_0_2px_color-mix(in_srgb,var(--primary)_45%,transparent)]" : ""}`}
+      aria-current={active ? "step" : undefined}>
+      {done ? <CheckDisc size={28} label="Hecho" /> : (
+        <span className={`num grid size-7 place-items-center rounded-full text-[13px] ${active ? "bg-primary-strong text-white" : "bg-card text-muted ring-1 ring-line"}`} aria-hidden>{n}</span>
+      )}
+      <div className="grid min-w-0 gap-2.5">
+        <div>
+          <b className="block text-[15px] font-semibold text-ink"><span className="sr-only">{n}. </span>{title}</b>
+          <p className="mt-0.5 text-sm leading-relaxed text-body">{children}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">{actions}</div>
+      </div>
+    </li>
+  );
+}
+
 export function Step1Sheet() {
-  const { state, crearSheet, elegirExistente, mode } = useLedger();
+  const { state, crearSheet, elegirExistente, elegirCopia, mode, templateId, templateFolderId } = useLedger();
   const busy = state.phase === "nofile" ? state.busy : undefined;
   const error = state.phase === "nofile" ? state.error : undefined;
-  const pasos: ReactNode[] = [
-    <>Pulsa <b className="font-semibold text-ink">Crear mi Sheet</b>. Se abre el selector de Google: elige <b className="font-semibold text-ink">&quot;Luca — Plantilla&quot;</b> (está en &quot;Compartidos conmigo&quot; o búscala por nombre).</>,
-    <>Hacemos una copia a tu nombre con el script de Luca incluido.</>,
-    <>En la copia, menú <b className="font-semibold text-ink">Luca → Autorizar</b>: le das permiso a <i>tu propio</i> script para leer tus correos de BCP/Yape. No a nosotros.</>,
-  ];
+  const plantilla = templateId || "1kQWNaj9J29LRK-LsdCAxrplW06heaTvS3Hje3NV1htg";
+  const carpeta = `https://drive.google.com/drive/folders/${templateFolderId || "18aQXOYlyznY6xZm3ViRdVrFWILLXsHQL"}?usp=sharing`;
+  const [copiado, setCopiado] = useState(leerCopiado);
+  const [volvio, setVolvio] = useState(false);
+  // Tras abrir la copia en otra pestaña, al volver a esta resaltamos "Elegir mi copia".
+  useEffect(() => {
+    if (!copiado) return;
+    const f = () => setVolvio(true);
+    window.addEventListener("focus", f);
+    return () => window.removeEventListener("focus", f);
+  }, [copiado]);
+  const marcarCopiado = () => {
+    setCopiado(true); setVolvio(false);
+    try { localStorage.setItem(LS_COPIADO, "1"); } catch { /* sin storage */ }
+  };
   return (
     <section className="card rise mx-auto grid w-full max-w-xl gap-5 sm:p-7" data-testid="onboarding-step1">
       <Stepper step={1} />
       <div className="sunken grid place-items-center px-4 py-5"><SheetCopyArt /></div>
-      <StepHead done={0} title="Crea tu Sheet de Luca">
-        Luca guarda tus movimientos en una hoja de cálculo <b className="font-semibold text-ink">de tu propiedad</b>, en tu Google Drive.
-        Solo pedimos permiso sobre ese archivo (y ningún otro).
+      <StepHead done={0} title="Copia la plantilla a tu Drive">
+        Luca guarda tus movimientos en una hoja de cálculo <b className="font-semibold text-ink">de tu propiedad</b>. La copia la haces tú,
+        en tu Google Drive, y luego nos das permiso solo sobre ese archivo (y ningún otro).
       </StepHead>
-      <ol className="grid gap-2 text-sm text-body">
-        {pasos.map((t, n) => (
-          <li key={n} className="sunken grid grid-cols-[24px_minmax(0,1fr)] items-start gap-3 px-3.5 py-3">
-            <span className="num grid size-6 place-items-center rounded-full bg-card text-xs text-muted ring-1 ring-line" aria-hidden>{n + 1}</span>
-            <span><span className="sr-only">{n + 1}. </span>{t}</span>
-          </li>
-        ))}
+      <ol className="grid gap-2.5">
+        <Fase n={1} title="Haz tu copia" done={copiado} active={!copiado}
+          actions={
+            <a className={`btn lg ${copiado ? "" : "primary"}`} href={templateCopyUrl(plantilla)} target="_blank" rel="noopener noreferrer" onClick={marcarCopiado} data-testid="copy-template">
+              <IconCopiar size={16} />{copiado ? "Copiar otra vez" : "Copiar a mi Drive"}<IconExterno size={15} />
+            </a>
+          }>
+          Se abre Google Sheets: pulsa <b className="font-semibold text-ink">Hacer una copia</b>. Queda a tu nombre, con el script de Luca incluido.
+        </Fase>
+        <Fase n={2} title="Elige tu copia" active={copiado}
+          actions={<button className={`btn lg ${copiado ? "primary" : ""}`} onClick={elegirCopia} disabled={!!busy} data-testid="pick-copy">Elegir mi copia</button>}>
+          {copiado && volvio
+            ? <>¿Ya tienes tu copia? Elígela en el selector de Google: se llama <b className="font-semibold text-ink">&quot;Copia de {COPY_QUERY}&quot;</b>.</>
+            : <>Vuelve aquí y elígela en el selector de Google: se llama <b className="font-semibold text-ink">&quot;Copia de {COPY_QUERY}&quot;</b>. Así Luca solo puede abrir ese archivo.</>}
+        </Fase>
       </ol>
-      <div className="flex flex-wrap gap-3">
-        <button className="btn primary lg" onClick={crearSheet} disabled={!!busy}>Crear mi Sheet</button>
-        <button className="btn lg" onClick={elegirExistente} disabled={!!busy}>Ya tengo una</button>
-      </div>
       {busy && <p className="flex items-center gap-2 text-sm text-muted" role="status"><i className="dot warn skeleton" aria-hidden /> {busy}</p>}
       {error && <p className="notice warn" role="alert">Error: {error}</p>}
+      <details className="group rounded-xl border border-line px-4 py-3 text-sm" data-testid="otras-formas">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-medium text-ink [&::-webkit-details-marker]:hidden">
+          Otras formas de empezar <IconChevron size={16} className="text-muted transition-transform duration-200 group-open:rotate-180" />
+        </summary>
+        <div className="mt-3 grid gap-3 text-body">
+          <p>La plantilla <b className="font-semibold text-ink">&quot;Luca Template&quot;</b> está en la <a className="font-semibold text-ink underline underline-offset-2" href={carpeta} target="_blank" rel="noopener noreferrer" data-testid="template-folder-link">carpeta LUCA</a>.
+            Puedes abrirla, hacer <b className="font-semibold text-ink">Archivo → Hacer una copia</b> y luego pulsar &quot;Ya tengo una&quot;.</p>
+          <div className="flex flex-wrap gap-2">
+            <button className="btn" onClick={crearSheet} disabled={!!busy}>Crear mi Sheet</button>
+            <button className="btn" onClick={elegirExistente} disabled={!!busy}>Ya tengo una</button>
+            <a className="btn ghost" href={carpeta} target="_blank" rel="noopener noreferrer">Abrir carpeta LUCA <IconExterno size={15} /></a>
+          </div>
+          <p className="text-xs text-muted">&quot;Crear mi Sheet&quot; abre el selector en la carpeta LUCA para elegir la plantilla y la copiamos por ti.</p>
+        </div>
+      </details>
       {mode === "mock" && <p className="text-xs text-muted">Modo de prueba: el selector de Google está simulado.</p>}
     </section>
   );
@@ -189,19 +258,64 @@ function AuthArt() {
 
 export function Step2Authorize() {
   const { state, refresh, refreshing } = useLedger();
+  usePoll(() => { if (!refreshing) void refresh(); }, state.phase === "ready");
   if (state.phase !== "ready") return null;
   const sheetUrl = state.file.webViewLink ?? `https://docs.google.com/spreadsheets/d/${state.file.id}/edit`;
   return (
     <section className="card rise mx-auto grid w-full max-w-3xl gap-5 border-[color-mix(in_srgb,var(--primary)_35%,var(--line))] sm:p-7" data-testid="onboarding-step2">
       <Stepper step={2} />
-      <StepHead done={1} title="Autoriza tu script en el Sheet">
-        Tu Sheet existe pero el script todavía no ha escrito nada. Ábrela, espera a que aparezca el menú <b className="font-semibold text-ink">Luca</b> y pulsa
-        <b className="font-semibold text-ink"> Autorizar</b>. Al terminar, importa automáticamente tu último mes de correos.
+      <StepHead done={1} title="Autoriza tu script">
+        Abre tu copia, espera a que aparezca el menú <b className="font-semibold text-ink">Luca</b> y pulsa <b className="font-semibold text-ink">Autorizar</b>.
+        No tienes que volver a pulsar nada aquí: esta página avanza sola en cuanto tu script escribe en la hoja.
       </StepHead>
       <AuthArt />
+      <p className="sunken flex items-center gap-2.5 px-3.5 py-3 text-sm text-body" role="status" data-testid="auth-waiting">
+        <i className="dot warn skeleton" aria-hidden /> Esperando tu autorización… lo comprobamos cada pocos segundos.
+      </p>
       <div className="flex flex-wrap gap-3">
-        <a className="btn primary lg" href={sheetUrl} target="_blank" rel="noreferrer">Abrir mi Sheet y autorizar <IconExterno size={16} /></a>
-        <button className="btn lg" onClick={refresh} disabled={refreshing}>{refreshing ? "Comprobando…" : "Ya autoricé → Actualizar"}</button>
+        <a className="btn primary lg" href={sheetUrl} target="_blank" rel="noreferrer">Abrir mi copia y autorizar <IconExterno size={16} /></a>
+        <button className="btn lg" onClick={refresh} disabled={refreshing}>{refreshing ? "Comprobando…" : "Comprobar ahora"}</button>
+      </div>
+      <details className="group rounded-xl border border-line px-4 py-3 text-sm">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-medium text-ink [&::-webkit-details-marker]:hidden">
+          ¿No ves el menú Luca o Google te advierte? <IconChevron size={16} className="text-muted transition-transform duration-200 group-open:rotate-180" />
+        </summary>
+        <ul className="mt-3 grid list-disc gap-1.5 pl-5 text-body">
+          <li>El menú <b className="font-semibold text-ink">Luca</b> aparece unos segundos después de abrir la hoja. Si no, recarga la página de la Sheet.</li>
+          <li>&quot;Google no ha verificado esta app&quot; es normal: el script es tu propia copia. Pulsa <b className="font-semibold text-ink">Configuración avanzada → Ir a Luca</b>.</li>
+          <li>Al terminar, Luca importa tu último mes de correos del BCP y Yape y deja el escaneo automático cada 15 minutos.</li>
+        </ul>
+      </details>
+    </section>
+  );
+}
+
+const fechaCorta = (epoch: string) => {
+  const n = Number(epoch);
+  return Number.isFinite(n) && n > 0 ? new Date(n * 1000).toLocaleDateString("es-PE", { day: "numeric", month: "short", year: "numeric" }) : "";
+};
+
+/** Fase 3: solo mientras la primera importación corre; avanza sola al terminar. */
+export function Step3Import() {
+  const { state, refresh, refreshing, dismissImport } = useLedger();
+  usePoll(() => { if (!refreshing) void refresh(); }, state.phase === "ready");
+  if (state.phase !== "ready") return null;
+  const n = state.data.txs.length;
+  const desde = fechaCorta(importStatus(state.data.ajustes).since);
+  return (
+    <section className="card rise mx-auto grid w-full max-w-xl gap-5 sm:p-7" data-testid="onboarding-step3">
+      <Stepper step={3} />
+      <StepHead done={2} title="Importando tus correos">
+        Tu script está leyendo tus correos del BCP y Yape{desde ? <> desde el <b className="font-semibold text-ink">{desde}</b></> : null}.
+        Sigue solo, en segundo plano: puedes cerrar esta página.
+      </StepHead>
+      <div className="sunken flex items-center gap-4 px-4 py-4" role="status" aria-live="polite">
+        <span className="num text-[38px] font-medium leading-none tracking-[-0.04em] text-ink">{n}</span>
+        <span className="text-sm leading-snug text-body">{n === 1 ? "movimiento" : "movimientos"} en tu Sheet<br /><small className="text-muted">Se actualiza solo cada pocos segundos</small></span>
+        <i className="dot warn skeleton ml-auto" aria-hidden />
+      </div>
+      <div className="flex flex-wrap gap-3">
+        <button className="btn primary lg" onClick={dismissImport}>Seguir al panel</button>
       </div>
     </section>
   );
@@ -217,7 +331,7 @@ function CheckItem({ done, children, action }: { done: boolean; children: ReactN
   );
 }
 
-export function Step3Connections() {
+export function Step4Connections() {
   const { state, skipConnections } = useLedger();
   const [open, setOpen] = useState(true);
   const id = useId();
@@ -229,11 +343,11 @@ export function Step3Connections() {
     [c.mcp.connected, `IA ${c.mcp.connected ? "conectada" : "no configurada"}`],
   ];
   return (
-    <section className="card rise overflow-hidden p-0!" data-testid="onboarding-step3">
+    <section className="card rise overflow-hidden p-0!" data-testid="onboarding-step4">
       <h2>
         <button type="button" className="grid w-full cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3.5 px-4 py-4 text-left sm:px-5"
           aria-expanded={open} aria-controls={`${id}-c`} onClick={() => setOpen((o) => !o)}>
-          <ProgressRing done={2} size={40} />
+          <ProgressRing done={3} size={40} />
           <span className="min-w-0">
             <span className="block text-[14.5px] font-semibold">Activa las conexiones (opcional)</span>
             <span className="block text-[13px] font-normal text-muted">Te falta un paso opcional: conecta el iPhone o tu IA cuando quieras</span>
@@ -244,8 +358,9 @@ export function Step3Connections() {
       <div className="expand" data-open={open} id={`${id}-c`} inert={!open}>
         <div>
           <ul className="grid gap-2 px-4 pb-4 sm:px-5">
-            <CheckItem done>Crear tu Sheet</CheckItem>
+            <CheckItem done>Copiar la plantilla a tu Drive</CheckItem>
             <CheckItem done>Autorizar tu script</CheckItem>
+            <CheckItem done>Importar tus correos</CheckItem>
             <CheckItem done={false} action={<Link className="btn primary sm" href="/app/conexiones">Ver la guía de conexiones</Link>}>
               <span className="font-medium">Activar conexiones</span>
               <small className="mt-0.5 block text-[12.5px] leading-snug text-muted">

@@ -18,7 +18,7 @@ test.describe("Asistente Conectar iPhone", () => {
     await useScenario(page, "authorized");
     await login(page);
     await waitForDashboard(page);
-    await expect(page.getByTestId("onboarding-step3").getByRole("link", { name: "Conectar iPhone" })).toHaveAttribute("href", "/app/conexiones/iphone");
+    await expect(page.getByTestId("onboarding-step4").getByRole("link", { name: "Conectar iPhone" })).toHaveAttribute("href", "/app/conexiones/iphone");
     await page.goto("/app/conexiones");
     await page.getByTestId("card-iphone").getByTestId("iphone-configurar").click();
     await expect(page).toHaveURL(/\/app\/conexiones\/iphone/);

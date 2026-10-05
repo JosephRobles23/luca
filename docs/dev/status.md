@@ -5,6 +5,16 @@ Skill de release: `.claude/skills/deploy-luca/SKILL.md`
 Actualizado: 2026-10-05. Fuente de verdad de qué está hecho, en curso y pendiente. Commits en `main`.
 
 ## Hecho y publicado
+- **Onboarding por fases (ADR-009, web):** "Copiar a mi Drive" (página nativa `/copy` de la plantilla) + "Elegir mi
+  copia" (Picker con búsqueda "Luca Template", solo mis archivos); autorización e importación detectadas solas
+  (relectura cada 6 s); conexiones como fase 4. "Otras formas": Picker en la carpeta LUCA, "Ya tengo una", enlace a
+  la carpeta. e2e de onboarding e iPhone en verde. Pendiente: probar `setFileIds` con una cuenta externa.
+- **Migración de cuenta (2026-10-05):** LucaLib y la plantilla pasan a la cuenta `petter.chuquipiondo.r@gmail.com`
+  (carpeta Drive "LUCA"). LucaLib nueva `1DI_…` con numeración reiniciada: **v2** = código de la v22 anterior (v1
+  quedó sin usar: clasp se saltó el push por el manifiesto; ahora `lib:push`/`stub:push` llevan `--force`). Plantilla
+  "Luca Template" `1kQW…` con el stub actual apuntando a v2. Worker anuncia v2. La web copia la plantilla nueva y el
+  onboarding enlaza la carpeta LUCA (el selector de Google se abre dentro de ella). Las copias existentes siguen en
+  la librería antigua (hasta v22) y no reciben avisos de versión.
 - LucaLib **v22** — logo del sidebar más grande: `_Logo.html` lo genera ahora `apps/web/scripts/brand-assets.py`, que
   recorta el halo casi transparente del PNG fuente y reduce el margen (mismo cambio en favicon, iconos PWA y og:image). 215 tests.
 - LucaLib **v21** — iconos SVG de categoría en los avatares del Dashboard (`iconoCategoria` en `_Ui`: fijos para la
