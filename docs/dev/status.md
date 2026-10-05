@@ -2,9 +2,18 @@
 
 Skill de release: `.claude/skills/deploy-luca/SKILL.md`
 
-Actualizado: 2026-10-04 (noche). Fuente de verdad de qué está hecho, en curso y pendiente. Commits en `main`.
+Actualizado: 2026-10-05. Fuente de verdad de qué está hecho, en curso y pendiente. Commits en `main`.
 
 ## Hecho y publicado
+- LucaLib **v18** — UI de la Sheet con la identidad de DESIGN.md (210 tests):
+  - Parciales `_Estilos`/`_Ui`/`_Logo` insertados en el servidor (`htmlConParciales_`): tokens, Geist, botones con
+    estado de carga, toasts arriba, esqueletos.
+  - Sidebar rediseñado: pestañas Estado/IA/iPhone/MCP con iconos SVG, iPhone en 3 pasos, código MCP con cuenta
+    atrás, **Modo avanzado** por usuario (UserProperties). Maqueta: `docs/html/preview-sidebar.html` (monta el real).
+  - **Guía** (`DialogGuia`, modeless) con pasos auto-detectados; abre el panel en su pestaña.
+  - **Estilo de las hojas** (`estilo-hojas-runtime.js`): encabezado, filas alternas, colores de categoría (paridad
+    con la web), columnas técnicas plegadas; se aplica solo una vez por `ui.estiloVersion` y desde Luca → 🎨.
+  - Pendiente: verificar en una Sheet real (fuente Geist en Sheets, diálogos desde el panel).
 - LucaLib **v17** (`gas/shared`), 164 tests unitarios en total (GAS + web + Worker):
   - Parsers correo (9 tipos + avisos ignorados) validados con 8 `.eml` reales; parser push (yapeo recibido → `transfer_in`).
   - **Autorizar** = consentimiento + trigger (callback `setupTriggers` del stub) + importación del último mes + telemetría.
