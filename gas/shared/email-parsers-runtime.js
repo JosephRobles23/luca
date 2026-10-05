@@ -35,7 +35,7 @@ var EMAIL_TYPES_ = [
   { bank: 'bcp',  type: 'bcp_rejected',          re: /se rechazo tu compra/ },
   // Avisos no transaccionales (se ignoran, no quedan como desconocidos)
   { bank: 'yape', type: 'yape_notice',           re: /ingresaste a yape|cambio de clave|nuevo dispositivo|bienvenid/ },
-  { bank: 'bcp',  type: 'bcp_notice',            re: /ingresaste|clave|bienvenid|actualiza tus datos/ },
+  { bank: 'bcp',  type: 'bcp_notice',            re: /ingresaste|clave|bienvenid|actualiza tus datos|no te olvides|recordatorio|vence|promoci/ },
   // Yape
   { bank: 'yape', type: 'yape_p2p_sent',         re: /te notificaremos por cada yapeo/ },
   { bank: 'yape', type: 'yape_service',          re: /yapeo de servicio ha sido confirmado/ },

@@ -106,3 +106,37 @@ function toGmail(e) {
   const b = (s) => Buffer.from(s, 'utf8').toString('base64url');
   return { id: e.id, threadId: 't-' + e.id, internalDate: String(e.date.getTime()), payload: { mimeType: 'multipart/alternative', headers: [{ name: 'From', value: e.from }, { name: 'Subject', value: e.subject }], parts: [{ mimeType: 'text/plain', body: { data: b('(t)') } }, { mimeType: 'text/html', body: { data: b(e.html) } }] } };
 }
+
+test('[GAS real] body.data y raw llegan como Byte[] con signo: se decodifican directo, con charset', () => {
+  const e = emails.bcp_card_purchase_pen;
+  const signed = (buf) => Array.from(buf).map((b) => (b > 127 ? b - 256 : b));
+  const htmlLatin = Buffer.from(e.html, 'utf8');
+  const msg = {
+    id: 'm-bytes', threadId: 't', internalDate: String(e.date.getTime()),
+    payload: {
+      mimeType: 'multipart/alternative', headers: [{ name: 'From', value: e.from }, { name: 'Subject', value: e.subject }],
+      parts: [
+        { mimeType: 'text/plain', headers: [{ name: 'Content-Type', value: 'text/plain; charset=UTF-8' }], body: { data: signed(Buffer.from('(t)')) } },
+        { mimeType: 'text/html', headers: [{ name: 'Content-Type', value: 'text/html; charset="UTF-8"' }], body: { data: signed(htmlLatin), size: htmlLatin.length } },
+      ],
+    },
+  };
+  const h = makeHarness({ spreadsheets: { [SID]: {} }, gmailMessages: [msg] });
+  const em = h.api.gmailMessageToEmail(msg);
+  assert.match(em.html, /CA012 AVIACION/);
+  const st = h.api.scanGmail_(SID, configFor(h, SID), {});
+  assert.equal(st.added, 1); assert.equal(st.emptyBody, 0);
+  const data = h.tab(SID, 'Movimientos'); const hdr = data[0];
+  assert.equal(data[1][hdr.indexOf('monto')], 53.3);
+  // raw como Byte[] también
+  const bin = h.api.b64urlToBinary_(signed(Buffer.from(rfc822(e), 'latin1')));
+  assert.match(h.api.mimeParseMessage(bin).html, /CA012 AVIACION/);
+  const d = h.api.diagnosticarCorreo(SID, configFor(h, SID), 'm-bytes');
+  assert.equal(d.parts[1].dataType, 'bytes[]');
+});
+
+test('avisos BCP "¡No te olvides!…" se ignoran', () => {
+  const h = makeHarness();
+  const r = h.api.parseEmail({ id: 'n', from: 'BCP Notificaciones <notificaciones@notificacionesbcp.com.pe>', subject: '¡No te olvides! Tienes un pago pendiente', html: '<p>x</p>' });
+  assert.equal(r.ignored, true);
+});

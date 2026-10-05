@@ -34,8 +34,11 @@ function gmailListIds_(query, max) {
  * base64url (Gmail API) → string UTF-8. Tolerante: normaliza alfabeto y padding y prueba ambos
  * decodificadores; si aun así falla devuelve '' en vez de abortar el escaneo.
  */
-function b64urlToString_(data) {
+function b64urlToString_(data, charset) {
   if (!data) return '';
+  // Servicio avanzado de Gmail en Apps Script: los campos "bytes" (body.data, raw) llegan YA
+  // decodificados como Byte[] (array de enteros con signo), no como base64. En Node/tests son strings.
+  if (typeof data !== 'string' && data.length != null) return bytesToString_(data, charset);
   var s = String(data).replace(/\s+/g, '');
   var std = s.replace(/-/g, '+').replace(/_/g, '/');
   while (std.length % 4) std += '=';
@@ -45,9 +48,26 @@ function b64urlToString_(data) {
     function () { return Utilities.base64DecodeWebSafe(s + '=='.slice(0, (4 - s.length % 4) % 4)); }
   ];
   for (var i = 0; i < attempts.length; i++) {
-    try { return Utilities.newBlob(attempts[i]()).getDataAsString('UTF-8'); } catch (e) { /* siguiente */ }
+    try { return bytesToString_(attempts[i](), charset); } catch (e) { /* siguiente */ }
   }
   Logger.log('b64urlToString_: no se pudo decodificar una parte (%s chars)', s.length);
+  return '';
+}
+
+/** Byte[] → string respetando el charset de la parte (ISO-8859-1 en muchos correos de bancos). */
+function bytesToString_(bytes, charset) {
+  var blob = Utilities.newBlob(bytes);
+  var cs = String(charset || '').toLowerCase();
+  if (/8859|latin|1252/.test(cs)) { try { return blob.getDataAsString('ISO-8859-1'); } catch (e) { /* cae a utf-8 */ } }
+  return blob.getDataAsString('UTF-8');
+}
+
+/** charset declarado en las cabeceras de una parte (Content-Type: text/html; charset=...). */
+function partCharset_(p) {
+  var hs = (p && p.headers) || [];
+  for (var i = 0; i < hs.length; i++) {
+    if (String(hs[i].name).toLowerCase() === 'content-type') { var m = /charset="?([^";]+)"?/i.exec(String(hs[i].value || '')); if (m) return m[1]; }
+  }
   return '';
 }
 
@@ -58,8 +78,8 @@ function gmailBodies_(payload) {
     if (!p) return;
     var mime = String(p.mimeType || '');
     if (p.body && p.body.data) {
-      if (mime === 'text/html' && !out.html) out.html = b64urlToString_(p.body.data);
-      else if (mime === 'text/plain' && !out.plain) out.plain = b64urlToString_(p.body.data);
+      if (mime === 'text/html' && !out.html) out.html = b64urlToString_(p.body.data, partCharset_(p));
+      else if (mime === 'text/plain' && !out.plain) out.plain = b64urlToString_(p.body.data, partCharset_(p));
     }
     (p.parts || []).forEach(walk);
   }
@@ -100,7 +120,7 @@ function gmailGetEmailRaw_(id) {
   try {
     var msg = Gmail.Users.Messages.get('me', id, { format: 'raw' });
     if (!msg || !msg.raw) return null;
-    var parsed = mimeParseMessage(b64urlToBinary_(msg.raw));
+    var parsed = mimeParseMessage(b64urlToBinary_(msg.raw));   // acepta Byte[] o base64url
     var epoch = Math.floor(parseInt(msg.internalDate || '0', 10) / 1000);
     return { id: id, from: parsed.from, subject: parsed.subject, date: parsed.date || (epoch ? new Date(epoch * 1000) : null), epoch: epoch, html: parsed.html, plain: parsed.plain };
   } catch (e) {
@@ -120,8 +140,10 @@ function diagnosticarCorreo(sheetId, config, gmailId) {
   catch (e) { out.error = 'get(full): ' + (e && e.message); return out; }
   (function walk(p, depth) {
     if (!p) return;
-    var info = { depth: depth, mime: String(p.mimeType || ''), hasData: !!(p.body && p.body.data), dataLen: p.body && p.body.data ? String(p.body.data).length : 0, attachmentId: !!(p.body && p.body.attachmentId), size: p.body ? p.body.size : null, attempts: [] };
-    if (info.hasData) {
+    var info = { depth: depth, mime: String(p.mimeType || ''), dataType: p.body && p.body.data != null ? (typeof p.body.data === 'string' ? 'string' : 'bytes[]') : 'none', charset: partCharset_(p), hasData: !!(p.body && p.body.data), dataLen: p.body && p.body.data ? String(p.body.data).length : 0, attachmentId: !!(p.body && p.body.attachmentId), size: p.body ? p.body.size : null, attempts: [] };
+    if (info.hasData && typeof p.body.data !== 'string') {
+      try { var t0 = bytesToString_(p.body.data, partCharset_(p)); info.attempts.push({ via: 'bytes[] directo', chars: t0.length, startsWithTag: /^\s*</.test(t0) }); } catch (e0) { info.attempts.push({ via: 'bytes[] directo', error: String(e0 && e0.message || e0).slice(0, 120) }); }
+    } else if (info.hasData) {
       var s = String(p.body.data).replace(/\s+/g, ''); var std = s.replace(/-/g, '+').replace(/_/g, '/'); while (std.length % 4) std += '=';
       [['base64Decode(std)', function () { return Utilities.base64Decode(std); }], ['base64DecodeWebSafe(s)', function () { return Utilities.base64DecodeWebSafe(s); }]].forEach(function (a) {
         try { var b = a[1](); var t = Utilities.newBlob(b).getDataAsString('UTF-8'); info.attempts.push({ via: a[0], bytes: b.length, chars: t.length, startsWithTag: /^\s*</.test(t) }); }

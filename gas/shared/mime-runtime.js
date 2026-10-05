@@ -98,10 +98,14 @@ function mimeParseMessage(rawMsg) {
 
 /** base64url (campo `raw` de la Gmail API) → string "binario" latin1 (1 char = 1 byte). */
 function b64urlToBinary_(data) {
-  var s = String(data || '').replace(/\s+/g, '');
-  var std = s.replace(/-/g, '+').replace(/_/g, '/');
-  while (std.length % 4) std += '=';
-  var bytes = Utilities.base64Decode(std);
+  var bytes;
+  if (data && typeof data !== 'string' && data.length != null) bytes = data;   // Byte[] del servicio avanzado
+  else {
+    var s = String(data || '').replace(/\s+/g, '');
+    var std = s.replace(/-/g, '+').replace(/_/g, '/');
+    while (std.length % 4) std += '=';
+    bytes = Utilities.base64Decode(std);
+  }
   var out = [];
   for (var i = 0; i < bytes.length; i += 8192) {
     var chunk = [];
