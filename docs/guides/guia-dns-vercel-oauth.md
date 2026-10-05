@@ -101,8 +101,8 @@ Errores comunes: "Invalid Configuration" persistente = nube naranja encendida o 
 | Key | Value |
 |---|---|
 | `AUTH_SECRET` | genera con `openssl rand -base64 32` en tu terminal y pega el resultado. Marca **Sensitive** si la opción aparece. |
-| `AUTH_GOOGLE_ID` | `334287534871-9v2rvalbfm53uq8v7t93f0vhc9808b0i.apps.googleusercontent.com` |
-| `AUTH_GOOGLE_SECRET` | el "Client secret" del cliente OAuth (Parte D). Nunca lo pegues en documentos. |
+| `AUTH_GOOGLE_ID` | el **ID de cliente de "Luca Web"** (termina en `.apps.googleusercontent.com`), el mismo que ya tienes en `apps/web/.env.local`. **No** el de "Luca Web (spikes)" (`…808b0i`), que es solo para la página de spikes. |
+| `AUTH_GOOGLE_SECRET` | el "Client secret" de ese mismo cliente "Luca Web" (Parte D, paso 7). Nunca lo pegues en documentos ni en el chat. |
 | `AUTH_TRUST_HOST` | `true` |
 | `NEXT_PUBLIC_GOOGLE_PICKER_KEY` | la API key del Picker (GCP → APIs y servicios → Credenciales) |
 | `NEXT_PUBLIC_GOOGLE_APP_ID` | `334287534871` |
@@ -122,7 +122,7 @@ Notas de Auth.js v5: `AUTH_SECRET` es "la única variable estrictamente requerid
 
 1. https://console.cloud.google.com → selector de proyecto arriba → **luca-510610**.
 2. Menú ☰ → **Google Auth Platform** → **Clientes** (*Clients*). Enlace directo: https://console.cloud.google.com/auth/clients?project=luca-510610
-3. Haz clic en el nombre **Luca Web** (NO el que dice "(spikes)"). Comprueba que el **ID de cliente** que aparece a la derecha es el mismo que `AUTH_GOOGLE_ID` en `apps/web/.env.local` y en Vercel: si no coinciden, Google responderá `redirect_uri_mismatch` aunque registres bien las URIs. Se abre la página de detalles del cliente.
+3. Verás dos clientes: **Luca Web** y **Luca Web (spikes)**. Haz clic en **Luca Web**. El cliente "(spikes)" se queda como está (sirve a la página de pruebas del puerto 5173 y no tiene nada que ver con la web). Comprueba que el **ID de cliente** que aparece a la derecha es el mismo que `AUTH_GOOGLE_ID` en `apps/web/.env.local` y en Vercel: si no coinciden, Google responderá `redirect_uri_mismatch` aunque registres bien las URIs. Se abre la página de detalles del cliente.
 4. Sección **Orígenes autorizados de JavaScript** (*Authorized JavaScript origins*) → **+ Agregar URI** (*Add URI*) por cada uno (sin barra final, sin rutas):
 
 ```
@@ -146,7 +146,10 @@ https://www.lucaa.lat/api/auth/callback/google
 6. Pulsa **Guardar** (*Save*) abajo. Google avisa: "los cambios pueden tardar de 5 minutos a unas horas en aplicarse" (https://support.google.com/cloud/answer/15549257).
 7. Si necesitas el secreto para la Parte C y no lo tienes guardado: en la misma página, sección **Secretos del cliente** → **Agregar secreto** (*Add Secret*); cópialo en ese momento (luego solo se ven los últimos 4 caracteres) y deshabilita el viejo.
 
-Error común: `redirect_uri_mismatch` = falta la URI exacta de la lista anterior (revisa `http` vs `https`, `www`, y que no sobre una `/`). `origin_mismatch` = falta el origen.
+Errores comunes:
+- `redirect_uri_mismatch` = falta la URI exacta de la lista anterior en **el cliente de `AUTH_GOOGLE_ID`** (revisa `http` vs `https`, `www`, que no sobre una `/`, y sobre todo que no la hayas registrado en "Luca Web (spikes)" por error).
+- `origin_mismatch` = falta el origen en ese mismo cliente.
+- Cómo comprobar en 10 segundos que estás en el cliente correcto: el **ID de cliente** mostrado a la derecha debe ser idéntico al valor de `AUTH_GOOGLE_ID` en Vercel (Settings → Environment Variables → ojo "mostrar valor").
 
 ---
 
@@ -210,5 +213,6 @@ Ese mensaje genérico aparece en el navegador; la causa real está en la **termi
 | `InvalidProvider` / provider sin `clientId` | `AUTH_GOOGLE_ID` o `AUTH_GOOGLE_SECRET` vacías | Rellénalas en `.env.local`; sin comillas ni espacios |
 | `Configuration` + `redirect_uri_mismatch` en la pantalla de Google | La URL/puerto actual no está en el cliente OAuth | Parte D, paso 4–5 (incluye `localhost:3000` y la URL de la workstation) |
 | `UntrustedHost` | Host no confiado (workstation, proxy) | `AUTH_TRUST_HOST=true` en `.env.local` |
+| Pantalla de Google con `redirect_uri_mismatch` aunque "ya registraste" las URIs | Las registraste en "Luca Web (spikes)" y las variables apuntan a "Luca Web" (o al revés) | Compara el ID de cliente de la consola con `AUTH_GOOGLE_ID` de `.env.local`/Vercel; registra las URIs en el que coincide |
 
 Siempre: después de tocar `.env.local` **detén y vuelve a arrancar** el servidor de desarrollo (Ctrl+C, `npm run dev`); Next.js no recarga esas variables en caliente. Comprueba que el archivo está en `apps/web/.env.local` y que copiaste todas las claves de `apps/web/.env.example`.
