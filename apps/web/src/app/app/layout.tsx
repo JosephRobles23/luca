@@ -1,6 +1,10 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth, CLIENT_MODE, signOut } from "@/auth";
 import AppShell from "@/components/AppShell";
+
+// Panel privado: fuera de buscadores aunque alguien enlace a una URL interna.
+export const metadata: Metadata = { title: "Panel", robots: { index: false, follow: false } };
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();

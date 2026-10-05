@@ -1,7 +1,11 @@
 import Link from "next/link";
 import LegalLayout from "@/components/LegalLayout";
 
-export const metadata = { title: "Términos de uso · Luca" };
+export const metadata = {
+  title: "Términos de uso",
+  description: "Condiciones de uso de Luca, una herramienta gratuita y sin anuncios para ordenar tus gastos de BCP y Yape en tu propia cuenta de Google.",
+  alternates: { canonical: "/terminos" },
+};
 
 export default function Terminos() {
   return (

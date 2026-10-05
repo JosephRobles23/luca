@@ -1,7 +1,11 @@
 import Link from "next/link";
 import LegalLayout from "@/components/LegalLayout";
 
-export const metadata = { title: "Política de privacidad · Luca" };
+export const metadata = {
+  title: "Política de privacidad",
+  description: "Dónde viven tus datos cuando usas Luca: en tu Google. Qué permisos pide la web, qué hace el servidor MCP y qué no guardamos.",
+  alternates: { canonical: "/privacidad" },
+};
 
 export default function Privacidad() {
   return (

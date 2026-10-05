@@ -1,6 +1,10 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signIn } from "@/auth";
+import { FAQ, jsonLdScript } from "@/lib/seo";
+
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export default async function Home() {
   const session = await auth();
@@ -10,6 +14,7 @@ export default async function Home() {
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-16 sm:py-24">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript() }} />
       <header className="flex items-center justify-between">
         <div className="text-lg font-extrabold tracking-tight">luca<span className="text-accent">.</span></div>
         <form action={entrar}><button className="btn" type="submit">Entrar</button></form>
@@ -51,6 +56,15 @@ export default async function Home() {
           <li>• Si usas la categorización con IA, solo viaja el nombre del comercio y el monto; nunca el correo.</li>
         </ul>
         <p className="mt-4 text-sm"><Link className="underline" href="/privacidad">Política de privacidad</Link> · <Link className="underline" href="/terminos">Términos de uso</Link></p>
+      </section>
+
+      <section className="mt-16" aria-labelledby="faq">
+        <h2 id="faq" className="label">Preguntas frecuentes</h2>
+        <dl className="grid gap-4 sm:grid-cols-2">
+          {FAQ.map(([q, a]) => (
+            <div key={q} className="card"><dt className="font-bold">{q}</dt><dd className="mt-2 text-sm text-muted">{a}</dd></div>
+          ))}
+        </dl>
       </section>
 
       <footer className="mt-16 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">

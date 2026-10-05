@@ -1,0 +1,30 @@
+# Luca
+
+> Luca es una herramienta gratuita, sin anuncios y sin base de datos para ordenar gastos personales en Perú. Lee las notificaciones por correo de BCP y Yape y las convierte en movimientos categorizados dentro de una Google Sheet que es del usuario. Las transacciones nunca salen de la cuenta de Google del usuario.
+
+## Cómo funciona
+
+1. El usuario entra con Google en https://lucaa.lat y crea una copia de la plantilla de Luca en su Drive. Esa Sheet guarda movimientos, categorías y ajustes.
+2. Dentro de la Sheet autoriza su propio script de Apps Script para leer los correos de BCP y Yape. El permiso de Gmail se concede a ese script, no a Luca. El script importa el último mes y luego revisa el correo cada 15 minutos.
+3. La web muestra un dashboard por mes, categoría y comercio. El usuario puede recategorizar, marcar transferencias y agregar movimientos a mano.
+
+## Privacidad
+
+- Luca no tiene base de datos. La web lee la Sheet desde el navegador del usuario con su sesión de Google.
+- La web solo pide el correo del usuario y el permiso `drive.file` (archivos que el usuario crea o elige con Luca). Nunca pide acceso a Gmail.
+- Si el usuario activa la categorización con IA, solo se envían el nombre del comercio y el monto.
+
+## Integraciones opcionales
+
+- Servidor MCP en https://mcp.lucaa.lat/mcp para consultar los gastos desde un asistente de IA (Claude, ChatGPT). Reenvía cada consulta al script del usuario y no retiene las respuestas.
+- Atajo de iPhone para registrar los yapeos recibidos, que van directo del teléfono al script del usuario.
+
+## Precio
+
+Gratis. Proyecto personal, sin anuncios ni rastreadores.
+
+## Enlaces
+
+- [Inicio](https://lucaa.lat/)
+- [Política de privacidad](https://lucaa.lat/privacidad)
+- [Términos de uso](https://lucaa.lat/terminos)
