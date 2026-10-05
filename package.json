@@ -12,7 +12,8 @@
     "lib:version": "clasp create-version --project gas/shared",
     "stub:push": "clasp push --project gas/stub",
     "web:dev": "npm --prefix apps/web run dev",
-    "web:build": "npm --prefix apps/web run build"
+    "web:build": "npm --prefix apps/web run build",
+    "release:check": "node scripts/release-check.mjs"
   },
   "engines": {
     "node": ">=20"

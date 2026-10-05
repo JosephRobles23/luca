@@ -18,14 +18,17 @@ desde el navegador; Worker Cloudflare (`services/luca-mcp`) expone MCP. Vocabula
 
 ## Comandos
 ```bash
-npm test                 # 69+ tests Node (harness vm con mocks de Apps Script, stub y lógica web)
+npm test                 # 148 tests Node (harness vm con mocks de Apps Script, stub, lógica web y Worker)
+npm run release:check    # LUCA_VERSION, stub, wrangler.toml y .env.example en la misma versión
 npm run lib:push         # clasp push de LucaLib (gas/shared)
 npm run lib:version      # nueva versión de LucaLib → luego subir "version" en gas/stub/appsscript.json
 npm run stub:push        # clasp push del stub a la plantilla (gas/stub)
-npm run web:dev          # Next.js en apps/web (necesita apps/web/.env.local)
+npm run web:dev          # Next.js en apps/web (necesita apps/web/.env.local); e2e: npm run e2e --prefix apps/web
 ```
-Release: tests → `lib:push` → `lib:version` → bump en `gas/stub/appsscript.json` → `stub:push` → (Worker)
-`wrangler deploy` → Vercel. Las copias existentes de los usuarios no se actualizan solas (ADR-006 §5).
+Release: skill `.claude/skills/deploy-luca/SKILL.md` (`/deploy-luca`): tests → `LUCA_VERSION` → `lib:push` →
+`lib:version` → bump en `gas/stub/appsscript.json` → `stub:push` → `LUCA_LIB_VERSION` (wrangler) y
+`NEXT_PUBLIC_LUCA_LIB_VERSION` (.env.example + Vercel) → `wrangler deploy` → commit. Las copias existentes de
+los usuarios no se actualizan solas (ADR-006 §5).
 
 ## Convenciones de código
 - **Apps Script (`gas/shared`, `gas/stub`)**: sin `import/export`; declaraciones de nivel superior con
@@ -54,8 +57,13 @@ Release: tests → `lib:push` → `lib:version` → bump en `gas/stub/appsscript
 | Guías de usuario/operador (GCP, iOS 27) | `docs/guides/` |
 
 ## Infraestructura (no es del usuario final)
-GCP `luca-510610` (cuenta `gavynenita@gmail.com`; clasp ya autenticado) · LucaLib
-`1gU08ZAJ0EAmi59WgPSWHVjzQ-FZAhBWMxb01XXjaYsdH06Td19z27tuU` · plantilla Sheet
-`1FMxSE00KcD68JdClICcWayMxdqvSROYr6tuL-va5KWA` (stub `1UmA2ZK8Ho7X9V3nR1qb8udDURa6dkojCW7gY5nGOx1OLYq9LmM6oXMoK`)
-· dominio `lucaa.lat` (DNS Cloudflare, web Vercel, Worker en la cuenta de Cloudflare de CoS-Agent).
-Cuenta de prueba "usuario final": `petter.chuquipiondo.r@gmail.com`.
+- **GCP** `luca-510610` (cuenta `gavynenita@gmail.com`; clasp ya autenticado). Dos clientes OAuth: **"Luca Web"**
+  (producción: `AUTH_GOOGLE_ID/SECRET` de `apps/web/.env.local` y de Vercel; URIs de lucaa.lat, luca-sand.vercel.app
+  y localhost:3000) y "Luca Web (spikes)" (solo la página de spikes del puerto 5173; no tocar).
+- **Apps Script**: LucaLib `1gU08ZAJ0EAmi59WgPSWHVjzQ-FZAhBWMxb01XXjaYsdH06Td19z27tuU` · plantilla Sheet
+  `1FMxSE00KcD68JdClICcWayMxdqvSROYr6tuL-va5KWA` (stub `1UmA2ZK8Ho7X9V3nR1qb8udDURa6dkojCW7gY5nGOx1OLYq9LmM6oXMoK`).
+- **Web**: https://lucaa.lat → Vercel proyecto `luca-sand` (https://luca-sand.vercel.app, Root Directory `apps/web`).
+- **Worker**: https://mcp.lucaa.lat (respaldo https://luca-mcp.chif-of-staff.workers.dev), cuenta de Cloudflare de
+  CoS-Agent; D1 `luca-mcp` id `6fa4bc8d-628c-4b4a-85e5-f98cb07f19bb`; KV `LUCA_OAUTH_KV` (binding `OAUTH_KV`).
+- **Dominio** `lucaa.lat`: DNS en Cloudflare. Guía: `docs/guides/guia-dns-vercel-oauth.md`.
+- Cuenta de prueba "usuario final": `petter.chuquipiondo.r@gmail.com`.
