@@ -1,5 +1,7 @@
 # Estado de desarrollo
 
+Skill de release: `.claude/skills/deploy-luca/SKILL.md`
+
 Actualizado: 2026-10-04 (noche). Fuente de verdad de qué está hecho, en curso y pendiente. Commits en `main`.
 
 ## Hecho y publicado
