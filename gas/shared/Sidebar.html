@@ -50,6 +50,11 @@
   <input id="desde" type="date">
   <button class="sec" onclick="importar()">Importar desde esa fecha</button>
 
+  <h3>URL de tu aplicación web</h3>
+  <div class="hint">Si tienes varias implementaciones, pega aquí la URL de la de tipo "Aplicación web" (termina en <code>/exec</code>). Luca la verifica antes de guardarla.</div>
+  <input id="execUrlManual" placeholder="https://script.google.com/macros/s/…/exec">
+  <button class="sec" onclick="guardarExecUrl()">Verificar y guardar URL</button>
+
   <h3>Conectar iPhone</h3>
   <div class="hint">Captura los yapeos recibidos (que no llegan por correo) desde el iPhone, directo a esta hoja. Tres pasos: comprobar el Web App, copiar URL y token (o el prompt completo) y crear el atajo en iOS 27.</div>
   <div class="box">
@@ -264,6 +269,7 @@
     run('desconectarMcp').then(function () { cargarIa(); pintar(); show('IA desconectada.'); }).catch(function (e) { show('Error: ' + e.message); });
   }
   function diagnosticar() { var id = document.getElementById('diagId').value.trim(); if (!id) return show('Pega un gmail_id.'); show('diagnosticando…'); run('diagnosticarCorreo', id).then(show).catch(function (e) { show('Error: ' + e.message); }); }
+  function guardarExecUrl() { var u = document.getElementById('execUrlManual').value.trim(); if (!u) return show('Pega la URL /exec.'); show('verificando…'); run('guardarExecUrl', u).then(function (r) { show('URL verificada y guardada: ' + r.url); pintar(); }).catch(function (e) { show('Error: ' + e.message); }); }
   function pintar() {
     cargarIa();
     run('estadoLuca').then(pintarEstado).catch(function (e) { show('Error: ' + e.message); });

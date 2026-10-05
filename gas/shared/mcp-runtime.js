@@ -429,8 +429,9 @@ function cargarMcp(sheetId, config) {
  * resultado. No expone el secreto: usa un secreto temporal solo si no hay uno.
  */
 function probarWebApp(sheetId, config) {
+  var res = resolverExecUrl_(sheetId, config);   // prueba manual/guardada/viva y fija la que responde
   var st = mcpWebAppStatus_(config, sheetId);
-  var out = { webApp: st, get: null, challenge: null, veredicto: '' };
+  var out = { webApp: st, candidatas: res.candidatas, get: null, challenge: null, veredicto: '' };
   if (!st.ready) { out.veredicto = st.message; return out; }
   var opts = { muteHttpExceptions: true, followRedirects: true };
   try {
@@ -453,8 +454,9 @@ function probarWebApp(sheetId, config) {
   } catch (e3) { out.challenge = { exception: String(e3 && e3.message || e3).slice(0, 160) }; }
   finally { if (!hadSecret) setSecret_('mcpSecret', ''); }
   var c = out.challenge || {};
-  if (c.exception) out.veredicto = 'No se pudo llamar al /exec: ' + c.exception;
-  else if (!c.json) out.veredicto = 'El /exec no devuelve JSON (devuelve HTML): la implementación no es "Acceso: Cualquiera" o es una implementación de prueba (/dev). Edita la implementación: Ejecutar como "Yo", Acceso "Cualquiera", versión Nueva.';
+  if (!res.verified && res.candidatas.length > 1) out.veredicto = 'Ninguna de tus implementaciones respondió como Luca. ';
+  if (c.exception) out.veredicto += 'No se pudo llamar al /exec: ' + c.exception;
+  else if (!c.json) out.veredicto += 'El /exec no devuelve JSON (devuelve HTML): la implementación no es "Acceso: Cualquiera" o es una implementación de prueba (/dev). Crea una implementación nueva de tipo "Aplicación web" (Implementar → Nueva implementación → ⚙️ Aplicación web → Yo / Cualquiera) y pega su URL en "URL de tu aplicación web".';
   else if (c.error === 'mcp-not-available') out.veredicto = 'La implementación usa una versión vieja de la librería. Administrar implementaciones → Editar → Versión: Nueva → Implementar.';
   else if (c.error === 'not-enrolled') out.veredicto = 'El /exec no ve el secreto (contexto de usuario distinto). Repórtalo con este JSON.';
   else if (c.sigOk) out.veredicto = 'OK: el Web App responde el challenge correctamente. Ya puedes Generar código.';
@@ -469,6 +471,7 @@ function probarWebApp(sheetId, config) {
  * @return {{code:string, expiresInSeconds:number, connectorUrl:string, authorizeUrl:string}}
  */
 function iniciarConexionMcp(sheetId, config) {
+  resolverExecUrl_(sheetId, config);   // asegura la URL que responde antes del challenge del Worker
   var estado = cargarMcp(sheetId, config);
   if (!estado.webApp.ready) throw new Error(estado.webApp.message);
 

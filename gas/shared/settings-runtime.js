@@ -12,7 +12,7 @@
  * Versión de LucaLib que se escribe en `Ajustes.luca.version` en cada pasada (ADR-006 §5): la web y el
  * sidebar comparan con la última publicada para avisar "hay una versión nueva". Subirla en cada release.
  */
-var LUCA_VERSION = '14';
+var LUCA_VERSION = '15';
 // Versión mínima del stub que esta librería necesita (stub v2 = pasa setupTriggers y execUrl/stubVersion).
 var STUB_MIN_VERSION_ = '2';
 
@@ -53,6 +53,8 @@ var AJUSTES_DEFAULTS_ = {
   'scan.lastStats': '',
   'triggers.installedAt': '',
   'conexiones.execUrl': '',
+  'conexiones.execUrl.manual': '',
+  'conexiones.execUrl.verifiedAt': '',
   // iPhone (ADR-003, addendum 2026-10-05): el token del atajo vive AQUÍ (la web solo lee la hoja y el token
   // solo permite insertar filas en esta misma hoja). `iphone.execUrl` = URL con la que se generó el atajo.
   'conexiones.iphone.token': '',
@@ -177,25 +179,75 @@ function execUrlGuardada_(config) {
 }
 
 /**
- * URL `/exec` efectiva: la viva gana (si el usuario recrea la implementación, cambia y la guardada queda
- * obsoleta); la guardada solo sirve de respaldo cuando la viva no está disponible (stub antiguo, contexto
- * sin servicio). Para además refrescar la guardada usar syncExecUrl_.
+ * URL `/exec` efectiva SIN red (para escaneos): si hay una URL verificada (respondió `{app:'luca'}`),
+ * gana siempre; si no, la viva; si no, la guardada. Nota (2026-10-05): con varias implementaciones,
+ * `ScriptApp.getService().getUrl()` puede devolver una implementación vieja/rota, por eso la viva ya no
+ * pisa a una URL verificada.
  */
 function execUrl_(config) {
+  var a = (config && config.ajustes) || {};
+  if (str_(a['conexiones.execUrl.verifiedAt']) && execUrlGuardada_(config)) return execUrlGuardada_(config);
   return execUrlLive_(config) || execUrlGuardada_(config);
 }
 
-/**
- * Como execUrl_, pero si la viva difiere de la guardada actualiza `Ajustes.conexiones.execUrl` (y el
- * snapshot `config.ajustes`) para que la web y el sidebar vean la URL actual.
- */
+/** Igual que execUrl_, y si no hay URL verificada y la viva difiere de la guardada, actualiza Ajustes. */
 function syncExecUrl_(sheetId, config) {
-  var live = execUrlLive_(config), saved = execUrlGuardada_(config);
+  var a = (config && config.ajustes) || {};
+  var saved = execUrlGuardada_(config);
+  if (str_(a['conexiones.execUrl.verifiedAt']) && saved) return saved;
+  var live = execUrlLive_(config);
   if (live && live !== saved) {
     setAjustes_(sheetId, config, { 'conexiones.execUrl': live });
     if (config && config.ajustes) config.ajustes['conexiones.execUrl'] = live;
   }
   return live || saved;
+}
+
+/** ¿La URL responde como el Web App de Luca? GET /exec → JSON {ok:true, app:'luca'}. */
+function execUrlResponde_(url) {
+  if (!/^https:\/\/script\.google\.com\/[^?#]*\/exec$/i.test(String(url || ''))) return false;
+  try {
+    var r = UrlFetchApp.fetch(url, { muteHttpExceptions: true, followRedirects: true });
+    if (r.getResponseCode() !== 200) return false;
+    var j = JSON.parse(r.getContentText());
+    return !!(j && j.ok === true && j.app === 'luca');
+  } catch (e) { return false; }
+}
+
+/**
+ * Resuelve CON red la URL buena: prueba candidatas (manual, guardada, viva), se queda con la primera que
+ * responde y la guarda como verificada. Solo se usa en acciones del usuario (no en cada escaneo).
+ * @return {{url:string, verified:boolean, candidatas:Array<{url:string, ok:boolean}>}}
+ */
+function resolverExecUrl_(sheetId, config) {
+  var a = (config && config.ajustes) || {};
+  var cands = [];
+  [str_(a['conexiones.execUrl.manual']).trim(), execUrlGuardada_(config), execUrlLive_(config)].forEach(function (u) {
+    if (u && cands.indexOf(u) < 0) cands.push(u);
+  });
+  var probadas = [];
+  for (var i = 0; i < cands.length; i++) {
+    var ok = execUrlResponde_(cands[i]);
+    probadas.push({ url: cands[i], ok: ok });
+    if (ok) {
+      var upd = { 'conexiones.execUrl': cands[i], 'conexiones.execUrl.verifiedAt': new Date().toISOString() };
+      setAjustes_(sheetId, config, upd);
+      if (config && config.ajustes) { config.ajustes['conexiones.execUrl'] = cands[i]; config.ajustes['conexiones.execUrl.verifiedAt'] = upd['conexiones.execUrl.verifiedAt']; }
+      if (config) config.execUrl = cands[i];
+      return { url: cands[i], verified: true, candidatas: probadas };
+    }
+  }
+  return { url: cands[0] || '', verified: false, candidatas: probadas };
+}
+
+/** Sidebar: el usuario pega la URL de su aplicación web; se valida antes de guardarla. */
+function guardarExecUrl(sheetId, config, url) {
+  var u = String(url || '').trim();
+  if (!/^https:\/\/script\.google\.com\/[^?#]*\/exec$/i.test(u)) throw new Error('La URL debe ser la de la aplicación web y terminar en /exec.');
+  if (!execUrlResponde_(u)) throw new Error('Esa URL no responde como Luca. Revisa que sea una implementación de tipo "Aplicación web", ejecutar como "Yo" y acceso "Cualquiera".');
+  var upd = { 'conexiones.execUrl.manual': u, 'conexiones.execUrl': u, 'conexiones.execUrl.verifiedAt': new Date().toISOString() };
+  setAjustes_(sheetId, config, upd);
+  return { ok: true, url: u };
 }
 
 /** Resumen de telemetría del iPhone leído de Ajustes (para sidebar/web). */

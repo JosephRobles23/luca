@@ -81,6 +81,7 @@ function datosIphoneFor_(sheetId, config) {
  * y el token ya puestos (no hace preguntas al importarse). Requiere el Web App desplegado.
  */
 function generarPromptIphone(sheetId, config) {
+  resolverExecUrl_(sheetId, config);
   var d = conectarIphone(sheetId, config);
   if (!d.execUrl) throw new Error('Despliega primero el Web App (Implementar → Aplicación web → ejecutar como yo, acceso: cualquiera) para obtener la URL /exec.');
   return { prompt: promptIphone_(d.execUrl, d.token), execUrl: d.execUrl, token: d.token, shortcutUrl: d.shortcutUrl, eventsUrl: d.eventsUrl };

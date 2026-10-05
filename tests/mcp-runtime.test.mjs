@@ -267,7 +267,8 @@ test('iniciarConexionMcp traduce el rechazo del Worker', () => {
     fetch: () => ({ getResponseCode: () => 400, getContentText: () => JSON.stringify({ ok: false, error: 'challenge-failed' }) })
   });
   assert.throws(() => h.api.iniciarConexionMcp(SID, configFor(h, SID)), /challenge-failed/);
-  assert.equal(h.fetchCalls[0].url, 'https://mcp.lucaa.lat/enroll');
+  // Antes del /enroll, Luca verifica qué URL /exec responde (GET a la candidata).
+  assert.ok(h.fetchCalls.some((c) => c.url === 'https://mcp.lucaa.lat/enroll'));
 });
 
 test('MCP_DISPATCH_ tiene la forma de DISPATCH_ (fn(sid, cfg, args))', () => {
@@ -301,4 +302,21 @@ test('probarWebApp: diagnostica HTML (acceso incorrecto), versión vieja y OK', 
   r = h2.api.probarWebApp(SID, configFor(h2, SID));
   assert.match(r.veredicto, /^OK/);
   assert.equal(h2.userProps.get('luca.mcp.secret'), 'secreto-fijo');
+});
+
+test('URL del Web App: con varias implementaciones gana la que responde, aunque getService() devuelva la rota', () => {
+  const rota = 'https://script.google.com/macros/s/ROTA/exec';
+  const buena = 'https://script.google.com/macros/s/BUENA/exec';
+  const resp = (code, body) => ({ getResponseCode: () => code, getContentText: () => (typeof body === 'string' ? body : JSON.stringify(body)) });
+  const fetch = (url) => url.startsWith(buena) ? resp(200, { ok: true, app: 'luca', version: '14' }) : resp(404, '<html>Not Found</html>');
+  const h = makeHarness({ execUrl: rota, spreadsheets: { [SID]: { Ajustes: [['key', 'value'], ['conexiones.execUrl', buena]] } }, fetch });
+  const r = h.api.resolverExecUrl_(SID, configFor(h, SID));
+  assert.equal(r.url, buena); assert.equal(r.verified, true);
+  // Tras verificar, la URL viva (rota) ya no pisa a la verificada, ni en el escaneo.
+  const cfg2 = configFor(h, SID);
+  assert.equal(h.api.execUrl_(cfg2), buena);
+  assert.equal(h.api.syncExecUrl_(SID, cfg2), buena);
+  // Guardado manual: valida y rechaza URLs que no responden.
+  assert.throws(() => h.api.guardarExecUrl(SID, cfg2, rota), /no responde/);
+  assert.equal(h.api.guardarExecUrl(SID, cfg2, buena).ok, true);
 });
