@@ -23,8 +23,8 @@ significa otra cosa, el que está mal es el código o este archivo: arreglar uno
 | Pestaña | Contenido |
 |---|---|
 | `Movimientos` | el ledger (una fila por movimiento) |
-| `_Procesados` | ids de correos/eventos ya vistos y su resultado (`tx`, `ignored:*`, `unknown`) |
-| `Ajustes` | key/value de configuración no sensible (`gmail.*`, `import.*`, `fx.usd_pen`, `llm.provider`, `conexiones.*`, `luca.version`) |
+| `_Procesados` | ids de correos/eventos ya vistos y su resultado (`tx`, `tx:llm`, `ignored:*`, `unknown`) |
+| `Ajustes` | key/value de configuración no sensible (`gmail.*`, `import.*`, `fx.usd_pen`, `llm.provider`, `llm.extractUnknown`, `conexiones.*`, `luca.version`) |
 | `Categorías` | taxonomía editable |
 | `Comercios` | caché comercio/contraparte → categoría, con `categoria_origen` |
 
@@ -39,7 +39,8 @@ significa otra cosa, el que está mal es el código o este archivo: arreglar uno
 - **monto/moneda** originales; `tipo_cambio` si el correo lo trae. La conversión a PEN es solo para mostrar.
 - **categoria / categoria_origen**: `user` (corrección manual, gana siempre) · `rule` · `cache` · `llm` · vacío
   = **por categorizar**.
-- **flags**: `date_from_header`, `no_amount`, `no_date`, `possible_yape_duplicate`, `fuzzy_dup`.
+- **flags**: `date_from_header`, `no_amount`, `no_date`, `possible_yape_duplicate`, `fuzzy_dup`, `llm_extracted` (lo
+  extrajo el LLM de un correo no reconocido; revisar).
 
 ## Procesos
 - **Escaneo**: pasada del trigger (cada 15 min) que lista correos nuevos de los remitentes transaccionales
@@ -48,7 +49,10 @@ significa otra cosa, el que está mal es el código o este archivo: arreglar uno
   Al **Autorizar** se importa automáticamente el **último mes**.
 - **Clasificar** (correo): remitente + asunto → `type` (`bcp_card_purchase`, `bcp_internal_transfer`,
   `bcp_wardadito`, `bcp_qr_payment`, `bcp_rejected`, `yape_p2p_sent`, `yape_service`, `yape_topup`,
-  `yape_auto_transfer`, `*_unknown`).
+  `yape_auto_transfer`, `*_unknown`). Un `*_unknown` puede pasar a `<banco>_llm` si el usuario activó el **Extractor IA**.
+- **Extractor IA** (opt-in, `llm.extractUnknown`): para `*_unknown` de BCP/Yape, envía al LLM el texto del correo
+  **enmascarado** (`maskPii_`: ≥7 dígitos → `#######`, saludo y etiquetas de persona → `<NOMBRE>`, correos → `<EMAIL>`)
+  y acepta la respuesta solo con confianza ≥ 0.7 y monto > 0. Comparte el presupuesto de llamadas con Categorizar.
 - **Parsear**: HTML → texto con celdas (tab) y filas (salto) → pares etiqueta→valor → movimiento normalizado.
 - **Categorizar**: user → reglas → caché `Comercios` → LLM (opcional, solo comercio+monto) → por categorizar.
 - **Dedupe**: por `id`, por `gmail_id`, y entre canales por **clave difusa** `moneda|monto|minuto`.
