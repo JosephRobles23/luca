@@ -12,15 +12,16 @@ export function eventsUrl(execUrl: string): string {
 }
 
 export function buildShortcutPrompt(o: { execUrl: string; token: string }): string {
+  // Copia EXACTA de promptIphone_ (gas/shared/iphone-runtime.js). tests/prompt-parity.test.mjs falla si divergen.
   const url = eventsUrl(o.execUrl);
   const token = o.token.trim();
   return `Crea un atajo llamado "Luca – Captura Yape" pensado para ejecutarse como automatización personal
 cuando llega una notificación de la app Yape. Debe correr sin pedir confirmación, sin abrirse en
 pantalla y sin mostrar alertas ni notificaciones propias.
 
-Usa estos dos valores fijos (guárdalos como texto dentro del atajo, no los preguntes):
-- "URL de Luca": ${url}
-- "Token del iPhone": ${token}
+Usa estos dos valores fijos (ya son los míos, no preguntes nada al importar):
+- URL de Luca: ${url}
+- Token de mi iPhone: ${token}
 
 Pasos exactos, en este orden:
 
@@ -40,7 +41,7 @@ Pasos exactos, en este orden:
    - "id": eventId
    - "source": "yape"
    - "channel": "ios-notification"
-   - "token": el valor de "Token del iPhone"
+   - "token": "${token}"
    - "title": titulo
    - "subtitle": subtitulo
    - "body": cuerpo
@@ -49,16 +50,15 @@ Pasos exactos, en este orden:
    - "received_at": ahora
    - "device": dispositivo
 
-6. Haz una petición HTTP a "URL de Luca" con método POST, tipo de cuerpo JSON, enviando el
-   Diccionario del paso 5. Debe seguir redirecciones. Guarda la respuesta en "respuesta".
+6. Haz una petición HTTP a la URL de Luca (${url}) con método POST, tipo de cuerpo JSON,
+   enviando el Diccionario del paso 5. Debe seguir redirecciones. Guarda la respuesta en "respuesta".
 
 7. Si "respuesta" contiene el texto "\\"ok\\":true", termina. En cualquier otro caso (error de red,
    respuesta vacía o sin "ok":true), añade el Diccionario del paso 5 a la lista persistente
    "luca_pendientes" del almacenamiento de Atajos (acción "Añadir elemento a la lista").
 
-8. Incluye además un segundo atajo pequeño llamado "Luca – Probar iPhone" que envíe a la misma
-   "URL de Luca" (POST, JSON) un Diccionario con "schema_version": "1", "id": "test-" + ahora,
-   "source": "test", "token": "Token del iPhone", "device": dispositivo, y muestre el texto de la
-   respuesta en pantalla. Sirve para verificar la conexión sin esperar un yapeo.
-`;
+8. Incluye además un segundo atajo pequeño llamado "Luca – Probar iPhone" que envíe a la misma URL de
+   Luca un Diccionario con "schema_version": "1", "id": "test-" + ahora, "source": "test", "token":
+   "${token}", "device": dispositivo, y muestre el texto de la respuesta en pantalla. Sirve para
+   verificar la conexión sin esperar un yapeo: el sidebar de Luca mostrará "Última prueba".`;
 }

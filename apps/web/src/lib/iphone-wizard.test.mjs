@@ -14,8 +14,9 @@ test("eventsUrl añade ?events=1 (o &events=1 si ya hay query)", () => {
 
 test("buildShortcutPrompt inyecta URL de eventos y token, y describe el atajo Probar", () => {
   const p = buildShortcutPrompt({ execUrl: EXEC, token: "abc-123" });
-  assert.match(p, /"URL de Luca": https:\/\/script\.google\.com\/macros\/s\/AKfycbxMOCK\/exec\?events=1/);
-  assert.match(p, /"Token del iPhone": abc-123/);
+  // Texto exacto = promptIphone_ de GAS (tests/prompt-parity.test.mjs); aquí solo que URL y token van inyectados.
+  assert.ok(p.includes("https://script.google.com/macros/s/AKfycbxMOCK/exec?events=1"));
+  assert.ok(p.includes("abc-123"));
   assert.match(p, /Luca – Captura Yape/);
   assert.match(p, /Luca – Probar iPhone/);
   assert.match(p, /luca_pendientes/);

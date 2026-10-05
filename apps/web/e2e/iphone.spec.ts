@@ -81,8 +81,8 @@ test.describe("Asistente Conectar iPhone", () => {
     await expect(page.getByTestId("install-shortcut")).toHaveCount(0); // NEXT_PUBLIC_SHORTCUT_URL vacío → sin botón de iCloud
     await expect(page.getByTestId("ai-prompt")).toHaveAttribute("open", "");
     const prompt = await page.getByTestId("prompt-text").inputValue();
-    expect(prompt).toContain(`"URL de Luca": ${EXEC}?events=1`);
-    expect(prompt).toContain(`"Token del iPhone": ${token}`);
+    expect(prompt).toContain(`${EXEC}?events=1`);
+    expect(prompt).toContain(token);
     expect(prompt).toContain("Luca – Probar iPhone");
     await page.getByTestId("copy-prompt").click();
     expect(await clipboard(page)).toBe(prompt);
