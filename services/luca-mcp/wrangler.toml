@@ -11,9 +11,11 @@ main = "src/index.ts"
 compatibility_date = "2026-08-01"
 compatibility_flags = ["nodejs_compat"]
 
-routes = [
-  { pattern = "mcp.lucaa.lat", custom_domain = true }
-]
+# Activar cuando la zona lucaa.lat esté en esta cuenta de Cloudflare (hasta entonces: workers.dev)
+# routes = [
+#   { pattern = "mcp.lucaa.lat", custom_domain = true }
+# ]
+workers_dev = true
 
 [vars]
 # Versión de LucaLib fijada en el stub de la plantilla (gas/stub/appsscript.json → "version").
@@ -26,10 +28,10 @@ MIN_SHORTCUT_SCHEMA = "1"
 [[d1_databases]]
 binding = "DB"
 database_name = "luca-mcp"
-database_id = "00000000-0000-0000-0000-000000000000"   # ← reemplazar (wrangler d1 create luca-mcp)
+database_id = "6fa4bc8d-628c-4b4a-85e5-f98cb07f19bb"
 
 # KV: estado OAuth de @cloudflare/workers-oauth-provider.
 # Plan Free: 1k writes/día por CUENTA (compartido con Vera-MCP). Ver README §Cuotas.
 [[kv_namespaces]]
 binding = "OAUTH_KV"
-id = "00000000000000000000000000000000"   # ← reemplazar (wrangler kv namespace create OAUTH_KV)
+id = "35b20b18e85b4fd3a6ca94792ca00245"   # namespace "LUCA_OAUTH_KV" (binding OAUTH_KV)
