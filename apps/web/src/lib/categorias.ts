@@ -56,3 +56,36 @@ export function suggestCategory(tx: Tx, txs: Tx[]): string | null {
   const hit = txs.filter((t) => t.id !== tx.id && t.categoria && key(t) === k).sort((a, b) => (a.fecha < b.fecha ? 1 : -1))[0];
   return hit ? hit.categoria : null;
 }
+
+/** Icono fijo para la taxonomía por defecto; mismo mapa que ICONO_CATEGORIA_ en gas/shared/_Ui.html. */
+const ICON_BY_CAT: Record<string, string> = {
+  Vivienda: "casa", Supermercado: "carrito", "Comidas fuera": "cubiertos", Transporte: "bus", Servicios: "rayo",
+  Suscripciones: "repetir", Salud: "salud", "Educación": "birrete", Ropa: "camisa", Ocio: "ticket",
+  Transferencias: "flechas", Otros: "etiqueta", Ingreso: "billetera", "Sin categoría": "duda",
+};
+
+/** Palabras clave (sin acentos, minúsculas) → icono para categorías propias; la primera que coincide gana (ICONO_PALABRAS_). */
+const ICON_WORDS: [RegExp, string][] = [
+  [/mascota|perro|gato|veterin/, "huella"], [/viaje|vuelo|hotel|vacacion/, "avion"], [/regalo|cumple/, "regalo"],
+  [/gym|gimnasio|deporte|fitness/, "pesa"], [/cafe/, "cafe"], [/auto|carro|gasolina|combustible|grifo|peaje|estacionamiento/, "auto"],
+  [/banco|comision|interes|prestamo|deuda|tarjeta/, "banco"], [/bebe|hijo|nino|colegio/, "bebe"], [/tecnolog|electron|gadget/, "laptop"],
+  [/ahorro|inversion/, "hucha"], [/impuesto|sunat|tramite|multa/, "recibo"], [/seguro/, "escudo"], [/belleza|peluquer|barber|spa/, "tijeras"],
+  [/casa|hogar|alquiler|depa/, "casa"], [/comida|restaurant|delivery|almuerzo/, "cubiertos"], [/mercado|bodega|abarrote/, "carrito"],
+  [/taxi|uber|movilidad|bus/, "bus"], [/luz|agua|internet|celular|telefon|gas/, "rayo"], [/suscrip|streaming|netflix|spotify/, "repetir"],
+  [/salud|farmacia|medic|clinica|doctor/, "salud"], [/curso|estudio|libro|universidad|educa/, "birrete"], [/ropa|zapat|calzado/, "camisa"],
+  [/ocio|cine|salida|fiesta|concierto/, "ticket"], [/transfer/, "flechas"], [/sueldo|ingreso|salario/, "billetera"],
+];
+
+/**
+ * Clave del icono de una categoría o de un movimiento (transferencia propia, yapeo recibido, ingreso sin
+ * categoría). Paridad con claveIconoCategoria/iconoCategoria del Dashboard de la Sheet.
+ */
+export function catIconKey(categoria: string, tipo?: string): string {
+  if (tipo === "internal_transfer") return "flechas";
+  if (tipo === "transfer_in" && !categoria) return "recibir";
+  if (tipo === "income" && !categoria) return "billetera";
+  if (!categoria) return "duda";
+  if (ICON_BY_CAT[categoria]) return ICON_BY_CAT[categoria];
+  const n = categoria.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  return ICON_WORDS.find(([re]) => re.test(n))?.[1] ?? "etiqueta";
+}

@@ -4,6 +4,7 @@
 import Link from "next/link";
 import { fmtPEN } from "@/lib/ledger";
 import { catColor } from "@/lib/categorias";
+import CategoryIcon from "../CategoryIcon";
 import { categoryHref } from "@/lib/resumen";
 
 type Props = { data: { name: string; amount: number; pct: number }[]; total: number; month: string; anim: boolean; className?: string; style?: React.CSSProperties };
@@ -25,8 +26,8 @@ export default function CategoryBreakdown({ data, total, month, anim, className 
           <ul className="mt-3 grid">
             {data.map((c) => (
               <li key={c.name} className="border-t border-line-soft first:border-t-0">
-                <Link href={categoryHref(c.name, month)} className="-mx-2 grid grid-cols-[10px_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-lg px-2 py-2.5 text-sm transition-colors hover:bg-sunken">
-                  <i className="h-2.5 w-2.5 rounded-[3px]" style={{ background: catColor(c.name) }} aria-hidden />
+                <Link href={categoryHref(c.name, month)} className="-mx-2 grid grid-cols-[28px_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-lg px-2 py-2.5 text-sm transition-colors hover:bg-sunken">
+                  <span className={`grid h-7 w-7 place-items-center rounded-lg ${c.name === "Sin categoría" ? "text-body" : "text-[#1d1a17]"}`} style={{ background: catColor(c.name) }} aria-hidden><CategoryIcon categoria={c.name} size={15} /></span>
                   <span className="truncate">{c.name}</span>
                   <span className="num min-w-[38px] text-right text-[12.5px] text-muted">{c.pct} %</span>
                   <span className="num min-w-[84px] text-right font-medium">{fmtPEN(c.amount)}</span>

@@ -6,6 +6,7 @@
  */
 import { useEffect, useState } from "react";
 import { catColor } from "@/lib/categorias";
+import CategoryIcon from "@/components/CategoryIcon";
 import s from "./portada.module.css";
 
 /**
@@ -86,7 +87,7 @@ export function PanelShot() {
           <ul className="grid">
             {HOY.map((t, i) => (
               <li key={t.who} className="rise grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-3 py-2" style={{ ["--i" as string]: i + 6 }}>
-                <span className={s.avatar} style={{ background: catColor(t.cat) }}>{t.who.replace(/^Yape a /, "")[0]}</span>
+                <span className={s.avatar} style={{ background: catColor(t.cat) }}><CategoryIcon categoria={t.cat} /></span>
                 <div className="min-w-0">
                   <div className="truncate text-[14.5px] font-semibold">{t.who}</div>
                   <div className="mt-0.5 flex items-center gap-1.5 text-[12.5px] text-muted">{t.cat} <span className="tag">{t.src}</span></div>

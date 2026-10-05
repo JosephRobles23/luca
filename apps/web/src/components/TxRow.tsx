@@ -3,7 +3,8 @@
 /** Fila de movimiento compartida por Resumen y Movimientos (DESIGN.md §Components · Fila de movimiento). */
 import { useId, useState, type ReactNode } from "react";
 import { fmtMoney, fmtPEN, toBase, txLabel, type Tx } from "@/lib/ledger";
-import { catColor, txInitial } from "@/lib/categorias";
+import { catColor } from "@/lib/categorias";
+import CategoryIcon from "./CategoryIcon";
 import { SRC_LABEL } from "./ui";
 
 /** Texto secundario por tipo: categoría, pendiente o explicación de por qué no cuenta. */
@@ -43,7 +44,7 @@ export default function TxRow({ t, usdRate, detail, detailLabel = "Ver detalle",
   const head = (
     <>
       <span className={`grid h-9 w-9 flex-none place-items-center rounded-[10px] text-[13px] font-semibold ${neutral ? "text-body" : "text-[#1d1a17]"}`}
-        style={{ background: dim ? "var(--strong)" : catColor(t.categoria) }} aria-hidden>{txInitial(t)}</span>
+        style={{ background: dim ? "var(--strong)" : catColor(t.categoria) }} aria-hidden><CategoryIcon categoria={t.categoria} tipo={t.tipo} /></span>
       <span className="min-w-0">
         <span className={`block truncate text-[14.5px] ${dim ? "font-medium text-muted" : "font-semibold"}`}>{txLabel(t)}</span>
         <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[12.5px] text-muted">

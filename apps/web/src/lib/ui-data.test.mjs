@@ -78,3 +78,17 @@ test("scanFreshness: hace X · próxima en Y; aviso si lleva mucho sin leer", ()
   assert.match(scanFreshness("2026-10-04T10:00:00-05:00", now), /revisa tu script/);
   assert.equal(scanFreshness(undefined, now), "Tu script aún no ha leído el correo");
 });
+
+test("catIconKey: taxonomía fija, palabras clave, tipos especiales y etiqueta por defecto (paridad con la Sheet)", async () => {
+  const { catIconKey } = await import("./categorias.ts");
+  assert.equal(catIconKey("Supermercado"), "carrito");
+  assert.equal(catIconKey("Educación"), "birrete");
+  assert.equal(catIconKey("Mascotas"), "huella");
+  assert.equal(catIconKey("Viajes de trabajo"), "avion");
+  assert.equal(catIconKey("Gasolina"), "auto");
+  assert.equal(catIconKey("Cosas raras"), "etiqueta");
+  assert.equal(catIconKey(""), "duda");
+  assert.equal(catIconKey("", "internal_transfer"), "flechas");
+  assert.equal(catIconKey("", "transfer_in"), "recibir");
+  assert.equal(catIconKey("", "income"), "billetera");
+});

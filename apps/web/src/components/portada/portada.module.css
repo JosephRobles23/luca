@@ -88,10 +88,11 @@
   .bento { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .bA { grid-column: span 3; } .bB { grid-column: span 3; } .bC, .bD, .bE { grid-column: span 2; }
 }
-.tile { display: grid; gap: 10px; align-content: start; padding: 22px; }
+.tile { display: flex; flex-direction: column; gap: 10px; padding: 22px; }
+.tile > * { flex: none; }
 .tileIcon { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--strong); color: var(--ink); }
 /* ---------- demo "Pregúntale a tu IA" (AiChatDemo) ---------- */
-.ai { --ai-accent: #d97757; display: grid; grid-template-rows: auto 1fr auto; min-height: 352px; margin-top: 6px; border-radius: 14px; border: 1px solid var(--line); background: var(--canvas); overflow: hidden; font-size: 13.5px; transition: opacity .3s var(--ease-out); }
+.ai { --ai-accent: #d97757; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; height: 404px; contain: layout; margin-top: 6px; border-radius: 14px; border: 1px solid var(--line); background: var(--canvas); overflow: hidden; font-size: 13.5px; transition: opacity .3s var(--ease-out); }
 .aiGpt { --ai-accent: var(--ink); }
 .aiFade { opacity: 0; }
 .aiBar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line-soft); background: var(--card); }
@@ -99,7 +100,10 @@
 .aiConn { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
 .aiConn i { width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 0 var(--success); animation: aiPing 2s ease-out infinite; }
 @keyframes aiPing { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--success) 60%, transparent); } 70%, 100% { box-shadow: 0 0 0 6px transparent; } }
-.aiBody { display: grid; align-content: start; gap: 10px; padding: 14px 12px; }
+.aiBody { display: flex; flex-direction: column; justify-content: flex-end; gap: 10px; padding: 14px 12px; overflow: hidden; min-height: 0; }
+.aiBody > * { flex: none; }
+.aiUser, .aiTool { align-self: flex-end; }
+.aiTool { align-self: flex-start; }
 .aiUser { justify-self: end; max-width: 88%; padding: 8px 12px; border-radius: 16px; background: var(--strong); color: var(--ink); animation: aiIn .25s var(--ease-out) both; }
 .aiClaude .aiUser { border-radius: 12px; }
 .aiGpt .aiUser { border-radius: 18px; }
@@ -131,19 +135,22 @@
 
 
 /* ---------- demo "Movimientos que llegan solos" (MovesFeed) ---------- */
-.feed { margin-top: 6px; border-radius: 14px; border: 1px solid var(--line); background: var(--canvas); overflow: hidden; }
+.feed { flex: 1 1 auto !important; display: flex; flex-direction: column; min-height: 300px; margin-top: 6px; border-radius: 14px; border: 1px solid var(--line); background: var(--canvas); overflow: hidden; }
 .feedHead { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-bottom: 1px solid var(--line-soft); background: var(--card); }
 .feedMail { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px; background: var(--strong); color: var(--body); font-size: 11.5px; font-weight: 500; transition: background .2s, color .2s; }
 .feedPing { background: var(--primary-soft); color: var(--primary); animation: feedPing .7s var(--ease-out); }
 @keyframes feedPing { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 45%, transparent); } 100% { box-shadow: 0 0 0 8px transparent; } }
 .feedArrow { flex: 1; height: 1px; background: repeating-linear-gradient(90deg, var(--line-strong) 0 4px, transparent 4px 8px); background-size: 16px 1px; animation: feedDash 1s linear infinite; }
 @keyframes feedDash { to { background-position: 16px 0; } }
-.feedList { list-style: none; margin: 0; padding: 6px; display: grid; gap: 4px; min-height: 236px; align-content: start; }
-.feedRow { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; background: var(--card); font-size: 13.5px; animation: feedIn .45s var(--ease-out) both; }
+.feedList { list-style: none; margin: 0; padding: 6px; display: grid; grid-auto-rows: 52px; gap: 4px; flex: 1 1 0; min-height: 0; overflow: hidden; align-content: start; contain: strict; -webkit-mask-image: linear-gradient(#000 80%, transparent); mask-image: linear-gradient(#000 80%, transparent); }
+.feedRow { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 0 10px; height: 52px; border-radius: 10px; background: var(--card); font-size: 13.5px; animation: feedIn .45s var(--ease-out) both; }
 .feedRow:first-child { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 25%, transparent); }
 .feedRow:nth-child(n+2) { box-shadow: none; }
 @keyframes feedIn { from { opacity: 0; transform: translateY(-14px) scale(.98); } to { opacity: 1; transform: none; } }
 .feedAvatar { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: #1d1a17; font-weight: 600; font-size: 12.5px; transition: background .35s var(--ease-out); }
+.feedDots { display: inline-flex; gap: 3px; }
+.feedDots i { width: 4px; height: 4px; border-radius: 50%; background: var(--muted); animation: blink 1s ease-in-out infinite; }
+.feedDots i:nth-child(2) { animation-delay: .15s; } .feedDots i:nth-child(3) { animation-delay: .3s; }
 .feedCat { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: var(--body); animation: aiIn .3s var(--ease-spring) both; }
 .feedCat i { width: 7px; height: 7px; border-radius: 50%; }
 .feedReading { font-size: 12px; color: transparent; border-radius: 5px; background: linear-gradient(90deg, var(--strong) 0%, var(--line-strong) 50%, var(--strong) 100%); background-size: 200% 100%; animation: feedShimmer .9s linear infinite; -webkit-background-clip: text; background-clip: text; }
@@ -184,34 +191,112 @@
 .sheetRow[data-new="true"] { border-radius: 8px; border-top-color: transparent; background: var(--success-soft); animation: sheetNew .6s var(--ease-out) both; }
 @keyframes sheetNew { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: none; } }
 
-/* ---------- sección "Dentro de tu Sheet" (SheetSection) ---------- */
-.gs { position: relative; padding-bottom: 0; }
-@media (min-width: 960px) { .gs { padding-bottom: 150px; } }
-.gsWin { border-radius: 16px; border: 1px solid var(--line); background: #fff; overflow: hidden; box-shadow: var(--halo); }
-.gsTop { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #f9fbfd; border-bottom: 1px solid #e3e3e3; }
+/* ---------- sección "Dentro de tu Sheet" (SheetSection): maqueta de Google Sheets + UI de Luca ----------
+   La ventana imita la UI clara de Sheets en ambos temas (como la hoja real): colores propios y fijos. */
 .gsIcon { width: 22px; height: 28px; border-radius: 3px; background: #1e8e3e; position: relative; flex: none; }
 .gsIcon::after { content: ""; position: absolute; inset: 9px 4px 5px; border: 1.5px solid #fff; border-radius: 1px; background: linear-gradient(#fff, #fff) center/1.5px 100% no-repeat, linear-gradient(#fff, #fff) center/100% 1.5px no-repeat; }
-.gsMenu { display: flex; gap: 12px; margin-top: 2px; font-size: 12px; color: #444; white-space: nowrap; overflow: hidden; }
-.gsMenuOn { padding: 0 6px; border-radius: 4px; background: #fbe6dc; color: #a8472a; font-weight: 600; }
-.gsBody { display: grid; grid-template-columns: minmax(0, 1fr) 300px; min-height: 420px; }
-@media (max-width: 760px) { .gsBody { grid-template-columns: 1fr; } .gsGrid { display: none; } .gsSide { border-left: 0 !important; justify-self: center; } }
-.gsGrid { font-size: 12px; color: #1f1f1f; background: #fff; }
-.gsRow { display: grid; grid-template-columns: 56px minmax(0, 1fr) 76px 140px; gap: 0; border-bottom: 1px solid #e8e8e8; }
-.gsRow > span { padding: 7px 8px; border-right: 1px solid #efefef; min-width: 0; }
-.gsRow:nth-child(odd):not(.gsHead) { background: #faf7f3; }
-.gsHead { background: #f3ede6; font-weight: 600; color: #57524b; font-size: 11px; text-transform: lowercase; }
-.gsCat { display: inline-block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-style: normal; padding: 1px 8px; border-radius: 999px; color: #1d1a17; font-size: 11px; }
-.gsSide { border-left: 1px solid #e3e3e3; background: #f4efe8; overflow: hidden; max-height: 520px; }
-.gsSideImg { width: 300px; height: auto; display: block; }
-.gsDialog { margin: 16px 0 0; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 30px 60px -24px rgba(0,0,0,.45); }
-.gsDialog img { width: 100%; height: auto; display: block; }
-@media (min-width: 960px) {
-  .gsDialog { position: absolute; left: 6%; bottom: 0; width: 640px; margin: 0; }
-  .reveal .gsDialog { animation: gsPop .7s var(--ease-out) .25s both, gsFloat 6s ease-in-out 1.2s infinite; }
+.sx { --sx-ink: #1d1a17; --sx-body: #57524b; --sx-muted: #6f675d; --sx-line: #e6ddd1; --sx-soft: #efe8de; --sx-canvas: #f4efe8; --sx-card: #fffdf9; --sx-strong: #ebe4d9; color: var(--sx-ink); }
+.sxWin { border-radius: 16px; border: 1px solid var(--line); background: #fff; overflow: hidden; box-shadow: var(--halo); }
+.sxTop { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #f9fbfd; border-bottom: 1px solid #e3e3e3; color: #1f1f1f; }
+.sxMenu { display: flex; align-items: center; gap: 2px; margin-top: 2px; font-size: 12px; color: #444; white-space: nowrap; }
+.sxMenuItem { padding: 2px 6px; border-radius: 4px; }
+@media (max-width: 640px) { .sxMenuItem:nth-child(n+4) { display: none; } }
+.sxMenuLuca { padding: 2px 8px; border-radius: 4px; border: 0; background: #fbe6dc; color: #a8472a; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }
+.sxMenuLuca:hover, .sxMenuLuca[aria-expanded="true"] { background: #f6d5c5; }
+.sxDrop { position: absolute; left: 0; top: calc(100% + 4px); z-index: 20; display: grid; min-width: 230px; padding: 6px; border-radius: 8px; background: #fff; border: 1px solid #e3e3e3; box-shadow: 0 10px 30px -10px rgba(0,0,0,.3); animation: aiIn .18s var(--ease-out) both; }
+.sxDrop button { display: flex; align-items: center; gap: 8px; text-align: left; padding: 8px 10px; border: 0; border-radius: 6px; background: none; font: inherit; font-size: 13px; color: #1f1f1f; cursor: pointer; }
+.sxDrop button:hover { background: #f1f3f4; }
+.sxBody { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 300px; height: 580px; }
+.sxBody[data-side="false"] { grid-template-columns: minmax(0, 1fr); }
+.sxGrid { position: relative; font-size: 12px; color: #1f1f1f; background: #fff; overflow: hidden; }
+.sxRow { display: grid; grid-template-columns: 34px 52px minmax(0, 1fr) 72px 150px; border-bottom: 1px solid #e8e8e8; height: 31px; align-items: center; }
+.sxRow > span { padding: 0 8px; border-right: 1px solid #efefef; min-width: 0; height: 100%; display: flex; align-items: center; }
+.sxRow:nth-child(odd):not(.sxHead) { background: #faf7f3; }
+.sxHead { background: #f3ede6; font-weight: 600; color: #57524b; font-size: 11px; }
+.sxNum { justify-content: center; color: #8a8a8a; background: #f8f9fa; font-size: 10.5px; }
+.sxChip { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-style: normal; padding: 1px 8px 1px 6px; border-radius: 999px; color: #1d1a17; font-size: 11px; }
+.sxReopen { position: absolute; left: 50%; bottom: 20px; transform: translateX(-50%); }
+.sxReopenSide { position: absolute; right: 14px; top: 12px; z-index: 5; }
+.sxSide { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; height: 100%; min-height: 0; border-left: 1px solid #e3e3e3; background: var(--sx-canvas); font-size: 13px; animation: sxSlide .25s var(--ease-out) both; }
+@keyframes sxSlide { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+.sxSideHead, .sxDlgHead { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: #fff; font-size: 14px; color: #1f1f1f; }
+.sxSideHead button, .sxDlgHead button { display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: 50%; background: none; color: #444; cursor: pointer; }
+.sxSideHead button:hover, .sxDlgHead button:hover { background: #f1f3f4; }
+.sxSideScroll { overflow-y: auto; padding: 12px; scrollbar-width: thin; }
+.sxBrand { display: flex; align-items: center; gap: 9px; margin-bottom: 10px; }
+.sxBrand img { border-radius: 8px; border: 1px solid var(--sx-line); }
+.sxBrand b { display: block; font-size: 14px; font-weight: 600; }
+.sxBrand small { display: block; font-size: 11px; color: var(--sx-muted); }
+.sxTabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; padding: 3px; border-radius: 11px; background: var(--sx-strong); }
+.sxTabs button { display: grid; justify-items: center; gap: 2px; padding: 6px 2px; border: 0; border-radius: 8px; background: none; font: inherit; font-size: 11px; color: var(--sx-body); cursor: pointer; transition: background .15s, color .15s; }
+.sxTabs button[aria-selected="true"] { background: #fff; color: var(--sx-ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); font-weight: 600; }
+.sxPanel { animation: aiIn .22s var(--ease-out) both; }
+.sxPanel h4 { margin: 14px 2px 6px; font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--sx-muted); }
+.sxCard { background: var(--sx-card); border: 1px solid var(--sx-line); border-radius: 12px; padding: 12px; min-width: 0; }
+.sxCard + .sxCard { margin-top: 8px; }
+.sxPill { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px; border-radius: 999px; background: #dcefe5; color: #1a7a59; font-size: 11px; font-weight: 500; white-space: nowrap; }
+.sxPill i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.sxStat { display: grid; text-align: left; gap: 2px; padding: 8px 10px; border: 0; border-radius: 10px; background: var(--sx-strong); font: inherit; color: var(--sx-ink); cursor: pointer; transition: transform .12s; }
+.sxStat:hover { transform: translateY(-1px); }
+.sxStat small { font-size: 11px; color: var(--sx-muted); }
+.sxStat b { font-family: var(--font-geist-mono), monospace; font-size: 16px; font-weight: 500; }
+.sxBtn { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; margin-top: 10px; min-height: 36px; border: 0; border-radius: 9px; background: #bf5230; color: #fff; font: inherit; font-size: 13px; font-weight: 500; cursor: pointer; }
+.sxBtn:hover { background: #a8472a; } .sxBtn:disabled { opacity: .7; }
+.sxBtnSec { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 32px; padding: 0 12px; border: 1px solid var(--sx-line); border-radius: 9px; background: #fff; font: inherit; font-size: 12.5px; font-weight: 500; color: var(--sx-ink); cursor: pointer; text-decoration: none; }
+.sxBtnSec:hover { border-color: #b8ad9f; }
+.sxConn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; border: 0; border-radius: 9px; background: none; font: inherit; color: var(--sx-ink); cursor: pointer; }
+.sxConn:not(:disabled):hover { background: var(--sx-canvas); } .sxConn:disabled { cursor: default; }
+.sxConn b { font-size: 12.5px; font-weight: 500; } .sxConn small { font-size: 11px; color: var(--sx-muted); }
+.sxLead { margin: 6px 0 10px; font-size: 12px; color: var(--sx-body); }
+.sxHint { margin: 6px 0 0; font-size: 11px; color: var(--sx-muted); }
+.sxSeg { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 3px; border-radius: 9px; background: var(--sx-strong); }
+.sxSeg button { padding: 5px 4px; border: 0; border-radius: 7px; background: none; font: inherit; font-size: 11.5px; color: var(--sx-body); cursor: pointer; }
+.sxSeg button[aria-pressed="true"] { background: #fff; color: var(--sx-ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.sxInput { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-top: 8px; padding: 7px 10px; border-radius: 9px; border: 1px solid var(--sx-line); background: #fff; font-size: 12px; color: var(--sx-body); min-width: 0; }
+.sxInput button { display: grid; place-items: center; border: 0; background: none; color: var(--sx-muted); cursor: pointer; }
+.sxSwitchRow { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--sx-soft); cursor: pointer; }
+.sxSwitchRow small { font-size: 11px; color: var(--sx-muted); }
+.sxSwitch { appearance: none; flex: none; width: 34px; height: 20px; border-radius: 999px; background: #d8cfc3; position: relative; cursor: pointer; transition: background .2s; }
+.sxSwitch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.2); transition: transform .2s var(--ease-spring); }
+.sxSwitch:checked { background: #bf5230; } .sxSwitch:checked::after { transform: translateX(14px); }
+.sxSteps { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 4px; }
+.sxSteps li { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 9px; background: var(--sx-card); border: 1px solid var(--sx-line); font-size: 12px; animation: aiIn .25s var(--ease-out) both; }
+.sxSteps li:nth-child(2) { animation-delay: .05s; } .sxSteps li:nth-child(3) { animation-delay: .1s; } .sxSteps li:nth-child(4) { animation-delay: .15s; }
+.sxSteps span { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: #1a7a59; color: #fff; font-size: 10px; font-weight: 700; }
+.sxCode { display: flex; align-items: baseline; justify-content: space-between; margin-top: 8px; padding: 10px 12px; border-radius: 10px; background: #fbe6dc; color: #a8472a; animation: luca-pop .3s var(--ease-spring) both; }
+.sxCode span { font-size: 20px; font-weight: 600; letter-spacing: .12em; } .sxCode small { font-size: 11px; }
+.sxFoot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--sx-line); background: #fff; cursor: pointer; }
+.sxFoot small { font-size: 11px; color: var(--sx-muted); }
+.sxDialog { position: absolute; z-index: 4; left: 24px; top: 26px; width: min(600px, calc(100% - 300px - 48px)); height: calc(100% - 52px); display: grid; grid-template-rows: auto minmax(0, 1fr); border-radius: 12px; overflow: hidden; background: var(--sx-canvas); box-shadow: 0 24px 60px -18px rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.06); animation: sxDlg .3s var(--ease-out) both; }
+.sxBody[data-side="false"] .sxDialog { width: min(680px, calc(100% - 48px)); left: 50%; transform: translateX(-50%); animation: none; }
+@keyframes sxDlg { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
+.sxDlgBody { overflow-y: auto; padding: 14px 16px 16px; scrollbar-width: thin; }
+.sxMonth { display: inline-flex; gap: 8px; align-items: center; padding: 5px 12px; border-radius: 9px; border: 1px solid var(--sx-line); background: #fff; font-size: 12px; color: var(--sx-muted); }
+.sxMonth b { color: var(--sx-ink); font-weight: 500; }
+.sxDTabs { display: flex; gap: 2px; margin: 12px 0 10px; padding: 3px; border-radius: 10px; background: var(--sx-strong); width: max-content; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.sxDTabs button { padding: 6px 12px; border: 0; border-radius: 7px; background: none; font: inherit; font-size: 12px; color: var(--sx-body); cursor: pointer; white-space: nowrap; }
+.sxDTabs button[aria-selected="true"] { background: #fff; color: var(--sx-ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.sxEyebrow { font-size: 10.5px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--sx-muted); }
+.sxPace { position: relative; height: 8px; margin: 12px 0 6px; border-radius: 999px; background: var(--sx-strong); }
+.sxPace i { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: #d9623b; transform-origin: left; }
+.sxPace b { position: absolute; top: -4px; bottom: -4px; width: 2px; border-radius: 2px; background: var(--sx-ink); }
+.sxMini { display: grid; gap: 1px; padding: 7px 8px; border-radius: 9px; background: var(--sx-strong); min-width: 0; }
+.sxMini small { font-size: 10.5px; color: var(--sx-muted); } .sxMini b { font-size: 12px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sxCatRow { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 9px; }
+.sxCatRow:hover { background: var(--sx-canvas); }
+.sxAvatar { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; color: #1d1a17; }
+.sxBar { display: block; height: 5px; margin-top: 5px; border-radius: 999px; background: var(--sx-strong); overflow: hidden; }
+.sxBar i { display: block; height: 100%; border-radius: 999px; }
+.sxToast { position: absolute; z-index: 10; left: 50%; top: 14px; transform: translateX(-50%); padding: 8px 14px; border-radius: 10px; background: #1d1a17; color: #f4efe8; font-size: 12.5px; box-shadow: 0 10px 24px -10px rgba(0,0,0,.4); animation: aiIn .2s var(--ease-out) both; white-space: nowrap; }
+@media (max-width: 760px) {
+  .sxBody, .sxBody[data-side="false"] { display: flex; flex-direction: column; height: auto; }
+  .sxGrid { display: none; }
+  .sxDialog, .sxBody[data-side="false"] .sxDialog { position: static; order: -1; width: 100%; height: 470px; transform: none; border-radius: 0; box-shadow: none; border-bottom: 1px solid #e3e3e3; animation: none; }
+  .sxSide { height: 540px; border-left: 0; }
+  .sxReopenSide { position: static; margin: 12px auto; }
+  .sxReopen { display: none; }
+  .sxClose { visibility: hidden; }
 }
-@keyframes gsPop { from { opacity: 0; transform: translateY(40px) scale(.96); } to { opacity: 1; transform: none; } }
-@keyframes gsFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-.reveal .gsRow:not(.gsHead) { animation: aiIn .35s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 60ms); }
 
 /* Las animaciones de una sección esperan a que se vea (Reveal pone data-inview). */
 @media (prefers-reduced-motion: no-preference) {

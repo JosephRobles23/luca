@@ -7,6 +7,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { catColor } from "@/lib/categorias";
+import CategoryIcon from "@/components/CategoryIcon";
 import s from "./portada.module.css";
 
 type Move = { who: string; cat: string; amount: string; sub?: string; src: "BCP" | "Yape" };
@@ -21,7 +22,7 @@ const POOL: Move[] = [
   { who: "INKAFARMA", cat: "Salud", amount: "−S/ 23.10", src: "BCP" },
   { who: "CINEPLANET", cat: "Ocio", amount: "−S/ 32.00", src: "BCP" },
 ];
-const SHOWN = 4;
+const SHOWN = 6;
 const STEP_MS = 2400;
 const READ_MS = 900;
 
@@ -67,7 +68,7 @@ export function MovesFeed() {
       <ul className={s.feedList} aria-hidden>
         {rows.map((r) => (
           <li key={r.key} className={s.feedRow}>
-            <span className={s.feedAvatar} style={{ background: r.read ? catColor(r.cat) : "var(--strong)" }}>{r.who.replace(/^Yape a /, "")[0]}</span>
+            <span className={s.feedAvatar} style={{ background: r.read ? catColor(r.cat) : "var(--strong)" }}>{r.read ? <CategoryIcon categoria={r.cat} size={17} className="pop" /> : <span className={s.feedDots}><i /><i /><i /></span>}</span>
             <span className="min-w-0">
               <span className="block truncate font-medium text-ink">{r.who}</span>
               <span className="mt-0.5 flex items-center gap-1.5">
