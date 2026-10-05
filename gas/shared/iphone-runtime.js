@@ -10,7 +10,7 @@
  * Sin import/export: runtime de Apps Script.
  */
 
-var SHORTCUT_URL_ = 'https://www.icloud.com/shortcuts/PENDIENTE';
+var SHORTCUT_URL_ = 'https://www.icloud.com/shortcuts/4466a87c439a40b1a3e193d6777ccd38';
 var IPHONE_TOKEN_KEY_ = 'conexiones.iphone.token';
 
 /** `<execUrl>?events=1`: la URL exacta a la que el atajo hace POST (webapp-runtime.js). */
