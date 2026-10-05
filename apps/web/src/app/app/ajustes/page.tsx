@@ -1,7 +1,8 @@
 import Ajustes from "@/components/Ajustes";
+import PageTransition from "@/components/PageTransition";
 
-export const metadata = { title: "Ajustes · Luca" };
+export const metadata = { title: "Ajustes" };
 
 export default function AjustesPage() {
-  return <Ajustes />;
+  return <PageTransition><Ajustes /></PageTransition>;
 }

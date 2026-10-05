@@ -25,8 +25,8 @@ export function Kpi({ label, value, sub, highlight, testId }: { label: string; v
 
 export function Notice({ kind = "info", children, action }: { kind?: "info" | "warn" | "ok"; children: ReactNode; action?: ReactNode }) {
   return (
-    <div role={kind === "warn" ? "alert" : "status"} className={`card flex flex-wrap items-center gap-3 py-3 text-sm ${kind === "warn" ? "border-warn" : kind === "ok" ? "border-ok" : ""}`}>
-      <i className={`dot flex-none ${kind === "warn" ? "warn" : kind === "info" ? "off" : ""}`} />
+    <div role={kind === "warn" ? "alert" : "status"} className={`notice fade-in ${kind === "warn" ? "warn" : kind === "ok" ? "ok" : ""}`}>
+      <i className={`dot flex-none ${kind === "warn" ? "warn" : kind === "info" ? "off" : ""}`} aria-hidden />
       <div className="min-w-0 flex-1">{children}</div>
       {action}
     </div>

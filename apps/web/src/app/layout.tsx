@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { THEME_BOOT } from "@/components/ThemeToggle";
 import { SITE } from "@/lib/seo";
 import "./globals.css";
 
 const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 // Favicon, iconos y la imagen para redes salen de los archivos de src/app (ver scripts/brand-assets.py).
 // La URL canónica va en cada página: si se pusiera aquí, todas heredarían la de la portada.
@@ -29,7 +30,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es" className={geist.variable} suppressHydrationWarning>
+    <html lang="es" className={`${geist.variable} ${geistMono.variable}`} suppressHydrationWarning>
       <head><script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} /></head>
       <body className="font-sans antialiased min-h-screen">{children}</body>
     </html>

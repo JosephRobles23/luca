@@ -27,10 +27,25 @@ function write(t: Theme) {
   window.dispatchEvent(new Event(EVT));
 }
 
+export type { Theme };
+export const useTheme = () => useSyncExternalStore(subscribe, read, () => "system" as Theme);
+export const setTheme = write;
+
+/** Selector de tema de tres posiciones (menú de usuario y Ajustes). */
+export function ThemeSegmented() {
+  const theme = useTheme();
+  const opts: [Theme, string][] = [["system", "Sistema"], ["light", "Claro"], ["dark", "Oscuro"]];
+  return (
+    <div className="segmented" role="radiogroup" aria-label="Tema">
+      {opts.map(([t, l]) => <button key={t} type="button" role="radio" aria-checked={theme === t} onClick={() => write(t)}>{l}</button>)}
+    </div>
+  );
+}
+
 export default function ThemeToggle() {
   const theme = useSyncExternalStore(subscribe, read, () => "system" as Theme);
   return (
-    <button type="button" className="btn" onClick={() => write(NEXT[theme])} aria-label={`${LABEL[theme]}. Cambiar tema`} title={LABEL[theme]} data-testid="theme-toggle">
+    <button type="button" className="btn icon" onClick={() => write(NEXT[theme])} aria-label={`${LABEL[theme]}. Cambiar tema`} title={LABEL[theme]} data-testid="theme-toggle">
       <span aria-hidden>{ICON[theme]}</span>
     </button>
   );
