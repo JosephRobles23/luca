@@ -185,8 +185,10 @@ function scanGmail_(sheetId, config, opts) {
   var yaVistos = processedSet_(sheetId, config);
   var pendientes = ids.filter(function (id) { return !yaVistos[id]; });
 
+  // Extractor opt-in (ADR-008): solo con key y `llm.extractUnknown`; comparte presupuesto con la categorización.
+  var extractor = llmExtractEnabled_(config) && getSecret_('llmKey') ? llmExtractContext_(sheetId, config) : null;
   var txs = [], procesados = [], maxEpoch = after || 0, n = 0;
-  var stats = { listed: ids.length, processed: 0, added: 0, skipped: 0, ignored: 0, unknown: 0, emptyBody: 0, viaRaw: 0 };
+  var stats = { listed: ids.length, processed: 0, added: 0, skipped: 0, ignored: 0, unknown: 0, llmExtracted: 0, emptyBody: 0, viaRaw: 0 };
   for (var i = 0; i < pendientes.length && n < max; i++) {
     if (Date.now() - t0 > SCAN_BUDGET_MS_) break;
     var email;
@@ -203,12 +205,18 @@ function scanGmail_(sheetId, config, opts) {
     if (email.viaRaw) stats.viaRaw++;
     var r = parseEmail(email);
     if (r.ignored) { stats.ignored++; procesados.push({ gmail_id: email.id, resultado: 'ignored:' + r.reason, tipo: r.type || '', asunto: email.subject, remitente: email.from }); continue; }
-    if (r.unknown) { stats.unknown++; procesados.push({ gmail_id: email.id, resultado: 'unknown', tipo: r.type, asunto: email.subject, remitente: email.from }); continue; }
+    if (r.unknown) {
+      var ex = extractor ? extractWithLlm_(email, extractor) : null;
+      if (ex && ex.ignored) { stats.ignored++; procesados.push({ gmail_id: email.id, resultado: 'ignored:' + ex.reason, tipo: ex.type || '', asunto: email.subject, remitente: email.from }); continue; }
+      if (ex) { stats.llmExtracted++; txs.push(ex); procesados.push({ gmail_id: email.id, resultado: 'tx:llm', tipo: ex.type, asunto: email.subject, remitente: email.from }); continue; }
+      stats.unknown++; procesados.push({ gmail_id: email.id, resultado: 'unknown', tipo: r.type, asunto: email.subject, remitente: email.from }); continue;
+    }
     txs.push(r);
     procesados.push({ gmail_id: email.id, resultado: 'tx', tipo: r.type });
   }
   stats.processed = n;
-  var res = appendTransactions_(sheetId, config, txs);
+  var res = appendTransactions_(sheetId, config, txs, extractor);
+  if (extractor) stats.llmCalls = extractor.llmCalls;
   stats.added = res.added; stats.skipped = res.skipped;
   markProcessed_(sheetId, config, procesados);
 

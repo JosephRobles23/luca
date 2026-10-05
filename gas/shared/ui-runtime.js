@@ -103,6 +103,7 @@ var DISPATCH_ = {
   recategorizar:     function (sid, cfg, a) { return recategorizar(sid, cfg, a[0] || {}); },
   categorizarPendientes: function (sid, cfg, a) { return categorizarPendientes(sid, cfg, a[0] || {}); },
   probarLlm:         function (sid, cfg, a) { return probarLlm(sid, cfg); },
+  extraerDesconocidos: function (sid, cfg, a) { return extraerDesconocidos(sid, cfg, a[0] || {}); },
   conectarIphone:    function (sid, cfg, a) { return conectarIphone(sid, cfg); },
   regenerarTokenIphone: function (sid, cfg, a) { return regenerarTokenIphone(sid, cfg); },
   desconectarIphone: function (sid, cfg, a) { return desconectarIphone(sid, cfg); },
@@ -133,7 +134,8 @@ function estadoLuca(sheetId, config) {
       provider: (config.llm && config.llm.provider) || a['llm.provider'] || '',
       model: (config.llm && config.llm.model) || a['llm.model'] || '',
       lastTestAt: a['llm.lastTestAt'] || '', lastError: a['llm.lastError'] || '',
-      proveedores: llmProveedores_(), defaults: LLM_DEFAULT_MODELS_
+      proveedores: llmProveedores_(), defaults: LLM_DEFAULT_MODELS_,
+      extractUnknown: llmExtractEnabled_(config), desconocidos: contarDesconocidos_(sheetId, config)
     },
     execUrl: a['conexiones.execUrl'] || execUrl_(config),
     iphone: telemetriaIphone_(a)
