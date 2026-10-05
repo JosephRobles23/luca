@@ -3,7 +3,7 @@ import { expect, type Page } from "@playwright/test";
 export const SHOTS = "e2e/screenshots";
 
 /** Fija el escenario del mock antes de cargar la app (lo lee `GoogleMockClient` desde localStorage). */
-export async function useScenario(page: Page, scenario: "full" | "authorized" | "empty") {
+export async function useScenario(page: Page, scenario: "full" | "webapp" | "authorized" | "empty") {
   // Solo fija la clave: `GoogleMockClient` resiembra cuando el escenario guardado difiere. Idempotente ante
   // recargas (incluidas las que hace `next dev` al compilar una ruta por primera vez).
   await page.addInitScript((s) => {

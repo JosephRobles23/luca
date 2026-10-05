@@ -40,6 +40,8 @@ export type LedgerApi = {
   crearSheet: () => Promise<void>;
   elegirExistente: () => Promise<void>;
   refresh: () => Promise<void>;
+  /** Relee solo `Ajustes` (telemetría), sin tocar el ledger: para sondeos ligeros. */
+  refreshAjustes: () => Promise<Ajustes | null>;
   cambiarSheet: () => void;
   skipConnections: (skip: boolean) => void;
   recategorize: (tx: Tx, categoria: string) => Promise<boolean>;
@@ -170,6 +172,18 @@ export function LedgerProvider({ cfg, user, signOutAction, children }: Props) {
     try { await loadLedger(state.file); } finally { setRefreshing(false); }
   }, [state, loadLedger]);
 
+  const refreshAjustes = useCallback(async (): Promise<Ajustes | null> => {
+    if (state.phase !== "ready") return null;
+    try {
+      const ajustes = parseAjustes(await client().readRange(state.file.id, RANGES.settings));
+      setState((s) => (s.phase === "ready" ? { ...s, data: { ...s.data, ajustes, usdRate: usdRate(ajustes) } } : s));
+      return ajustes;
+    } catch (e) {
+      if (e instanceof GoogleApiError && e.needsReauth) setSessionExpired(true);
+      return null;
+    }
+  }, [state]);
+
   const cambiarSheet = useCallback(() => {
     ls.del(LS_SHEET);
     setState({ phase: "nofile" });
@@ -228,8 +242,8 @@ export function LedgerProvider({ cfg, user, signOutAction, children }: Props) {
 
   const api = useMemo<LedgerApi>(() => ({
     state, mode: cfg.mode, user, refreshing, sessionExpired, connectionsSkipped, templateId: cfg.templateId, libVersion: cfg.libVersion, signOutAction,
-    crearSheet, elegirExistente, refresh, cambiarSheet, skipConnections, recategorize, markTransfer, addManual, saveAjustes,
-  }), [state, cfg.mode, cfg.templateId, cfg.libVersion, user, refreshing, sessionExpired, connectionsSkipped, signOutAction, crearSheet, elegirExistente, refresh, cambiarSheet, skipConnections, recategorize, markTransfer, addManual, saveAjustes]);
+    crearSheet, elegirExistente, refresh, refreshAjustes, cambiarSheet, skipConnections, recategorize, markTransfer, addManual, saveAjustes,
+  }), [state, cfg.mode, cfg.templateId, cfg.libVersion, user, refreshing, sessionExpired, connectionsSkipped, signOutAction, crearSheet, elegirExistente, refresh, refreshAjustes, cambiarSheet, skipConnections, recategorize, markTransfer, addManual, saveAjustes]);
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }

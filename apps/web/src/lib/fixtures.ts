@@ -53,6 +53,9 @@ const EXTRAS: Record<number, Seed[]> = {
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
+export const MOCK_EXEC_URL = "https://script.google.com/macros/s/AKfycbxMOCKmockMOCK/exec";
+export const MOCK_TOKEN = "0f1e2d3c-4b5a-4697-8877-66554433aabb";
+
 /** Movimientos como filas de `Movimientos` (con encabezado). */
 export function buildMovimientos(now = new Date()): string[][] {
   const months = lastMonths(isoLima(now).slice(0, 7), 3); // [M-2, M-1, M]
@@ -104,11 +107,12 @@ export function buildAjustes(o: { version?: string; iphone?: boolean; mcp?: bool
     ["scan.lastStats", JSON.stringify({ listed: 12, tx: 3, ignored: 9, unknown: 0 })],
   ];
   if (o.version !== "") rows.push(["luca.version", o.version ?? "4"]);
-  const execUrl = o.execUrl ?? (o.iphone || o.mcp ? "https://script.google.com/macros/s/AKfycbxMOCKmockMOCK/exec" : "");
+  const execUrl = o.execUrl ?? (o.iphone || o.mcp ? MOCK_EXEC_URL : "");
   rows.push(["conexiones.execUrl", execUrl]);
   if (o.iphone) {
     rows.push(
       ["conexiones.iphone", "1"],
+      ["conexiones.iphone.token", MOCK_TOKEN],
       ["conexiones.iphone.device", "iPhone de Nombre"],
       ["conexiones.iphone.lastEventAt", ago(0.003)],
       ["conexiones.iphone.eventsCount", "37"],
@@ -159,6 +163,12 @@ export function buildFullSheet(now = new Date()): MockSheet {
 /** Sheet recién copiada de la plantilla: sin `Movimientos` ni `luca.version` (falta Autorizar). */
 export function buildFreshSheet(): MockSheet {
   return { Ajustes: [["key", "value"], ["gmail.senders", "notificaciones@notificacionesbcp.com.pe, notificaciones@yape.pe"], ["gmail.batch", "40"]], Categorías: buildCategorias() };
+}
+
+/** Sheet autorizada con la Web App publicada pero sin iPhone ni IA (punto de partida del asistente "Conectar iPhone"). */
+export function buildWebAppSheet(now = new Date()): MockSheet {
+  const movs = buildMovimientos(now);
+  return { Movimientos: movs, Ajustes: buildAjustes({ execUrl: MOCK_EXEC_URL }, now), Categorías: buildCategorias(), Comercios: buildComercios(movs, now) };
 }
 
 /** Sheet autorizada pero sin conexiones (paso 3 pendiente). */

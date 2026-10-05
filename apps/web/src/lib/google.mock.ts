@@ -3,15 +3,36 @@
  * El estado vive en `localStorage` del navegador para sobrevivir recargas; se resembra con
  * `?mock=<escenario>` en la URL o borrando `luca.mock.*`.
  *
- * Escenarios: `full` (Sheet autorizada con iPhone + IA), `authorized` (sin conexiones),
- * `empty` (sin Sheet: onboarding desde cero; el Picker ofrece la plantilla o una Sheet antigua).
+ * Escenarios: `full` (Sheet autorizada con iPhone + IA), `webapp` (Web App publicada, sin iPhone ni IA),
+ * `authorized` (sin conexiones), `empty` (sin Sheet: onboarding desde cero; el Picker ofrece la plantilla o una
+ * Sheet antigua). `?mock=iphone-test` no resiembra: programa una "prueba" del iPhone (ver `scheduleMockIphoneTest`).
  */
 import { GoogleApiError, type CellWrite, type GoogleClient, type LedgerFile, type PickerOptions } from "./google-types.ts";
-import { buildAuthorizedSheet, buildFreshSheet, buildFullSheet, type MockSheet } from "./fixtures.ts";
+import { buildAuthorizedSheet, buildFreshSheet, buildFullSheet, buildWebAppSheet, type MockSheet } from "./fixtures.ts";
 import { planKeyValueUpsert } from "./sheets-ops.ts";
+import { isoLima } from "./ledger.ts";
 
-export type MockScenario = "full" | "authorized" | "empty";
-const SCENARIOS: MockScenario[] = ["full", "authorized", "empty"];
+export type MockScenario = "full" | "webapp" | "authorized" | "empty";
+const SCENARIOS: MockScenario[] = ["full", "webapp", "authorized", "empty"];
+const WRITES_KEY = "luca.mock.scriptWrites";
+type ScriptWrite = { due: number; values: Record<string, string> };
+
+/**
+ * Simula escrituras del Apps Script en `Ajustes` (telemetría que la web solo lee): se aplican en la primera lectura
+ * de `Ajustes` posterior a `due`. Lo usan el asistente en modo mock y los e2e.
+ */
+export function queueMockScriptWrite(values: Record<string, string>, delayMs = 0) {
+  try {
+    const q = JSON.parse(localStorage.getItem(WRITES_KEY) ?? "[]") as ScriptWrite[];
+    q.push({ due: Date.now() + delayMs, values });
+    localStorage.setItem(WRITES_KEY, JSON.stringify(q));
+  } catch { /* sin storage */ }
+}
+
+/** Simula que el atajo "Luca – Probar iPhone" llegó al script: `lastTestAt` nuevo + dispositivo, pasados `delayMs`. */
+export function scheduleMockIphoneTest(delayMs = 3000) {
+  queueMockScriptWrite({ "conexiones.iphone.lastTestAt": isoLima(new Date()), "conexiones.iphone.device": "iPhone de Nombre", "conexiones.iphone.schemaVersion": "1", "conexiones.iphone": "1" }, delayMs);
+}
 
 type MockFile = LedgerFile & { tagged: boolean; pickable: boolean; simulateAuthorize?: boolean; ledgerReads?: number };
 type Store = { scenario: MockScenario; files: MockFile[]; sheets: Record<string, MockSheet> };
@@ -34,12 +55,14 @@ function seed(scenario: MockScenario): Store {
     };
   }
   const main: MockFile = { id: "sheet-mock-1", name: "Luca Ledger — Nombre Apellido", modifiedTime, webViewLink: url("sheet-mock-1"), tagged: true, pickable: true };
-  return { scenario, files: [template, main], sheets: { "tpl-luca": buildFreshSheet(), "sheet-mock-1": scenario === "full" ? buildFullSheet(now) : buildAuthorizedSheet(now) } };
+  const sheet = scenario === "full" ? buildFullSheet(now) : scenario === "webapp" ? buildWebAppSheet(now) : buildAuthorizedSheet(now);
+  return { scenario, files: [template, main], sheets: { "tpl-luca": buildFreshSheet(), "sheet-mock-1": sheet } };
 }
 
 function scenarioFromUrl(): MockScenario | null {
   if (typeof window === "undefined") return null;
   const v = new URLSearchParams(window.location.search).get("mock");
+  if (v === "iphone-test") scheduleMockIphoneTest();
   return v && (SCENARIOS as string[]).includes(v) ? (v as MockScenario) : null;
 }
 
@@ -120,10 +143,26 @@ export class GoogleMockClient implements GoogleClient {
       if (f.ledgerReads >= 2) { Object.assign(sheet, buildAuthorizedSheet()); f.simulateAuthorize = false; }
       this.save();
     }
+    if (tab === "Ajustes" && sheet[tab]) this.applyScriptWrites(sheet[tab]);
     const rows = sheet[tab];
     if (!rows) throw new GoogleApiError(400, `Unable to parse range: ${range}`);
     if (!cols) return rows.map((r) => [...r]);
     return rows.map((r) => r.slice(cols[0], cols[1] + 1));
+  }
+
+  /** Aplica las escrituras "del script" ya vencidas (`queueMockScriptWrite`) sobre las filas de `Ajustes`. */
+  private applyScriptWrites(rows: string[][]) {
+    let q: ScriptWrite[] = [];
+    try { q = JSON.parse(localStorage.getItem(WRITES_KEY) ?? "[]") as ScriptWrite[]; } catch { return; }
+    const now = Date.now();
+    const due = q.filter((w) => w.due <= now);
+    if (!due.length) return;
+    for (const w of due) for (const [k, v] of Object.entries(w.values)) {
+      const r = rows.find((x) => x[0] === k);
+      if (r) r[1] = v; else rows.push([k, v]);
+    }
+    try { localStorage.setItem(WRITES_KEY, JSON.stringify(q.filter((w) => w.due > now))); } catch { /* sin storage */ }
+    this.save();
   }
 
   async updateCells(sheetId: string, writes: CellWrite[]): Promise<void> {
