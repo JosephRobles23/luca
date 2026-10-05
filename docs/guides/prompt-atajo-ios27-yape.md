@@ -136,6 +136,68 @@ Después de generarlo:
 
 Seguridad en una línea: el `/exec` es público pero solo acepta tu token; el daño máximo con el token es insertar filas en tu propia hoja; "Regenerar token" lo invalida; nada de esto pasa por servidores de Luca.
 
+## Prompt 1 (generado por Luca) — el que entrega el sidebar / la web
+
+Variante de producción **sin preguntas de importación**: Luca inyecta tu URL de eventos (`<EXEC_URL>?events=1`) y tu token
+literalmente, así que el prompt sale listo para pegar en el generador de Atajos de iOS 27 y el atajo resultante **no se comparte**
+(lleva tus datos). Lo genera `generarPromptIphone` (`gas/shared/iphone-runtime.js`, plantilla única `promptIphone_(execUrl, token)`)
+y el sidebar lo copia al portapapeles con **"Copiar prompt para Atajos"**. La web puede reproducirlo a partir de este texto
+sustituyendo `<EXEC_URL>` por `Ajustes.conexiones.execUrl` y `<TOKEN>` por `Ajustes.conexiones.iphone.token` (ADR-003, addendum
+2026-10-05). Este bloque debe coincidir carácter a carácter con la plantilla (lo verifica `tests/webapp-events.test.mjs`).
+
+```text
+Crea un atajo llamado "Luca – Captura Yape" pensado para ejecutarse como automatización personal
+cuando llega una notificación de la app Yape. Debe correr sin pedir confirmación, sin abrirse en
+pantalla y sin mostrar alertas ni notificaciones propias.
+
+Usa estos dos valores fijos (ya son los míos, no preguntes nada al importar):
+- URL de Luca: <EXEC_URL>?events=1
+- Token de mi iPhone: <TOKEN>
+
+Pasos exactos, en este orden:
+
+1. Toma la entrada del atajo (la notificación) y guarda en variables: "titulo" (título), "subtitulo"
+   (subtítulo, puede estar vacío), "cuerpo" (texto o mensaje), "fechaNotif" (fecha de la notificación)
+   y "raw" (la entrada completa convertida a texto).
+
+2. Guarda la fecha y hora actual en "ahora" formateada como ISO 8601 con hora y zona horaria
+   (ejemplo 2026-10-05T12:34:56-05:00), nunca solo la fecha.
+
+3. Genera "eventId" concatenando "ahora", un guion y un número aleatorio entre 100000 y 999999.
+
+4. Obtén el nombre del dispositivo en "dispositivo".
+
+5. Construye un Diccionario:
+   - "schema_version": "1"
+   - "id": eventId
+   - "source": "yape"
+   - "channel": "ios-notification"
+   - "token": "<TOKEN>"
+   - "title": titulo
+   - "subtitle": subtitulo
+   - "body": cuerpo
+   - "raw": raw
+   - "notified_at": fechaNotif
+   - "received_at": ahora
+   - "device": dispositivo
+
+6. Haz una petición HTTP a la URL de Luca (<EXEC_URL>?events=1) con método POST, tipo de cuerpo JSON,
+   enviando el Diccionario del paso 5. Debe seguir redirecciones. Guarda la respuesta en "respuesta".
+
+7. Si "respuesta" contiene el texto "\"ok\":true", termina. En cualquier otro caso (error de red,
+   respuesta vacía o sin "ok":true), añade el Diccionario del paso 5 a la lista persistente
+   "luca_pendientes" del almacenamiento de Atajos (acción "Añadir elemento a la lista").
+
+8. Incluye además un segundo atajo pequeño llamado "Luca – Probar iPhone" que envíe a la misma URL de
+   Luca un Diccionario con "schema_version": "1", "id": "test-" + ahora, "source": "test", "token":
+   "<TOKEN>", "device": dispositivo, y muestre el texto de la respuesta en pantalla. Sirve para
+   verificar la conexión sin esperar un yapeo: el sidebar de Luca mostrará "Última prueba".
+```
+
+Después de generarlo: los mismos pasos 1–4 de la sección anterior (permitir con el equipo bloqueado, automatización Notificación →
+Yape, ejecutar "Luca – Probar iPhone", pedir un yapeo de S/1). No lo compartas por iCloud: contiene tu token. Si pulsas
+**Regenerar token** o cambia tu `/exec`, vuelve a generar el prompt (o edita URL y token dentro del atajo).
+
 ## Prompt 2 — Atajo "Luca – Flush" (Experimento 2: cola offline)
 
 ```text
