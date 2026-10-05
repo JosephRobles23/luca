@@ -84,7 +84,7 @@
 
 html { scroll-padding-top: 24px; }
 body { background: var(--canvas); color: var(--ink); -webkit-font-smoothing: antialiased; }
-:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+@layer base { :focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; } }
 
 @layer components {
 /* ---------- tipografía ---------- */
@@ -127,6 +127,8 @@ body { background: var(--canvas); color: var(--ink); -webkit-font-smoothing: ant
 .segmented > * { padding: 6px 12px; border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--body); background: transparent; border: 0; cursor: pointer; }
 .segmented > [aria-pressed="true"], .segmented > [aria-checked="true"] { background: var(--raised); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
 .pill { display: inline-flex; align-items: center; gap: 7px; min-height: 26px; padding: 0 10px; border-radius: 999px; background: var(--strong); color: var(--body); font-size: 12.5px; white-space: nowrap; }
+.pill.ok { background: var(--success-soft); color: var(--success); }
+.pill.warn { background: var(--warning-soft); color: var(--warning); }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); display: inline-block; flex: none; }
 .dot.warn { background: var(--warning); }
 .dot.off { background: var(--muted); }

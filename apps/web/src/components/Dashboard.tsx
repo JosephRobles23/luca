@@ -12,6 +12,7 @@ import { iphoneStatus } from "@/lib/ajustes";
 import { scanFreshness } from "@/lib/dias";
 import { firstName, monthName, monthOptions } from "@/lib/resumen";
 import { useLedger } from "./LedgerProvider";
+import VersionNotice from "./VersionNotice";
 import { useFirstView } from "./motion";
 import { Notice } from "./ui";
 import MonthPicker from "./resumen/MonthPicker";
@@ -77,6 +78,8 @@ export default function Dashboard() {
         </div>
         <MonthPicker months={months} month={month} onChange={setMonth} />
       </div>
+
+      <VersionNotice />
 
       {iphone.silent && (
         <Notice kind="warn" action={<Link className="btn sm" href="/app/conexiones">Ver conexiones</Link>}>

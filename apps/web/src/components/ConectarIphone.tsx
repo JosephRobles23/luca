@@ -155,7 +155,7 @@ export default function ConectarIphone({ requestedStep, shortcutUrl }: { request
             <ol className="grid gap-2.5 sm:grid-cols-3">
               <Figure n={1} caption={<><b>Automatización</b> → <b>+</b> → <b>Notificación</b> → App: <b>Yape</b></>}><SvgBell /></Figure>
               <Figure n={2} caption={<>Elige <b>Ejecutar inmediatamente</b> y el atajo <b>Luca – Captura Yape</b></>}><SvgBolt /></Figure>
-              <Figure n={3} caption={<>En el atajo: <b>ⓘ → Privacidad → Permitir con el equipo bloqueado</b></>}><SvgLock /></Figure>
+              <Figure n={3} caption={<>En el atajo: <b>(i) → Privacidad → Permitir con el equipo bloqueado</b></>}><SvgLock /></Figure>
             </ol>
             <Notice kind="ok">Listo. Pide un yapeo de S/ 1 para verlo llegar: aparecerá como <b>Recibido por Yape</b> en Movimientos.</Notice>
 

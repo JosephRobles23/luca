@@ -13,16 +13,6 @@ export function Field({ label, htmlFor, hint, error, children }: { label: string
   );
 }
 
-export function Kpi({ label, value, sub, highlight, testId }: { label: string; value: string; sub?: ReactNode; highlight?: boolean; testId?: string }) {
-  return (
-    <div className={`card ${highlight ? "border-accent bg-accent-soft" : ""}`} data-testid={testId}>
-      <div className="label">{label}</div>
-      <div className={`text-2xl font-extrabold tracking-tight tabular-nums ${highlight ? "text-accent-2" : ""}`}>{value}</div>
-      {sub ? <div className="mt-1 text-[11.5px] text-muted">{sub}</div> : null}
-    </div>
-  );
-}
-
 export function Notice({ kind = "info", children, action }: { kind?: "info" | "warn" | "ok"; children: ReactNode; action?: ReactNode }) {
   return (
     <div role={kind === "warn" ? "alert" : "status"} className={`notice fade-in ${kind === "warn" ? "warn" : kind === "ok" ? "ok" : ""}`}>

@@ -4,13 +4,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { ClientConfig } from "@/lib/google-client";
-import { versionStatus } from "@/lib/ajustes";
 import { LedgerProvider, useLedger } from "./LedgerProvider";
 import { ToastProvider } from "./Toast";
 import { Step1Sheet, Step2Authorize, Step3Connections, useOnboardingStep } from "./Onboarding";
 import { Notice } from "./ui";
+import VersionNotice from "./VersionNotice";
 import ThemeToggle from "./ThemeToggle";
-import { IconActualizar, IconAjustes, IconBuscar, IconCerrar, IconConexiones, IconExterno, IconLista, IconMas, IconResumen, IconSalir } from "./icons";
+import { IconActualizar, IconAjustes, IconBuscar, IconConexiones, IconExterno, IconLista, IconMas, IconResumen, IconSalir } from "./icons";
 
 type Props = {
   cfg: ClientConfig & { templateId: string; libVersion: string };
@@ -50,7 +50,7 @@ function Brand({ className = "" }: { className?: string }) {
 }
 
 function Shell({ children, signOutAction }: { children: ReactNode; signOutAction: () => Promise<void> }) {
-  const { state, user, refresh, refreshing, sessionExpired, libVersion, mode } = useLedger();
+  const { state, user, refresh, refreshing, sessionExpired, mode } = useLedger();
   const step = useOnboardingStep();
   const path = usePathname();
   const ready = state.phase === "ready";
@@ -114,7 +114,8 @@ function Shell({ children, signOutAction }: { children: ReactNode; signOutAction
                 {step === 2 && <Step2Authorize />}
                 {step === 3 && <Step3Connections />}
                 {state.error && <Notice kind="warn">No pude leer la hoja: {state.error}</Notice>}
-                <VersionNotice libVersion={libVersion} />
+                {/* En el Resumen el aviso va debajo del saludo (lo pinta Dashboard). */}
+                {path !== "/app" && <VersionNotice />}
                 {children}
               </>
             )}
@@ -199,26 +200,6 @@ function LoadingSkeleton() {
       <div className="grid gap-4 md:grid-cols-[1.5fr_1fr]"><div className="skeleton h-56 rounded-2xl" /><div className="skeleton h-56 rounded-2xl" /></div>
       <div className="skeleton h-72 rounded-2xl" />
       <p className="text-sm text-muted">Buscando tu Sheet de Luca en tu Drive…</p>
-    </div>
-  );
-}
-
-const VERSION_KEY = "luca.versionNotice.hidden";
-
-function VersionNotice({ libVersion }: { libVersion: string }) {
-  const { state } = useLedger();
-  const [hidden, setHidden] = useState<string | null>(() => { try { return localStorage.getItem(VERSION_KEY); } catch { return null; } });
-  if (state.phase !== "ready") return null;
-  const v = versionStatus(state.data.ajustes, libVersion);
-  if (!v.outdated || hidden === v.latest) return null;
-  const url = state.file.webViewLink ?? `https://docs.google.com/spreadsheets/d/${state.file.id}/edit`;
-  return (
-    <div className="notice fade-in" role="status" data-testid="version-notice">
-      <span className="min-w-[220px] flex-1"><b className="font-semibold">LucaLib v{v.latest} disponible.</b> Tu copia usa v{v.current}. En tu Sheet: <b className="font-semibold">Extensiones → Apps Script → Bibliotecas → LucaLib → versión {v.latest} → Guardar</b>.</span>
-      <span className="flex items-center gap-1.5">
-        <a className="btn sm" href={url} target="_blank" rel="noreferrer">Abrir mi Sheet ↗</a>
-        <button type="button" className="btn ghost icon sm !w-8" aria-label="Ocultar este aviso" onClick={() => { try { localStorage.setItem(VERSION_KEY, v.latest); } catch { /* sin storage */ } setHidden(v.latest); }}><IconCerrar size={16} /></button>
-      </span>
     </div>
   );
 }

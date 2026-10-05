@@ -80,11 +80,13 @@ test.describe("Landing → entrar → dashboard", () => {
     // La fila guardada se queda un momento en el Resumen (confirmación + colapso): esperar a estar en Movimientos.
     await page.getByRole("link", { name: "Movimientos" }).click();
     await expect(page).toHaveURL(/\/app\/movimientos/);
+    // En Movimientos la categoría vive en el detalle desplegable de la fila.
+    await page.getByTestId(`mov-${txId}`).getByRole("button", { name: "Ver detalle" }).click();
     await expect(page.getByTestId(`cat-${txId}`)).toHaveValue("Comidas fuera");
     // Y sobrevive a una recarga completa (el mock persiste en localStorage igual que la Sheet real).
     await page.reload();
-    await expect(page.getByTestId(`cat-${txId}`)).toHaveValue("Comidas fuera");
     await page.getByTestId(`mov-${txId}`).getByRole("button", { name: "Ver detalle" }).click();
+    await expect(page.getByTestId(`cat-${txId}`)).toHaveValue("Comidas fuera");
     await expect(page.getByTestId(`mov-${txId}`)).toContainText("origen: user");
   });
 
