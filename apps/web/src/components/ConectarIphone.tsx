@@ -335,7 +335,7 @@ function Step4Test({ ajustes, refreshAjustes, onBack, onDone, mock }: {
   // En modo mock, `?mock=iphone-test` ya programó la prueba al cargar la página.
 
   return (
-    <StepCard title="Prueba la conexión" lead="En el iPhone, ejecuta el atajo «Luca – Probar iPhone». Tu script anota la prueba en tu hoja y aquí la verás llegar.">
+    <StepCard title="Prueba la conexión" lead="En el iPhone, ejecuta a mano el atajo «Luca – Captura Yape» (botón ▶ en Atajos; sin notificación manda una prueba». Tu script anota la prueba en tu hoja y aquí la verás llegar.">
       {result ? (
         <div className="rounded-lg border border-ok bg-panel-2 p-4 text-center" role="status" data-testid="test-ok">
           <div className="text-2xl">✓</div>
@@ -353,7 +353,7 @@ function Step4Test({ ajustes, refreshAjustes, onBack, onDone, mock }: {
         <div data-testid="test-timeout">
           <Notice kind="warn">Todavía nada. Revisa en el iPhone:</Notice>
           <ul className="mt-2 grid gap-1 text-sm text-muted">
-            <li>· ¿Ejecutaste <b className="text-text">Luca – Probar iPhone</b>? Debe mostrar <code>{"{\"ok\":true,\"test\":true}"}</code>.</li>
+            <li>· ¿Ejecutaste a mano <b className="text-text">Luca – Captura Yape</b> (▶)? Debe mostrar <code>{"{\"ok\":true,\"test\":true}"}</code>.</li>
             <li>· Si muestra <code>unauthorized</code>: el <b className="text-text">token</b> no coincide; vuelve al paso 3 y cópialo de nuevo.</li>
             <li>· Si da error de red: la <b className="text-text">URL</b> debe terminar en <code>/exec?events=1</code> y la Web App debe estar publicada para «Cualquier usuario».</li>
             <li>· También vale un yapeo real: si te llega uno, lo detectamos igual.</li>

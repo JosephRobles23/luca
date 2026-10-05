@@ -29,7 +29,7 @@ export function queueMockScriptWrite(values: Record<string, string>, delayMs = 0
   } catch { /* sin storage */ }
 }
 
-/** Simula que el atajo "Luca – Probar iPhone" llegó al script: `lastTestAt` nuevo + dispositivo, pasados `delayMs`. */
+/** Simula que la prueba manual del atajo "Luca – Captura Yape" llegó al script: `lastTestAt` nuevo + dispositivo, pasados `delayMs`. */
 export function scheduleMockIphoneTest(delayMs = 3000) {
   queueMockScriptWrite({ "conexiones.iphone.lastTestAt": isoLima(new Date()), "conexiones.iphone.device": "iPhone de Nombre", "conexiones.iphone.schemaVersion": "1", "conexiones.iphone": "1" }, delayMs);
 }

@@ -237,7 +237,7 @@
         fila('Última prueba', esc(fecha(tele.lastTestAt))) +
         (tele.lastError ? fila('Último error', '<span class="warn">' + esc(tele.lastError) + '</span>') : '') +
         (tele.execUrl && d.execUrl && tele.execUrl !== d.execUrl ? '<div class="warn" style="margin-top:4px">La URL /exec cambió desde que generaste el atajo: vuelve a copiar el prompt (o edita la URL en el atajo).</div>' : '') +
-        '<div class="hint" style="margin-top:6px">Ejecuta "Luca – Probar iPhone" en el iPhone y revisa "Última prueba" aquí.</div>';
+        '<div class="hint" style="margin-top:6px">En el iPhone, abre Atajos y ejecuta a mano "Luca – Captura Yape" (▶): sin notificación envía una prueba y revisa "Última prueba" aquí.</div>';
     }
     document.getElementById('iphone').innerHTML = html;
     document.getElementById('btnConectar').textContent = d.conectado ? 'Ver datos del atajo' : 'Conectar iPhone';

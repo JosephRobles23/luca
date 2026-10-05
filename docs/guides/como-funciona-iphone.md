@@ -91,7 +91,7 @@ CADA USUARIO (en su iPhone):
    lucaa.lat → Conexiones → iPhone → paso 3 → botón "Instalar atajo"
    → se abre el enlace de iCloud → "Añadir atajo"
    → iOS le hace las dos preguntas → pega su URL y su token (botones "Copiar" al lado)
-   → activa la automatización → "Probar" → listo
+   → activa la automatización → lo ejecuta a mano una vez (prueba) → listo
 ```
 
 - El enlace de iCloud es una **copia del atajo vacío**: no contiene tus datos y no puede usarse para escribir en tu Sheet.

@@ -18,7 +18,8 @@ test("buildShortcutPrompt inyecta URL de eventos y token, y describe el atajo Pr
   assert.ok(p.includes("https://script.google.com/macros/s/AKfycbxMOCK/exec?events=1"));
   assert.ok(p.includes("abc-123"));
   assert.match(p, /Luca – Captura Yape/);
-  assert.match(p, /Luca – Probar iPhone/);
+  assert.match(p, /modo prueba/);
+  assert.doesNotMatch(p, /Probar iPhone/); // un solo atajo
   assert.match(p, /luca_pendientes/);
   assert.match(p, /"schema_version": "1"/);
   assert.doesNotMatch(p, /preguntas de configuración/); // los valores van fijos: no hay preguntas al importar

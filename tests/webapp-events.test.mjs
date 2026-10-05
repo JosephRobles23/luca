@@ -90,7 +90,7 @@ test('generarPromptIphone: prompt con la URL ?events=1 y el token literales, sin
   assert.ok(r.prompt.includes('https://script.google.com/macros/s/TEST/exec?events=1'));
   assert.ok(r.prompt.includes('"token": "uuid-1"'));
   assert.ok(r.prompt.includes('Luca – Captura Yape'));
-  assert.ok(r.prompt.includes('Luca – Probar iPhone'));
+  assert.ok(r.prompt.includes('modo prueba') && !r.prompt.includes('Probar iPhone')); // un solo atajo
   assert.ok(r.prompt.includes('luca_pendientes'));
   assert.doesNotMatch(r.prompt, /preguntas de configuración|Al importarse/);
   assert.equal(r.prompt, h.api.promptIphone_(r.execUrl, r.token));

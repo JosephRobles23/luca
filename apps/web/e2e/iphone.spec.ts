@@ -83,7 +83,7 @@ test.describe("Asistente Conectar iPhone", () => {
     const prompt = await page.getByTestId("prompt-text").inputValue();
     expect(prompt).toContain(`${EXEC}?events=1`);
     expect(prompt).toContain(token);
-    expect(prompt).toContain("Luca – Probar iPhone");
+    expect(prompt).toContain("modo prueba");
     await page.getByTestId("copy-prompt").click();
     expect(await clipboard(page)).toBe(prompt);
     await page.screenshot({ path: `${SHOTS}/16-iphone-paso3-atajo.png`, fullPage: true });
@@ -142,7 +142,7 @@ test.describe("Asistente Conectar iPhone", () => {
     await page.goto("/app/conexiones/iphone?paso=4");
     await expect(page.getByTestId("test-waiting")).toBeVisible();
     await page.clock.runFor(61_000);
-    await expect(page.getByTestId("test-timeout")).toContainText("Luca – Probar iPhone");
+    await expect(page.getByTestId("test-timeout")).toContainText("Luca – Captura Yape");
     await expect(page.getByTestId("test-timeout")).toContainText("token");
     await expect(page.getByTestId("test-timeout")).toContainText("/exec?events=1");
   });

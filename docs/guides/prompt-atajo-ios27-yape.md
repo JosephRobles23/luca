@@ -121,20 +121,21 @@ Pasos exactos, en este orden:
    respuesta vacía o sin "ok":true), añade el Diccionario del paso 5 a la lista persistente
    "luca_pendientes" del almacenamiento de Atajos (acción "Añadir elemento a la lista").
 
-9. Incluye además un segundo atajo pequeño llamado "Luca – Probar iPhone" que envíe a la misma URL
-   un Diccionario con "schema_version": "1", "id": "test-" + ahora, "source": "test", "token": el
-   token, "device": dispositivo, y muestre el texto de la respuesta en pantalla. Sirve para verificar
-   la conexión sin esperar un yapeo: el sidebar de Luca mostrará "Última prueba".
+9. Si la entrada del atajo está vacía (lo ejecuté a mano desde Atajos), en lugar de los pasos 1–8 envía a la misma URL
+   un Diccionario con "schema_version": "1", "id": "test-" + ahora, "source": "test", "token": el token, "device":
+   dispositivo, y muestra la respuesta en una alerta. Así un único atajo sirve también para probar la conexión.
 ```
 
 Después de generarlo:
 1. **Editar** → **ⓘ** → **Privacidad** → activa **"Permitir ejecución con el equipo bloqueado"** (etiqueta aprox.).
 2. **Editar** → **Automatización** → **Notificación** → App: **Yape** → **Ejecutar inmediatamente**.
-3. Ejecuta **"Luca – Probar iPhone"**: debe mostrar `{"ok":true,"test":true}` y en el sidebar aparecer "Última prueba: hace unos segundos".
+3. Abre Atajos y **ejecuta a mano "Luca – Captura Yape"** (▶): sin notificación entra en modo prueba y debe mostrar `{"ok":true,"test":true}` y en el sidebar aparecer "Última prueba: hace unos segundos".
 4. Pide un yapeo de S/1: en el sidebar sube "Eventos recibidos" y en `Movimientos` aparece una fila `transfer_in`.
 5. Para compartirlo: **⋯ → Compartir → Copiar enlace de iCloud**; ese enlace es el que va en el sidebar (`SHORTCUT_URL_`). Quien lo importe responderá las dos preguntas con sus propios datos.
 
 Seguridad en una línea: el `/exec` es público pero solo acepta tu token; el daño máximo con el token es insertar filas en tu propia hoja; "Regenerar token" lo invalida; nada de esto pasa por servidores de Luca.
+
+> Nota (2026-10-05): el generador de Atajos de iOS crea **un atajo por prompt**. Por eso la prueba no es un atajo aparte: el mismo "Luca – Captura Yape", ejecutado a mano (sin notificación de entrada), envía un evento `source:"test"` y muestra la respuesta.
 
 ## Prompt 1 (generado por Luca) — el que entrega el sidebar / la web
 
@@ -146,9 +147,9 @@ sustituyendo `<EXEC_URL>` por `Ajustes.conexiones.execUrl` y `<TOKEN>` por `Ajus
 2026-10-05). Este bloque debe coincidir carácter a carácter con la plantilla (lo verifica `tests/webapp-events.test.mjs`).
 
 ```text
-Crea un atajo llamado "Luca – Captura Yape" pensado para ejecutarse como automatización personal
-cuando llega una notificación de la app Yape. Debe correr sin pedir confirmación, sin abrirse en
-pantalla y sin mostrar alertas ni notificaciones propias.
+Crea UN solo atajo llamado "Luca – Captura Yape". Se usará de dos formas: como automatización
+personal cuando llega una notificación de la app Yape (sin pedir confirmación, sin abrirse y sin
+mostrar nada), y también ejecutándolo a mano desde la app Atajos para probar la conexión.
 
 Usa estos dos valores fijos (ya son los míos, no preguntes nada al importar):
 - URL de Luca: <EXEC_URL>?events=1
@@ -156,18 +157,23 @@ Usa estos dos valores fijos (ya son los míos, no preguntes nada al importar):
 
 Pasos exactos, en este orden:
 
-1. Toma la entrada del atajo (la notificación) y guarda en variables: "titulo" (título), "subtitulo"
-   (subtítulo, puede estar vacío), "cuerpo" (texto o mensaje), "fechaNotif" (fecha de la notificación)
-   y "raw" (la entrada completa convertida a texto).
+1. Guarda la fecha y hora actual en "ahora" formateada como ISO 8601 con hora y zona horaria
+   (ejemplo 2026-10-05T12:34:56-05:00), nunca solo la fecha. Obtén el nombre del dispositivo en
+   "dispositivo". Genera "eventId" concatenando "ahora", un guion y un número aleatorio entre 100000
+   y 999999.
 
-2. Guarda la fecha y hora actual en "ahora" formateada como ISO 8601 con hora y zona horaria
-   (ejemplo 2026-10-05T12:34:56-05:00), nunca solo la fecha.
+2. Si la entrada del atajo está VACÍA (lo ejecuté a mano, modo prueba):
+   a. Construye un Diccionario con "schema_version": "1", "id": "test-" + eventId, "source": "test",
+      "token": "<TOKEN>", "device": dispositivo, "received_at": ahora.
+   b. Haz una petición HTTP POST a la URL de Luca (<EXEC_URL>?events=1) con tipo de cuerpo JSON, enviando ese
+      Diccionario y siguiendo redirecciones.
+   c. Muestra el texto de la respuesta en una alerta y termina el atajo.
 
-3. Genera "eventId" concatenando "ahora", un guion y un número aleatorio entre 100000 y 999999.
+3. Si la entrada NO está vacía (la disparó una notificación de Yape), guarda en variables: "titulo"
+   (título), "subtitulo" (subtítulo, puede estar vacío), "cuerpo" (texto o mensaje), "fechaNotif"
+   (fecha de la notificación) y "raw" (la entrada completa convertida a texto).
 
-4. Obtén el nombre del dispositivo en "dispositivo".
-
-5. Construye un Diccionario:
+4. Construye un Diccionario:
    - "schema_version": "1"
    - "id": eventId
    - "source": "yape"
@@ -181,21 +187,16 @@ Pasos exactos, en este orden:
    - "received_at": ahora
    - "device": dispositivo
 
-6. Haz una petición HTTP a la URL de Luca (<EXEC_URL>?events=1) con método POST, tipo de cuerpo JSON,
-   enviando el Diccionario del paso 5. Debe seguir redirecciones. Guarda la respuesta en "respuesta".
+5. Haz una petición HTTP a la URL de Luca (<EXEC_URL>?events=1) con método POST, tipo de cuerpo JSON,
+   enviando el Diccionario del paso 4. Debe seguir redirecciones. Guarda la respuesta en "respuesta".
 
-7. Si "respuesta" contiene el texto "\"ok\":true", termina. En cualquier otro caso (error de red,
-   respuesta vacía o sin "ok":true), añade el Diccionario del paso 5 a la lista persistente
-   "luca_pendientes" del almacenamiento de Atajos (acción "Añadir elemento a la lista").
-
-8. Incluye además un segundo atajo pequeño llamado "Luca – Probar iPhone" que envíe a la misma URL de
-   Luca un Diccionario con "schema_version": "1", "id": "test-" + ahora, "source": "test", "token":
-   "<TOKEN>", "device": dispositivo, y muestre el texto de la respuesta en pantalla. Sirve para
-   verificar la conexión sin esperar un yapeo: el sidebar de Luca mostrará "Última prueba".
+6. Si "respuesta" contiene el texto "\"ok\":true", termina sin mostrar nada. En cualquier otro caso
+   (error de red, respuesta vacía o sin "ok":true), añade el Diccionario del paso 4 a la lista
+   persistente "luca_pendientes" del almacenamiento de Atajos (acción "Añadir elemento a la lista").
 ```
 
 Después de generarlo: los mismos pasos 1–4 de la sección anterior (permitir con el equipo bloqueado, automatización Notificación →
-Yape, ejecutar "Luca – Probar iPhone", pedir un yapeo de S/1). No lo compartas por iCloud: contiene tu token. Si pulsas
+Yape, ejecutar a mano "Luca – Captura Yape" (prueba), pedir un yapeo de S/1). No lo compartas por iCloud: contiene tu token. Si pulsas
 **Regenerar token** o cambia tu `/exec`, vuelve a generar el prompt (o edita URL y token dentro del atajo).
 
 ## Prompt 2 — Atajo "Luca – Flush" (Experimento 2: cola offline)
