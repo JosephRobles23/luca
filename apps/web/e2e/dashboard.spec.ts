@@ -5,7 +5,7 @@ test.describe("Landing → entrar → dashboard", () => {
   test("la landing presenta propuesta, pasos, privacidad y legales", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Tus gastos de BCP y Yape");
-    await expect(page.getByRole("heading", { name: "Cómo funciona" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Todo pasa dentro de tu cuenta de Google." })).toBeVisible();
     await expect(page.getByRole("link", { name: "Política de privacidad" })).toHaveAttribute("href", "/privacidad");
     await expect(page.getByRole("link", { name: "Términos de uso" })).toHaveAttribute("href", "/terminos");
     await page.screenshot({ path: `${SHOTS}/01-landing.png`, fullPage: true });

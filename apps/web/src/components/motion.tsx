@@ -1,18 +1,20 @@
 "use client";
 
 /** Utilidades de movimiento (DESIGN.md §Motion). Todo respeta prefers-reduced-motion. */
-import { useEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 const reduced = () => typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 /**
  * Cuenta desde el valor anterior (0 la primera vez) hasta `value` en `ms`, con ease-out.
- * Con movimiento reducido devuelve el valor final directamente.
+ * El estado inicial es `value` en servidor y cliente (sin error de hidratación); el efecto de layout
+ * programa el primer cuadro antes del pintado, así que no se ve el valor final antes de contar.
+ * Con movimiento reducido salta al valor final.
  */
 export function useCountUp(value: number, ms = 600): number {
-  const [shown, setShown] = useState(() => (reduced() ? value : 0));
+  const [shown, setShown] = useState(value);
   const from = useRef(0);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const dur = reduced() || !Number.isFinite(value) ? 0 : ms;
     const start = performance.now(), a = Number.isFinite(from.current) ? from.current : 0, b = value;
     let raf = 0;

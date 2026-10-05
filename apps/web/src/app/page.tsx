@@ -85,7 +85,7 @@ export default async function Home() {
 
       <footer className="mx-auto flex max-w-[1120px] flex-wrap justify-between gap-3 px-4 pb-28 pt-8 text-[13px] text-muted sm:px-7 min-[720px]:pb-10">
         <span>Luca · lucaa.lat · proyecto personal, gratuito y sin anuncios</span>
-        <span><Link className="underline underline-offset-2" href="/privacidad">Privacidad</Link> · <Link className="underline underline-offset-2" href="/terminos">Términos</Link></span>
+        <span><Link className="underline underline-offset-2" href="/privacidad">Política de privacidad</Link> · <Link className="underline underline-offset-2" href="/terminos">Términos de uso</Link></span>
       </footer>
 
       <div className={s.mobileCta}><EntrarButton action={entrar} /></div>
