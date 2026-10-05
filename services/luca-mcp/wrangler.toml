@@ -11,10 +11,11 @@ main = "src/index.ts"
 compatibility_date = "2026-08-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Activar cuando la zona lucaa.lat esté en esta cuenta de Cloudflare (hasta entonces: workers.dev)
-# routes = [
-#   { pattern = "mcp.lucaa.lat", custom_domain = true }
-# ]
+# Dominio propio (zona lucaa.lat en esta misma cuenta). workers.dev queda activo como respaldo
+# para conexiones creadas antes del dominio.
+routes = [
+  { pattern = "mcp.lucaa.lat", custom_domain = true }
+]
 workers_dev = true
 
 [vars]
