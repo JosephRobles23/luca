@@ -11,7 +11,7 @@
 | Web | Vercel, proyecto `luca-sand` (https://luca-sand.vercel.app, Root Directory `apps/web`) |
 | Dominios finales web | `lucaa.lat` y `www.lucaa.lat` |
 | MCP | hoy https://luca-mcp.chif-of-staff.workers.dev → luego `mcp.lucaa.lat` |
-| Proyecto GCP | `luca-510610`, cliente OAuth "Luca Web (spikes)" |
+| Proyecto GCP | `luca-510610`. Hay **dos** clientes OAuth: **"Luca Web"** (el de producción: su ID y secreto son los `AUTH_GOOGLE_ID/SECRET` de `apps/web/.env.local` y de Vercel) y "Luca Web (spikes)" (solo para la página de spikes del puerto 5173; no tocar para la web) |
 
 ---
 
@@ -118,9 +118,11 @@ Notas de Auth.js v5: `AUTH_SECRET` es "la única variable estrictamente requerid
 
 ## Parte D — Cliente OAuth en Google Cloud
 
+> Regla: todas las URIs de esta parte se registran en el cliente **cuyo ID está en `AUTH_GOOGLE_ID`** (hoy, "Luca Web"). Si algún día cambias de cliente, cambia también las variables en `.env.local` y Vercel y vuelve a desplegar.
+
 1. https://console.cloud.google.com → selector de proyecto arriba → **luca-510610**.
 2. Menú ☰ → **Google Auth Platform** → **Clientes** (*Clients*). Enlace directo: https://console.cloud.google.com/auth/clients?project=luca-510610
-3. Haz clic en el nombre **Luca Web (spikes)** (ID termina en `...808b0i`). Se abre la página de detalles del cliente.
+3. Haz clic en el nombre **Luca Web** (NO el que dice "(spikes)"). Comprueba que el **ID de cliente** que aparece a la derecha es el mismo que `AUTH_GOOGLE_ID` en `apps/web/.env.local` y en Vercel: si no coinciden, Google responderá `redirect_uri_mismatch` aunque registres bien las URIs. Se abre la página de detalles del cliente.
 4. Sección **Orígenes autorizados de JavaScript** (*Authorized JavaScript origins*) → **+ Agregar URI** (*Add URI*) por cada uno (sin barra final, sin rutas):
 
 ```
