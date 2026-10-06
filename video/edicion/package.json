@@ -1,0 +1,20 @@
+{
+  "name": "luca-demo-edicion",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "render": "remotion render src/index.ts LucaDemo out/luca-demo-raw.mp4 --concurrency=5 --crf=18 --timeout=120000",
+    "still": "remotion still src/index.ts LucaDemo",
+    "render:narrado": "remotion render src/index.ts LucaNarrado out/luca-narrado-raw.mp4 --concurrency=5 --crf=18 --timeout=120000"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.484",
+    "remotion": "4.0.484",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "typescript": "5.4.5",
+    "@types/react": "18.3.3"
+  }
+}
