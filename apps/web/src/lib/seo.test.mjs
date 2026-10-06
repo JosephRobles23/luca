@@ -5,7 +5,7 @@ import { SITE, FAQ, PUBLIC_PATHS, jsonLd, jsonLdScript } from "./seo.ts";
 
 test("jsonLd: WebSite, WebApplication gratuita y FAQPage con todas las preguntas", () => {
   const graph = jsonLd()["@graph"];
-  assert.deepEqual(graph.map((n) => n["@type"]), ["WebSite", "WebApplication", "FAQPage"]);
+  assert.deepEqual(graph.map((n) => n["@type"]), ["WebSite", "WebApplication", "FAQPage", "VideoObject"]);
   const app = graph[1];
   assert.equal(app.applicationCategory, "FinanceApplication");
   assert.equal(app.offers.price, "0");

@@ -9,9 +9,11 @@ import { EntrarButton } from "@/components/portada/EntrarButton";
 import { Faq } from "@/components/portada/Faq";
 import { Features } from "@/components/portada/Features";
 import { PanelShot } from "@/components/portada/PanelShot";
+import { PitchVideo } from "@/components/portada/PitchVideo";
 import { SheetSection } from "@/components/portada/SheetSection";
 import { YapeSection } from "@/components/portada/YapeSection";
 import s from "@/components/portada/portada.module.css";
+import { PITCH_VIDEO, mmss } from "@/lib/pitch-video";
 import { FAQ, jsonLdScript } from "@/lib/seo";
 
 export const metadata: Metadata = { alternates: { canonical: "/" } };
@@ -34,6 +36,7 @@ export default async function Home() {
             <span>luca<b className="text-primary">.</b></span>
           </Link>
           <nav aria-label="Portada" className="flex items-center gap-1">
+            <a className={s.navLink} href="#video">Video</a>
             <a className={s.navLink} href="#camino">Cómo funciona</a>
             <a className={s.navLink} href="#que-hace">Qué hace</a>
             <a className={s.navLink} href="#en-tu-sheet">Tu Sheet</a>
@@ -54,7 +57,10 @@ export default async function Home() {
           </p>
           <div className="mt-1.5 flex flex-wrap justify-center gap-2.5">
             <EntrarButton action={entrar} testId="cta-entrar" />
-            <a className="btn lg" href="#camino">Ver cómo funciona</a>
+            <a className="btn lg" href="#video">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden><path d="M7 4.5v15L19.5 12z" /></svg>
+              Ver el video · {mmss(PITCH_VIDEO.seconds)}
+            </a>
           </div>
           <ul className={s.trust} aria-label="Lo que puedes esperar">
             <li>Gratis</li><li>Sin base de datos</li><li>Sin anuncios ni rastreadores</li><li>Nunca pide tu Gmail</li>
@@ -62,6 +68,7 @@ export default async function Home() {
           <PanelShot />
         </section>
 
+        <PitchVideo />
         <DataPath />
         <Features />
         <YapeSection />

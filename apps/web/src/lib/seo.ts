@@ -1,3 +1,5 @@
+import { PITCH_CHAPTERS, PITCH_VIDEO, isoDuration } from "./pitch-video.ts";
+
 // Datos del sitio para metadatos, sitemap y datos estructurados (JSON-LD). Una sola fuente para que la
 // página, los buscadores y los asistentes de IA lean lo mismo.
 
@@ -86,6 +88,24 @@ export function jsonLd() {
           "@type": "Question",
           name: q,
           acceptedAnswer: { "@type": "Answer", text: a },
+        })),
+      },
+      {
+        "@type": "VideoObject",
+        "@id": `${SITE.url}/#video`,
+        name: PITCH_VIDEO.name,
+        description: PITCH_VIDEO.description,
+        thumbnailUrl: `${SITE.url}${PITCH_VIDEO.poster}`,
+        contentUrl: PITCH_VIDEO.src,
+        uploadDate: PITCH_VIDEO.uploadDate,
+        duration: isoDuration(PITCH_VIDEO.seconds),
+        inLanguage: SITE.lang,
+        hasPart: PITCH_CHAPTERS.map((c, i) => ({
+          "@type": "Clip",
+          name: c.label,
+          startOffset: c.t,
+          endOffset: PITCH_CHAPTERS[i + 1]?.t ?? PITCH_VIDEO.seconds,
+          url: `${SITE.url}/#video`,
         })),
       },
     ],

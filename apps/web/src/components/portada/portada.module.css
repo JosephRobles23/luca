@@ -327,6 +327,61 @@
   .sxClose { visibility: hidden; }
 }
 
+/* ---------- video del pitch ----------
+   Entra con el scroll (animation-timeline: view(); sin soporte, aparece tal cual), un borde de luz lo recorre
+   (conic-gradient con un ángulo animable vía @property), un halo detrás y un botón con ondas. */
+@property --cine-a { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+.cineStage { perspective: 1600px; }
+.cine { position: relative; border-radius: 22px; padding: 1px; isolation: isolate; transform-origin: 50% 100%; background: var(--line); }
+.cine::before { content: ""; position: absolute; inset: 0; z-index: 2; pointer-events: none; border-radius: inherit; padding: 1px;
+  background: conic-gradient(from var(--cine-a), transparent 0 60%, var(--primary) 76%, #f08a5d 84%, transparent 94%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: cineSpin 7s linear infinite; }
+.cine::after { content: ""; position: absolute; inset: 10% 6% -4%; z-index: -1; border-radius: 48px; opacity: .45; transition: opacity .5s var(--ease-out);
+  background: radial-gradient(60% 60% at 50% 60%, color-mix(in srgb, var(--primary) 60%, transparent), transparent 72%); filter: blur(52px); }
+.cine:hover::after, .cine[data-playing="true"]::after { opacity: .85; }
+.cine[data-playing="true"]::before { animation-duration: 18s; }
+.cineFrame { position: relative; overflow: hidden; aspect-ratio: 16 / 9; border-radius: 21px; background: #0b0b0b; }
+.cineFrame video { display: block; width: 100%; height: 100%; object-fit: cover; }
+.cinePlay { position: absolute; inset: 0; display: grid; place-items: center; width: 100%; padding: 0; border: 0; cursor: pointer; color: #fff;
+  background: linear-gradient(180deg, rgba(0,0,0,.04) 30%, rgba(0,0,0,.62)); transition: opacity .4s var(--ease-out), visibility .4s; }
+.cinePlay[hidden] { display: none; }
+.cine[data-playing="true"] .cinePlay { opacity: 0; visibility: hidden; }
+.cineBtn { position: relative; display: grid; place-items: center; width: 84px; height: 84px; border-radius: 50%; background: var(--primary);
+  box-shadow: 0 14px 44px -10px var(--primary); transition: transform .3s cubic-bezier(.2, .8, .2, 1.25); }
+.cineBtn::before, .cineBtn::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--primary); animation: cineRing 2.6s cubic-bezier(.2, .6, .3, 1) infinite; }
+.cineBtn::after { animation-delay: 1.3s; }
+.cinePlay:hover .cineBtn { transform: scale(1.09); }
+.cinePlay:focus-visible { outline: none; }
+.cinePlay:focus-visible .cineBtn { outline: 3px solid #fff; outline-offset: 4px; }
+.cineBtn svg { width: 28px; height: 28px; margin-left: 5px; fill: #fff; }
+.cineMeta { position: absolute; left: clamp(16px, 3vw, 28px); bottom: clamp(14px, 2.6vw, 24px); display: grid; gap: 4px; text-align: left; }
+.cineMeta span { font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 11.5px; letter-spacing: .1em; text-transform: uppercase; color: #f08a5d; }
+.cineMeta b { font-size: clamp(16px, 2.2vw, 22px); font-weight: 500; letter-spacing: -0.01em; }
+.cineDur { position: absolute; right: clamp(16px, 3vw, 28px); bottom: clamp(14px, 2.6vw, 24px); font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 12px;
+  background: rgba(0,0,0,.6); border: 1px solid rgba(255,255,255,.14); border-radius: 6px; padding: 3px 8px; }
+@media (max-width: 560px) { .cineBtn { width: 64px; height: 64px; } .cineBtn svg { width: 22px; height: 22px; } .cineMeta b { display: none; } }
+.chapters { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.chapters a { display: inline-flex; align-items: center; gap: 8px; min-height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--card); color: var(--body); font-size: 13px; font-weight: 500; text-decoration: none; transition: border-color .2s, color .2s, background .2s; }
+.chapters a:hover { border-color: var(--primary); color: var(--ink); }
+.chapters a[data-on="true"] { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); }
+.chapterT { font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 12px; color: var(--muted); }
+.chapters a[data-on="true"] .chapterT { color: var(--primary); }
+@keyframes cineSpin { to { --cine-a: 360deg; } }
+@keyframes cineRing { from { transform: scale(1); opacity: .75; } to { transform: scale(1.75); opacity: 0; } }
+@keyframes cineIn { from { transform: rotateX(26deg) scale(.86) translateY(56px); opacity: .25; filter: blur(2px); } to { transform: none; opacity: 1; filter: none; } }
+@keyframes chipIn { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .cine { animation: cineIn linear both; animation-timeline: view(); animation-range: entry 0% entry 85%; }
+    .chapters li { animation: chipIn linear both; animation-timeline: view(); animation-range: entry calc(var(--i) * 6%) cover calc(18% + var(--i) * 6%); }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cine::before, .cineBtn::before, .cineBtn::after { animation: none; }
+}
+
 /* Las animaciones de una sección esperan a que se vea (Reveal pone data-inview). */
 @media (prefers-reduced-motion: no-preference) {
   .reveal[data-inview="false"] *, .reveal[data-inview="false"] *::before, .reveal[data-inview="false"] *::after { animation-play-state: paused !important; }
