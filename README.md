@@ -36,8 +36,34 @@ gastos desde **Claude o ChatGPT** mediante un servidor **MCP**.
 > **Principio rector: los datos viven y se procesan en el Google del usuario.** Luca no guarda transacciones,
 > tokens de Google ni claves de API en su infraestructura. La web no tiene base de datos.
 
+## Demo en video
+
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <a href="https://pub-9c0cbd6f24354fc589d1b895be70355d.r2.dev/luca-video/luca-demo-narrado.mp4"><img src="docs/img/video-demo.jpg" alt="Demo narrado de Luca (3:52)"></a>
+    </td>
+    <td width="50%" align="center">
+      <a href="https://pub-9c0cbd6f24354fc589d1b895be70355d.r2.dev/luca-video/luca-pitch-mujer.mp4"><img src="docs/img/video-pitch.jpg" alt="Pitch de Luca (2:22)"></a>
+    </td>
+  </tr>
+  <tr>
+    <td valign="top">
+      <b><a href="https://pub-9c0cbd6f24354fc589d1b895be70355d.r2.dev/luca-video/luca-demo-narrado.mp4">Demo narrado · 3:52</a></b><br>
+      El producto real de punta a punta: copiar la plantilla, el panel en lucaa.lat, el dashboard dentro de la Sheet,
+      las conexiones y el conector MCP preguntándole a ChatGPT por tus gastos.
+    </td>
+    <td valign="top">
+      <b><a href="https://pub-9c0cbd6f24354fc589d1b895be70355d.r2.dev/luca-video/luca-pitch-mujer.mp4">Pitch · 2:22</a></b><br>
+      La idea en dos minutos: tu Sheet es la base de datos, tu Google es el backend y la web solo renderiza.
+      Animación generada por código, cuadro a cuadro.
+    </td>
+  </tr>
+</table>
+
 ## Tabla de contenidos
 
+- [Demo en video](#demo-en-video)
 - [Características](#características)
 - [Cómo funciona](#cómo-funciona)
 - [Arquitectura](#arquitectura)
