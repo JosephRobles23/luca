@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luca · Pitch</title>
+<meta name="description" content="Pitch animado de Luca dibujado con JavaScript y Canvas: tus finanzas, en tu Google.">
+<style>
+  @font-face { font-family: Geist; src: url(fonts/Geist-400.ttf); font-weight: 400; }
+  @font-face { font-family: Geist; src: url(fonts/Geist-500.ttf); font-weight: 500; }
+  @font-face { font-family: Geist; src: url(fonts/Geist-600.ttf); font-weight: 600; }
+  @font-face { font-family: Geist; src: url(fonts/Geist-700.ttf); font-weight: 700; }
+  @font-face { font-family: "Geist Mono"; src: url(fonts/GeistMono-400.ttf); font-weight: 400; }
+  @font-face { font-family: "Geist Mono"; src: url(fonts/GeistMono-500.ttf); font-weight: 500; }
+  @font-face { font-family: "Geist Mono"; src: url(fonts/GeistMono-600.ttf); font-weight: 600; }
+  :root { --bg: #050505; --panel: rgba(23, 23, 23, .85); --text: #ede7dd; --muted: #8b857c; --accent: #d9623b; --line: rgba(237, 231, 221, .14); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); overflow-x: clip; }
+  body { font-family: Geist, system-ui, sans-serif; }
+  #stage { position: sticky; top: 0; height: 100vh; height: 100svh; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+  #frame { position: relative; width: min(100vw, calc((100svh - 96px) * 16 / 9)); aspect-ratio: 16 / 9; background: #000; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #controls { width: min(100vw, calc((100svh - 96px) * 16 / 9)); display: flex; align-items: center; gap: 10px; padding: 10px 16px; flex-wrap: wrap; }
+  button { font: inherit; font-size: 14px; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+  button:hover, button:focus-visible { border-color: var(--accent); outline: none; }
+  button[aria-current="true"] { background: var(--accent); color: #0b0b0b; border-color: var(--accent); }
+  button[aria-pressed="false"].toggle { color: var(--muted); text-decoration: line-through; }
+  #play { font-size: 17px; min-width: 52px; }
+  #chapters { display: flex; gap: 6px; flex-wrap: wrap; flex: 1 1 auto; }
+  #chapters button { font-size: 13px; padding: 4px 10px; }
+  #time { font-family: "Geist Mono", ui-monospace, monospace; font-size: 13px; color: var(--muted); min-width: 92px; text-align: right; }
+  #progress { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--accent); }
+  #hint { position: absolute; left: 50%; top: 62%; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--line); padding: 8px 16px; border-radius: 999px; font-size: clamp(13px, 2vw, 18px); transition: opacity .5s; pointer-events: none; white-space: nowrap; }
+  #caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  #spacer { height: 1400vh; }
+  @media (max-width: 600px) { #chapters button { font-size: 12px; padding: 3px 8px; } #controls { gap: 6px; } }
+</style>
+</head>
+<body>
+<main>
+  <div id="stage">
+    <div id="frame">
+      <canvas id="film" width="1920" height="1080" role="img" aria-label="Pitch animado de Luca"></canvas>
+      <div id="progress"></div>
+      <div id="hint">▶ o desplázate para avanzar</div>
+    </div>
+    <div id="controls">
+      <button id="play" type="button" aria-label="Reproducir">▶</button>
+      <nav id="chapters" aria-label="Capítulos"></nav>
+      <button id="cc" class="toggle" type="button" aria-pressed="true" aria-label="Subtítulos">CC</button>
+      <button id="mute" class="toggle" type="button" aria-pressed="true" aria-label="Sonido">♪ Sonido</button>
+      <span id="time">0:00 / 2:22</span>
+    </div>
+    <p id="caption" aria-live="polite"></p>
+    <audio id="soundtrack" data-src="audio/banda-sonora.m4a" preload="auto"></audio>
+  </div>
+  <div id="spacer"></div>
+  <noscript>Este pitch necesita JavaScript.</noscript>
+</main>
+<script src="film.js"></script>
+<script>
+  // ?voz=mujer → narración de Sulafat (banda-sonora-mujer.m4a, captions-mujer.js); sin parámetro, Charon
+  window.FILM_VOICE = /^[a-z]+$/.test(new URLSearchParams(location.search).get('voz') || '') ? '-' + new URLSearchParams(location.search).get('voz') : '';
+  document.write('<script src="captions' + window.FILM_VOICE + '.js" onerror="void 0"><\/script>');
+</script>
+<script>
+(function () {
+  const F = window.Film;
+  if (window.FILM_CAPTION_TIMES) F.setCaptionTimes(window.FILM_CAPTION_TIMES);
+  document.getElementById('soundtrack').dataset.src = 'audio/banda-sonora' + window.FILM_VOICE + '.m4a';
+  const $ = (id) => document.getElementById(id);
+  const cv = $('film'), ctx = cv.getContext('2d'), playBtn = $('play'), chapters = $('chapters'), timeEl = $('time');
+  const progress = $('progress'), hint = $('hint'), capEl = $('caption'), audio = $('soundtrack'), muteBtn = $('mute'), ccBtn = $('cc');
+  const fmt = (s) => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+  const perf = []; let lite = false;
+  let t = 0, lastDrawn = -1, playing = false, lastNow = 0, expectedY = -1, lastCap = null, raf = 0;
+  const maxScroll = () => Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+  const tFromScroll = () => Math.min(F.DURATION, Math.max(0, (window.scrollY / maxScroll()) * F.DURATION));
+  function scrollToT(nt) { expectedY = Math.round((nt / F.DURATION) * maxScroll()); window.scrollTo(0, expectedY); }
+
+  F.SCENES.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = (i + 1) + '. ' + s.title;
+    b.addEventListener('click', () => { t = s.start + 0.01; scrollToT(t); if (playing) syncAudio(true); lastDrawn = -1; request(); });
+    chapters.appendChild(b);
+  });
+  function frame(now) {
+    raf = 0;
+    if (playing) {
+      const dt = lastNow ? (now - lastNow) / 1000 : 0;
+      lastNow = now;
+      t = Math.min(F.DURATION, t + Math.min(dt, 0.25));
+      scrollToT(t);
+      if (t >= F.DURATION) setPlaying(false); else syncAudio();
+    }
+    const q = Math.round(t * F.FPS) / F.FPS;
+    if (q !== lastDrawn) {
+      const d0 = performance.now();
+      F.draw(ctx, q);
+      perf.push(performance.now() - d0);
+      if (perf.length === 24) { // calidad adaptable
+        const avg = perf.reduce((x, y) => x + y, 0) / perf.length;
+        if (avg > 30 && !lite) { lite = true; F.setQuality(0); }
+        perf.length = 0;
+      }
+      lastDrawn = q;
+      progress.style.width = (100 * t / F.DURATION) + '%';
+      timeEl.textContent = fmt(t) + ' / ' + fmt(F.DURATION);
+      hint.style.opacity = t < 1.5 && !playing ? 1 : 0;
+      const cap = F.captionAt(t);
+      if (cap !== lastCap) { capEl.textContent = cap; lastCap = cap; }
+      const cur = F.SCENES.findIndex((s) => t >= s.start && t < s.end);
+      chapters.querySelectorAll('button').forEach((b, i) => b.setAttribute('aria-current', String(i === (cur < 0 ? F.SCENES.length - 1 : cur))));
+    }
+    if (playing) request();
+  }
+  function request() { if (!raf) raf = requestAnimationFrame(frame); }
+  // Banda sonora: suena mientras ▶ reproduce, alineada con t (velocidad ±5 % para desfases pequeños, salto si > 0.15 s).
+  let audioOk = true;
+  audio.addEventListener('error', () => { audioOk = false; });
+  const SRC = audio.dataset.src;
+  if (location.protocol === 'file:' || !window.fetch) audio.src = SRC;
+  else fetch(SRC).then((r) => (r.ok ? r.blob() : Promise.reject(r.status))).then((bl) => { audio.src = URL.createObjectURL(bl); }, () => { audio.src = SRC; });
+  audio.addEventListener('loadedmetadata', () => { audioOk = true; if (playing) syncAudio(true); });
+  function syncAudio(force) {
+    if (!audioOk || audio.readyState < 1 || audio.seeking) return;
+    const d = audio.currentTime - t;
+    audio.playbackRate = Math.abs(d) > 0.03 ? 1 - Math.max(-0.05, Math.min(0.05, d * 0.5)) : 1;
+    if (force || Math.abs(d) > 0.15) { try { audio.currentTime = t; } catch (e) { /* sin metadatos */ } }
+    if (audio.paused && playing) audio.play().catch(() => {});
+  }
+  function setPlaying(p) {
+    playing = p; lastNow = 0;
+    playBtn.textContent = p ? '❚❚' : '▶';
+    playBtn.setAttribute('aria-label', p ? 'Pausar' : 'Reproducir');
+    if (p && t >= F.DURATION - 0.05) t = 0;
+    if (p) syncAudio(true); else if (!audio.paused) { audio.pause(); audio.playbackRate = 1; }
+    request();
+  }
+  muteBtn.addEventListener('click', () => { audio.muted = !audio.muted; muteBtn.setAttribute('aria-pressed', String(!audio.muted)); });
+  ccBtn.addEventListener('click', () => { const on = ccBtn.getAttribute('aria-pressed') !== 'true'; ccBtn.setAttribute('aria-pressed', String(on)); F.setCaptions(on); lastDrawn = -1; request(); });
+  playBtn.addEventListener('click', () => setPlaying(!playing));
+  window.addEventListener('keydown', (e) => { if (e.code === 'Space' && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); setPlaying(!playing); } });
+  window.addEventListener('scroll', () => {
+    if (expectedY >= 0 && Math.abs(window.scrollY - expectedY) < 3) return;
+    if (playing) setPlaying(false);
+    t = tFromScroll(); request();
+  }, { passive: true });
+  window.addEventListener('resize', () => { t = playing ? t : tFromScroll(); request(); });
+  function start() { F.init({}); t = tFromScroll(); request(); }
+  if (document.fonts && document.fonts.load) Promise.all(['400 20px Geist', '600 20px Geist', '500 20px "Geist Mono"'].map((f) => document.fonts.load(f))).then(start, start);
+  else start();
+})();
+</script>
+</body>
+</html>

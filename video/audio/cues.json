@@ -1,0 +1,718 @@
+[
+ {
+  "t": 0.3,
+  "name": "línea"
+ },
+ {
+  "t": 1.9,
+  "name": "logo"
+ },
+ {
+  "t": 1.95,
+  "name": "brillo"
+ },
+ {
+  "t": 8.7,
+  "name": "notif"
+ },
+ {
+  "t": 9.948,
+  "name": "notif"
+ },
+ {
+  "t": 10.591,
+  "name": "notif"
+ },
+ {
+  "t": 11.112,
+  "name": "notif"
+ },
+ {
+  "t": 11.567,
+  "name": "notif"
+ },
+ {
+  "t": 11.977,
+  "name": "notif"
+ },
+ {
+  "t": 12.356,
+  "name": "notif"
+ },
+ {
+  "t": 12.6,
+  "name": "notif-flot"
+ },
+ {
+  "t": 12.711,
+  "name": "notif"
+ },
+ {
+  "t": 12.9,
+  "name": "notif-flot"
+ },
+ {
+  "t": 13.045,
+  "name": "notif"
+ },
+ {
+  "t": 13.2,
+  "name": "notif-flot"
+ },
+ {
+  "t": 13.363,
+  "name": "notif"
+ },
+ {
+  "t": 13.5,
+  "name": "notif-flot"
+ },
+ {
+  "t": 13.668,
+  "name": "notif"
+ },
+ {
+  "t": 13.8,
+  "name": "notif-flot"
+ },
+ {
+  "t": 13.96,
+  "name": "notif"
+ },
+ {
+  "t": 14.1,
+  "name": "notif-flot"
+ },
+ {
+  "t": 14.242,
+  "name": "notif"
+ },
+ {
+  "t": 14.4,
+  "name": "notif-flot"
+ },
+ {
+  "t": 14.515,
+  "name": "notif"
+ },
+ {
+  "t": 14.7,
+  "name": "notif-flot"
+ },
+ {
+  "t": 14.779,
+  "name": "notif"
+ },
+ {
+  "t": 15,
+  "name": "notif-flot"
+ },
+ {
+  "t": 15.036,
+  "name": "notif"
+ },
+ {
+  "t": 15.286,
+  "name": "notif"
+ },
+ {
+  "t": 15.3,
+  "name": "notif-flot"
+ },
+ {
+  "t": 15.53,
+  "name": "notif"
+ },
+ {
+  "t": 15.6,
+  "name": "notif-flot"
+ },
+ {
+  "t": 15.768,
+  "name": "notif"
+ },
+ {
+  "t": 15.9,
+  "name": "notif-flot"
+ },
+ {
+  "t": 16.001,
+  "name": "notif"
+ },
+ {
+  "t": 16.2,
+  "name": "notif-flot"
+ },
+ {
+  "t": 16.23,
+  "name": "notif"
+ },
+ {
+  "t": 16.453,
+  "name": "notif"
+ },
+ {
+  "t": 16.5,
+  "name": "notif-flot"
+ },
+ {
+  "t": 16.673,
+  "name": "notif"
+ },
+ {
+  "t": 16.8,
+  "name": "notif-flot"
+ },
+ {
+  "t": 16.888,
+  "name": "notif"
+ },
+ {
+  "t": 17.1,
+  "name": "notif-flot"
+ },
+ {
+  "t": 17.6,
+  "name": "congela"
+ },
+ {
+  "t": 18.2,
+  "name": "contador"
+ },
+ {
+  "t": 18.2,
+  "name": "conteo"
+ },
+ {
+  "t": 18.284,
+  "name": "conteo"
+ },
+ {
+  "t": 18.376,
+  "name": "conteo"
+ },
+ {
+  "t": 18.476,
+  "name": "conteo"
+ },
+ {
+  "t": 18.584,
+  "name": "conteo"
+ },
+ {
+  "t": 18.7,
+  "name": "conteo"
+ },
+ {
+  "t": 18.824,
+  "name": "conteo"
+ },
+ {
+  "t": 18.956,
+  "name": "conteo"
+ },
+ {
+  "t": 19.096,
+  "name": "conteo"
+ },
+ {
+  "t": 19.244,
+  "name": "conteo"
+ },
+ {
+  "t": 19.4,
+  "name": "conteo"
+ },
+ {
+  "t": 19.564,
+  "name": "conteo"
+ },
+ {
+  "t": 19.736,
+  "name": "conteo"
+ },
+ {
+  "t": 19.8,
+  "name": "cero"
+ },
+ {
+  "t": 19.916,
+  "name": "conteo"
+ },
+ {
+  "t": 22.5,
+  "name": "notif-yape"
+ },
+ {
+  "t": 24.6,
+  "name": "atajo"
+ },
+ {
+  "t": 25.6,
+  "name": "morph"
+ },
+ {
+  "t": 28.2,
+  "name": "viaje"
+ },
+ {
+  "t": 29,
+  "name": "tachado"
+ },
+ {
+  "t": 29.05,
+  "name": "tachado-golpe"
+ },
+ {
+  "t": 32.4,
+  "name": "etapa"
+ },
+ {
+  "t": 33.4,
+  "name": "etapa"
+ },
+ {
+  "t": 34.4,
+  "name": "etapa"
+ },
+ {
+  "t": 34.9,
+  "name": "chip"
+ },
+ {
+  "t": 37,
+  "name": "fila"
+ },
+ {
+  "t": 37.1,
+  "name": "fila-ok"
+ },
+ {
+  "t": 38.2,
+  "name": "correo"
+ },
+ {
+  "t": 39.6,
+  "name": "viaje2"
+ },
+ {
+  "t": 41.5,
+  "name": "etapa"
+ },
+ {
+  "t": 42,
+  "name": "etapa"
+ },
+ {
+  "t": 42.5,
+  "name": "etapa"
+ },
+ {
+  "t": 42.9,
+  "name": "chip"
+ },
+ {
+  "t": 44.2,
+  "name": "fila"
+ },
+ {
+  "t": 44.3,
+  "name": "fila-ok"
+ },
+ {
+  "t": 54.6,
+  "name": "tachado3"
+ },
+ {
+  "t": 54.65,
+  "name": "golpe3"
+ },
+ {
+  "t": 55,
+  "name": "particulas"
+ },
+ {
+  "t": 56.4,
+  "name": "absorbe"
+ },
+ {
+  "t": 56.6,
+  "name": "tachado3"
+ },
+ {
+  "t": 56.65,
+  "name": "golpe3"
+ },
+ {
+  "t": 57,
+  "name": "particulas"
+ },
+ {
+  "t": 58.4,
+  "name": "absorbe"
+ },
+ {
+  "t": 59.8,
+  "name": "afirma"
+ },
+ {
+  "t": 61.4,
+  "name": "afirma"
+ },
+ {
+  "t": 63,
+  "name": "afirma"
+ },
+ {
+  "t": 64.6,
+  "name": "ramas"
+ },
+ {
+  "t": 71.6,
+  "name": "rise"
+ },
+ {
+  "t": 71.92,
+  "name": "rise"
+ },
+ {
+  "t": 72.24,
+  "name": "rise"
+ },
+ {
+  "t": 72.56,
+  "name": "rise"
+ },
+ {
+  "t": 72.88,
+  "name": "rise"
+ },
+ {
+  "t": 73.2,
+  "name": "rise"
+ },
+ {
+  "t": 73.52,
+  "name": "rise"
+ },
+ {
+  "t": 78,
+  "name": "zoom"
+ },
+ {
+  "t": 80,
+  "name": "zoom"
+ },
+ {
+  "t": 82.2,
+  "name": "zoom"
+ },
+ {
+  "t": 86.9,
+  "name": "clic"
+ },
+ {
+  "t": 87.1,
+  "name": "guardado"
+ },
+ {
+  "t": 91.6,
+  "name": "vidrio"
+ },
+ {
+  "t": 93.2,
+  "name": "vidrio-golpe"
+ },
+ {
+  "t": 99.6,
+  "name": "tecla"
+ },
+ {
+  "t": 99.652,
+  "name": "tecla"
+ },
+ {
+  "t": 99.704,
+  "name": "tecla"
+ },
+ {
+  "t": 99.756,
+  "name": "tecla"
+ },
+ {
+  "t": 99.807,
+  "name": "tecla"
+ },
+ {
+  "t": 99.859,
+  "name": "tecla"
+ },
+ {
+  "t": 99.911,
+  "name": "tecla"
+ },
+ {
+  "t": 99.963,
+  "name": "tecla"
+ },
+ {
+  "t": 100.015,
+  "name": "tecla"
+ },
+ {
+  "t": 100.067,
+  "name": "tecla"
+ },
+ {
+  "t": 100.119,
+  "name": "tecla"
+ },
+ {
+  "t": 100.17,
+  "name": "tecla"
+ },
+ {
+  "t": 100.222,
+  "name": "tecla"
+ },
+ {
+  "t": 100.274,
+  "name": "tecla"
+ },
+ {
+  "t": 100.326,
+  "name": "tecla"
+ },
+ {
+  "t": 100.378,
+  "name": "tecla"
+ },
+ {
+  "t": 100.43,
+  "name": "tecla"
+ },
+ {
+  "t": 100.481,
+  "name": "tecla"
+ },
+ {
+  "t": 100.533,
+  "name": "tecla"
+ },
+ {
+  "t": 100.585,
+  "name": "tecla"
+ },
+ {
+  "t": 100.637,
+  "name": "tecla"
+ },
+ {
+  "t": 100.689,
+  "name": "tecla"
+ },
+ {
+  "t": 100.741,
+  "name": "tecla"
+ },
+ {
+  "t": 100.793,
+  "name": "tecla"
+ },
+ {
+  "t": 100.844,
+  "name": "tecla"
+ },
+ {
+  "t": 100.896,
+  "name": "tecla"
+ },
+ {
+  "t": 100.948,
+  "name": "tecla"
+ },
+ {
+  "t": 101.2,
+  "name": "enviar"
+ },
+ {
+  "t": 101.8,
+  "name": "mcp-ida"
+ },
+ {
+  "t": 104.6,
+  "name": "mcp-vuelta"
+ },
+ {
+  "t": 106.4,
+  "name": "mcp-ok"
+ },
+ {
+  "t": 110.3,
+  "name": "cambio"
+ },
+ {
+  "t": 111.1,
+  "name": "tecla"
+ },
+ {
+  "t": 111.148,
+  "name": "tecla"
+ },
+ {
+  "t": 111.196,
+  "name": "tecla"
+ },
+ {
+  "t": 111.243,
+  "name": "tecla"
+ },
+ {
+  "t": 111.291,
+  "name": "tecla"
+ },
+ {
+  "t": 111.339,
+  "name": "tecla"
+ },
+ {
+  "t": 111.387,
+  "name": "tecla"
+ },
+ {
+  "t": 111.435,
+  "name": "tecla"
+ },
+ {
+  "t": 111.483,
+  "name": "tecla"
+ },
+ {
+  "t": 111.53,
+  "name": "tecla"
+ },
+ {
+  "t": 111.578,
+  "name": "tecla"
+ },
+ {
+  "t": 111.626,
+  "name": "tecla"
+ },
+ {
+  "t": 111.674,
+  "name": "tecla"
+ },
+ {
+  "t": 111.722,
+  "name": "tecla"
+ },
+ {
+  "t": 111.77,
+  "name": "tecla"
+ },
+ {
+  "t": 111.817,
+  "name": "tecla"
+ },
+ {
+  "t": 111.865,
+  "name": "tecla"
+ },
+ {
+  "t": 111.913,
+  "name": "tecla"
+ },
+ {
+  "t": 111.961,
+  "name": "tecla"
+ },
+ {
+  "t": 112.009,
+  "name": "tecla"
+ },
+ {
+  "t": 112.057,
+  "name": "tecla"
+ },
+ {
+  "t": 112.104,
+  "name": "tecla"
+ },
+ {
+  "t": 112.152,
+  "name": "tecla"
+ },
+ {
+  "t": 112.4,
+  "name": "enviar"
+ },
+ {
+  "t": 113,
+  "name": "mcp-ida"
+ },
+ {
+  "t": 115,
+  "name": "mcp-vuelta"
+ },
+ {
+  "t": 116.4,
+  "name": "mcp-ok"
+ },
+ {
+  "t": 117.6,
+  "name": "fila-ia"
+ },
+ {
+  "t": 123.5,
+  "name": "precio"
+ },
+ {
+  "t": 124,
+  "name": "tachado6"
+ },
+ {
+  "t": 124.04,
+  "name": "golpe6"
+ },
+ {
+  "t": 124.2,
+  "name": "precio"
+ },
+ {
+  "t": 124.7,
+  "name": "tachado6"
+ },
+ {
+  "t": 124.74,
+  "name": "golpe6"
+ },
+ {
+  "t": 125.2,
+  "name": "cero-golpe"
+ },
+ {
+  "t": 125.25,
+  "name": "cero-brillo"
+ },
+ {
+  "t": 128,
+  "name": "columna"
+ },
+ {
+  "t": 128.5,
+  "name": "columna"
+ },
+ {
+  "t": 129,
+  "name": "columna"
+ },
+ {
+  "t": 134.2,
+  "name": "logo-final"
+ },
+ {
+  "t": 134.3,
+  "name": "brillo-final"
+ }
+]

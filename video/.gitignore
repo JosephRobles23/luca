@@ -1,0 +1,6 @@
+frames/
+*.mp4
+# audio generado grande (stems y mezcla ~40 MB c/u): se regenera con tools/audio.mjs
+audio/*.wav
+# borradores personales (posts, notas)
+linkedin-post.md
