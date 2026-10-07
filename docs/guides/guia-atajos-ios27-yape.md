@@ -201,7 +201,9 @@ function reply_(obj) {
 
    - Primera vez: `OK_SAVED` y aparece una fila en la hoja.
    - Segunda vez: `OK_DUP`, sin fila nueva.
-9. **Si cambias el código:** entra a **Implementar > Administrar implementaciones (Manage deployments)**, edita la implementación y elige **Versión: Nueva versión (New version)**. Así se mantiene la misma URL `/exec`.
+9. **Si cambias el código:** entra a **Implementar > Gestionar implementaciones (Manage deployments)**, edita la implementación (✏️) y elige **Versión: Nueva versión (New version)**. Así se mantiene la misma URL `/exec`.
+   - **No uses "Nueva implementación" para actualizar.** Crea una URL `/exec` distinta y la anterior sigue viva con el código viejo hasta que la archives. El atajo del iPhone y el conector MCP seguirían apuntando a la vieja.
+   - Si ya lo hiciste: **Luca → ✅ Autorizar / Escanear ahora** (o "Comprobar Web App" en el panel) detecta la nueva y la guarda en `conexiones.execUrl`. Luego vuelve a copiar el prompt del atajo, porque `conexiones.iphone.execUrl` guarda la URL que lleva el atajo y solo cambia al regenerarlo. Si `ScriptApp.getService().getUrl()` no devuelve la nueva (bug conocido de Apps Script con varias implementaciones), pégala en **URL del Web App → Verificar y guardar URL** o archiva las viejas.
 
 > **Nota sobre el 302.** Al recibir un POST, Apps Script ejecuta `doPost` y responde con un **302** hacia `script.googleusercontent.com`, donde se sirve el resultado. Google pide que el cliente siga redirecciones ([Content Service](https://developers.google.com/apps-script/guides/content)).
 >

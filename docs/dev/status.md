@@ -2,9 +2,15 @@
 
 Skill de release: `.claude/skills/deploy-luca/SKILL.md`
 
-Actualizado: 2026-10-05. Fuente de verdad de qué está hecho, en curso y pendiente. Commits en `main`.
+Actualizado: 2026-10-07. Fuente de verdad de qué está hecho, en curso y pendiente. Commits en `main`.
 
 ## Hecho y publicado
+- LucaLib **v4** — (a) **plantilla oficial de solo lectura (ADR-010):** en "Luca Template" no hay triggers, escaneo,
+  eventos del iPhone ni del MCP; `lucaRun` solo lectura/estilo/paneles. (b) **URL /exec tras una "Nueva
+  implementación":** `resolverExecUrl_` prueba manual → viva → MCP → guardada (antes la vieja, que sigue respondiendo,
+  ganaba siempre) y "Autorizar / Escanear ahora" la vuelve a resolver (`refrescarExecUrl_`); `conexiones.iphone.execUrl`
+  no se toca (solo aviso). Web, sidebar y guía: publicar cambios con "Nueva versión" (misma URL). Incluye también la
+  retirada del atajo por iCloud pendiente desde v3. 225 tests.
 - LucaLib **v3** (cuenta petter). La opción de atajo por iCloud se retiró después (ADR-003, addendum 2026-10-05):
   sidebar y web solo ofrecen el prompt para generar el atajo; pendiente de publicar en una LucaLib nueva. 215 tests.
 - **Onboarding por fases (ADR-009, web):** "Copiar a mi Drive" (página nativa `/copy` de la plantilla) + "Elegir mi

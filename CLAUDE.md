@@ -12,13 +12,13 @@ desde el navegador; Worker Cloudflare (`services/luca-mcp`) expone MCP. Vocabula
 - **Secretos nunca en el repo ni en el chat.** `.env*`, `.dev.vars`, `.clasprc.json` están ignorados. Si un
   secreto aparece en el chat, decir que se rote.
 - **Antes de decidir algo nuevo de arquitectura, leer `docs/architecture/`.** Las decisiones viven en
-  ADR-001…009; si una cambia, se escribe un ADR que la sustituye, no se edita el anterior en silencio.
+  ADR-001…010; si una cambia, se escribe un ADR que la sustituye, no se edita el anterior en silencio.
 - Estado multi-tenant **nunca** en Script Properties de la librería (deuda de CoS-Agent que no se hereda).
   Por usuario: `PropertiesService.getUserProperties()` o pestañas del Sheet.
 
 ## Comandos
 ```bash
-npm test                 # 154 tests Node (harness vm con mocks de Apps Script, stub, lógica web y Worker)
+npm test                 # 225 tests Node (harness vm con mocks de Apps Script, stub, lógica web y Worker)
 npm run release:check    # LUCA_VERSION, stub, wrangler.toml y .env.example en la misma versión
 npm run lib:push         # clasp push de LucaLib (gas/shared)
 npm run lib:version      # nueva versión de LucaLib → luego subir "version" en gas/stub/appsscript.json
@@ -49,7 +49,7 @@ los usuarios no se actualizan solas (ADR-006 §5).
 ## Dónde está cada cosa
 | Qué | Dónde |
 |---|---|
-| Decisiones y plan | `docs/architecture/` (ADR-001…009, `plan-implementacion.md`) |
+| Decisiones y plan | `docs/architecture/` (ADR-001…010, `plan-implementacion.md`) |
 | Formatos reales de correos | `docs/discovery/formatos-correos-bcp-yape.md` |
 | Qué se reutiliza de CoS-Agent (`/home/user/Projects/CoS-Agent`) | `docs/discovery/reuso-cos-agent.md` |
 | Research con fuentes | `docs/research/` |

@@ -99,10 +99,15 @@ function resumenScan_(st) {
  */
 function autorizar(sheetId, config, installTriggers) {
   var ui = SpreadsheetApp.getUi();
+  if (esPlantillaOficial_(sheetId)) {
+    ui.alert('Luca', PLANTILLA_MSG_, ui.ButtonSet.OK);
+    return { modo: 'plantilla' };
+  }
+  var url = refrescarExecUrl_(sheetId, config);
   if (config.gmail.cursor) {
     var st = escanearAhora(sheetId, config);
-    ui.alert('Luca', 'Escaneo listo. ' + resumenScan_(st), ui.ButtonSet.OK);
-    return { modo: 'scan', scan: st };
+    ui.alert('Luca', 'Escaneo listo. ' + resumenScan_(st) + url.aviso, ui.ButtonSet.OK);
+    return { modo: 'scan', scan: st, execUrl: url };
   }
   var trigger = { installed: false, error: '' };
   if (typeof installTriggers === 'function') {
@@ -119,9 +124,30 @@ function autorizar(sheetId, config, installTriggers) {
   writeTelemetria_(sheetId, config, imp);
   var msg = 'Luca quedó activado.\n' +
     (trigger.installed ? 'Escaneo automático cada 15 min: instalado.\n' : 'Escaneo automático: NO se pudo instalar (' + trigger.error + ').\n') +
-    'Importación del último mes: ' + resumenScan_(imp) + (imp.done ? '.' : '. Continúa en segundo plano.');
+    'Importación del último mes: ' + resumenScan_(imp) + (imp.done ? '.' : '. Continúa en segundo plano.') + url.aviso;
   ui.alert('Luca', msg, ui.ButtonSet.OK);
-  return { modo: 'autorizar', trigger: trigger, import: imp };
+  return { modo: 'autorizar', trigger: trigger, import: imp, execUrl: url };
+}
+
+/**
+ * En Autorizar (acción del usuario, admite red): vuelve a resolver la URL /exec para que una "Nueva
+ * implementación" quede en `conexiones.execUrl` sin pasar por el sidebar. No toca `conexiones.iphone.execUrl`
+ * (es la URL grabada en el atajo): si difiere, solo avisa. Nunca lanza: no debe romper el escaneo.
+ * @return {{url:string, cambio:boolean, aviso:string}}
+ */
+function refrescarExecUrl_(sheetId, config) {
+  var a = config.ajustes || {};
+  var antes = execUrlGuardada_(config);
+  var out = { url: antes, cambio: false, aviso: '' };
+  try {
+    var res = resolverExecUrl_(sheetId, config);
+    if (!res.verified || res.url === antes) return out;
+    out.url = res.url; out.cambio = true;
+    out.aviso = '\nURL de tu aplicación web ' + (antes ? 'actualizada' : 'detectada') + ': ' + res.url;
+    var iphone = str_(a['conexiones.iphone.execUrl']).trim();
+    if (iphone && iphone !== res.url) out.aviso += '\nTu atajo del iPhone usa la URL anterior: vuelve a copiar el prompt desde el panel de Luca.';
+  } catch (e) { Logger.log('refrescarExecUrl_: ' + (e && e.message || e)); }
+  return out;
 }
 
 var MENU_ACTIONS_ = {
@@ -176,11 +202,13 @@ var DISPATCH_ = {
 /** Estado completo para el sidebar en una sola llamada (versión, cursor, último escaneo, conexiones). */
 function estadoLuca(sheetId, config) {
   var a = config.ajustes || {};
+  var plantilla = esPlantillaOficial_(sheetId);
   var ledger = estadoLedger(sheetId, config);
   var stats = null;
   try { stats = a['scan.lastStats'] ? JSON.parse(a['scan.lastStats']) : null; } catch (e) { stats = null; }
   return {
     version: LUCA_VERSION,
+    plantilla: plantilla,
     stubVersion: String(config.stubVersion || '1'),
     stubUpdate: stubUpdateMessage_(config),
     versionEnAjustes: a['luca.version'] || '',
@@ -200,15 +228,24 @@ function estadoLuca(sheetId, config) {
       proveedores: llmProveedores_(), defaults: LLM_DEFAULT_MODELS_,
       extractUnknown: llmExtractEnabled_(config), desconocidos: contarDesconocidos_(sheetId, config)
     },
-    execUrl: syncExecUrl_(sheetId, config),
+    // En la plantilla no se sincroniza: la URL quedaría en Ajustes y la heredaría cada copia.
+    execUrl: plantilla ? '' : syncExecUrl_(sheetId, config),
     iphone: telemetriaIphone_(a),
     ui: leerPrefUi_()
   };
 }
 
+// Lo único que lucaRun acepta dentro de la plantilla oficial: leer, dar estilo y abrir paneles (para mantenerla).
+var DISPATCH_PLANTILLA_ = {
+  cargarConfig: true, estadoLedger: true, estadoSecretos: true, leerLedger: true, resumenDashboard: true,
+  listarCategorias: true, estadoLuca: true, aplicarEstiloHojas: true, guardarPrefUi: true,
+  abrirGuia: true, abrirDashboard: true, abrirSidebar: true
+};
+
 function dispatch(fnName, args, sheetId, config) {
   // Módulos opcionales aportan su propia tabla (p. ej. MCP_DISPATCH_ en mcp-runtime.js).
   var fn = DISPATCH_[fnName] || (typeof MCP_DISPATCH_ !== 'undefined' ? MCP_DISPATCH_[fnName] : null);
   if (!fn) throw new Error('Función no permitida vía lucaRun: ' + fnName);
+  if (!DISPATCH_PLANTILLA_[fnName]) assertNoPlantilla_(sheetId);
   return fn(sheetId, config, args || []);
 }

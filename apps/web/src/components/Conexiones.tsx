@@ -50,7 +50,7 @@ export default function Conexiones() {
 
       {c.iphone.execUrlChanged && (
         <Notice kind="warn" action={<CopyButton text={c.execUrl} label="Copiar URL nueva" className="btn sm" />}>
-          La URL de tu Web App cambió (volviste a publicar la implementación). El atajo del iPhone sigue apuntando a la anterior: <b>reimporta el atajo</b> con la nueva URL desde <Link href="/app/conexiones/iphone?paso=3" className="underline underline-offset-2">Conectar iPhone</Link>.
+          La URL de tu Web App cambió (volviste a publicar la implementación). El atajo del iPhone sigue apuntando a la anterior: <b>reimporta el atajo</b> con la nueva URL desde <Link href="/app/conexiones/iphone?paso=3" className="underline underline-offset-2">Conectar iPhone</Link>. La próxima vez, publica cambios con <b>Implementar → Gestionar implementaciones → ✏️ → Versión: Nueva versión</b>: así la URL no cambia.
         </Notice>
       )}
 
@@ -82,6 +82,7 @@ export default function Conexiones() {
               <>En tu Sheet: <b>Extensiones → Apps Script → Implementar → Nueva implementación</b>.</>,
               <>Tipo <b>Aplicación web</b> · Ejecutar como <b>Yo</b> · Acceso <b>Cualquier usuario</b>.</>,
               <>Copia la URL que termina en <code>/exec</code> y pégala en tu Sheet → menú <b>Luca → Activar conexiones</b>. Tu script la valida y la guarda.</>,
+              <>Para publicar cambios más adelante no crees otra: <b>Gestionar implementaciones → ✏️ → Versión: Nueva versión</b> mantiene la misma URL.</>,
             ]}</NumSteps>
             <div><a className="btn primary" href={sheetUrl} target="_blank" rel="noreferrer">Abrir mi Sheet <IconExterno size={15} /></a></div>
           </>

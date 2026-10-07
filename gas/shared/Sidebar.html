@@ -18,7 +18,7 @@
   .sb-head .t small { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   button.guia { width: auto; min-height: 32px; margin: 0; padding: 0 10px; gap: 5px; font-size: 13px; }
   button.guia svg { width: 15px; height: 15px; }
-  #avisoStub { margin: 0 14px 10px; }
+  #avisoStub, #avisoPlantilla { margin: 0 14px 10px; }
 
   .tabs { flex: none; display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin: 0 14px; padding: 3px; background: var(--strong); border-radius: 11px; }
   .tabs button { position: relative; flex-direction: column; gap: 3px; min-height: 48px; margin: 0; padding: 6px 0 5px; border-radius: 8px;
@@ -48,6 +48,10 @@
     <button class="sec guia" id="btnGuia" data-cargando="Abriendo…" onclick="abrirGuia()" title="Guía paso a paso (no bloquea la hoja)"><i data-icon="brujula"></i>Guía</button>
   </header>
 
+  <div class="notice" id="avisoPlantilla" hidden>
+    <span class="ico" data-icon="alerta"></span>
+    <span>Esta es la <b>plantilla oficial</b>: aquí Luca no escanea ni guarda movimientos. Crea tu copia desde <a href="https://lucaa.lat" target="_blank">lucaa.lat</a>.</span>
+  </div>
   <div class="notice" id="avisoStub" hidden>
     <span class="ico" data-icon="alerta"></span>
     <span id="avisoStubTxt"></span>
@@ -89,7 +93,7 @@
         <details class="box">
           <summary>URL del Web App<i data-icon="chevron"></i></summary>
           <div>
-            <div class="hint" style="margin-top:0">Solo si tienes varias implementaciones: pega la de tipo "Aplicación web" (termina en <code>/exec</code>). Luca la verifica antes de guardarla.</div>
+            <div class="hint" style="margin-top:0">Solo si tienes varias implementaciones: pega la de tipo "Aplicación web" (termina en <code>/exec</code>). Luca la verifica antes de guardarla. <b>Luca → Autorizar / Escanear ahora</b> también detecta una implementación nueva. Para publicar cambios sin que la URL cambie: Implementar → Gestionar implementaciones → ✏️ → Versión: Nueva versión.</div>
             <input id="execUrlManual" placeholder="https://script.google.com/macros/s/…/exec">
             <button class="sec" data-cargando="Verificando…" onclick="guardarExecUrl()">Verificar y guardar URL</button>
           </div>
@@ -230,6 +234,7 @@
     var lg = s.ledger || {};
     $('subtitulo').textContent = 'v' + s.version + ' · ' + (s.autorizado ? (s.lastRunAt ? 'escaneado ' + hace(s.lastRunAt) : 'autorizado') : 'sin autorizar');
     // Aviso corto arriba; el texto completo (cómo actualizar) va en Detalles técnicos.
+    $('avisoPlantilla').hidden = !s.plantilla;
     $('avisoStub').hidden = !s.stubUpdate;
     $('avisoStub').title = s.stubUpdate || '';
     $('avisoStubTxt').innerHTML = esc(String(s.stubUpdate || '').split(':')[0]) + '. <a href="#" onclick="verStub();return false">Cómo actualizar</a>';

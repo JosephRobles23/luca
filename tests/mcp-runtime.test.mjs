@@ -320,3 +320,19 @@ test('URL del Web App: con varias implementaciones gana la que responde, aunque 
   assert.throws(() => h.api.guardarExecUrl(SID, cfg2, rota), /no responde/);
   assert.equal(h.api.guardarExecUrl(SID, cfg2, buena).ok, true);
 });
+
+test('URL del Web App: tras una "Nueva implementación" gana la nueva aunque la vieja (verificada) siga respondiendo', () => {
+  const vieja = 'https://script.google.com/macros/s/VIEJA/exec';
+  const nueva = 'https://script.google.com/macros/s/NUEVA/exec';
+  const resp = (code, body) => ({ getResponseCode: () => code, getContentText: () => (typeof body === 'string' ? body : JSON.stringify(body)) });
+  // Las dos responden: las implementaciones viejas no se archivan solas.
+  const fetch = () => resp(200, { ok: true, app: 'luca' });
+  const h = makeHarness({ execUrl: nueva, spreadsheets: { [SID]: { Ajustes: [['key', 'value'],
+    ['conexiones.execUrl', vieja], ['conexiones.mcp.execUrl', vieja], ['conexiones.execUrl.verifiedAt', '2026-10-01T00:00:00Z']] } }, fetch });
+  const r = h.api.resolverExecUrl_(SID, configFor(h, SID));
+  assert.equal(r.url, nueva); assert.equal(r.verified, true);
+  assert.equal(configFor(h, SID).ajustes['conexiones.execUrl'], nueva);
+  // La que pegó el usuario a mano sigue mandando sobre la viva.
+  h.api.guardarExecUrl(SID, configFor(h, SID), vieja);
+  assert.equal(h.api.resolverExecUrl_(SID, configFor(h, SID)).url, vieja);
+});

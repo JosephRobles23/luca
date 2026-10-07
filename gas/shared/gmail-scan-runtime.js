@@ -272,6 +272,8 @@ function pasadaImportacion_(sheetId, config) {
 
 /** Trigger temporal: importación en curso (si la hay) y luego escaneo incremental. Deja telemetría en Ajustes. */
 function runDispatcher(sheetId, config) {
+  // Trigger que quedó instalado en la plantilla oficial: no escanea (ver PLANTILLAS_OFICIALES_).
+  if (esPlantillaOficial_(sheetId)) return { skipped: 'plantilla' };
   var lock = LockService.getUserLock();
   try { lock.waitLock(5000); } catch (e) { return { skipped: 'locked' }; }
   try {
