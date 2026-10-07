@@ -16,6 +16,23 @@ var LUCA_VERSION = '3';
 // Versión mínima del stub que esta librería necesita (stub v2 = pasa setupTriggers y execUrl/stubVersion).
 var STUB_MIN_VERSION_ = '2';
 
+/**
+ * Sheets plantilla oficiales ("Luca Template"): cada usuario recibe una COPIA y todo lo que la plantilla
+ * contenga viaja en ella (pestañas y Ajustes, incluido el token del iPhone). Por eso Luca nunca escribe
+ * datos ahí: sin triggers, sin escaneo de Gmail, sin eventos del iPhone ni del MCP (ADR-010). Cada copia
+ * tiene otro ID, así que esto no afecta a nadie más. Debe coincidir con NEXT_PUBLIC_TEMPLATE_SHEET_ID.
+ */
+var PLANTILLAS_OFICIALES_ = { '1kQWNaj9J29LRK-LsdCAxrplW06heaTvS3Hje3NV1htg': true };
+var PLANTILLA_MSG_ = 'Esta es la plantilla oficial de Luca: aquí no se escanea Gmail ni se guardan movimientos, ' +
+  'porque todo lo que tenga se copiaría a cada usuario nuevo. Crea tu propia copia desde https://lucaa.lat';
+
+function esPlantillaOficial_(sheetId) {
+  return Object.prototype.hasOwnProperty.call(PLANTILLAS_OFICIALES_, String(sheetId || ''));
+}
+function assertNoPlantilla_(sheetId) {
+  if (esPlantillaOficial_(sheetId)) throw new Error(PLANTILLA_MSG_);
+}
+
 /** '' si el stub está al día; mensaje si hay que actualizar los archivos del stub en la copia. */
 function stubUpdateMessage_(config) {
   var v = parseInt((config && config.stubVersion) || '1', 10) || 1;

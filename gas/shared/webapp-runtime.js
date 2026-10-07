@@ -17,6 +17,7 @@ function webJson_(obj) {
 function webAction(metodo, e, sheetId, config) {
   var p = (e && e.parameter) || {};
   if (metodo === 'get') return webJson_({ ok: true, app: 'luca', version: LUCA_VERSION });
+  if (esPlantillaOficial_(sheetId)) return webJson_({ ok: false, error: 'template' });
   var body = {};
   try { body = JSON.parse((e && e.postData && e.postData.contents) || '{}'); } catch (err) { return webJson_({ ok: false, error: 'bad-json' }); }
 
