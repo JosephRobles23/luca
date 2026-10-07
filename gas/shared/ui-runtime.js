@@ -103,10 +103,11 @@ function autorizar(sheetId, config, installTriggers) {
     ui.alert('Luca', PLANTILLA_MSG_, ui.ButtonSet.OK);
     return { modo: 'plantilla' };
   }
+  var url = refrescarExecUrl_(sheetId, config);
   if (config.gmail.cursor) {
     var st = escanearAhora(sheetId, config);
-    ui.alert('Luca', 'Escaneo listo. ' + resumenScan_(st), ui.ButtonSet.OK);
-    return { modo: 'scan', scan: st };
+    ui.alert('Luca', 'Escaneo listo. ' + resumenScan_(st) + url.aviso, ui.ButtonSet.OK);
+    return { modo: 'scan', scan: st, execUrl: url };
   }
   var trigger = { installed: false, error: '' };
   if (typeof installTriggers === 'function') {
@@ -123,9 +124,30 @@ function autorizar(sheetId, config, installTriggers) {
   writeTelemetria_(sheetId, config, imp);
   var msg = 'Luca quedó activado.\n' +
     (trigger.installed ? 'Escaneo automático cada 15 min: instalado.\n' : 'Escaneo automático: NO se pudo instalar (' + trigger.error + ').\n') +
-    'Importación del último mes: ' + resumenScan_(imp) + (imp.done ? '.' : '. Continúa en segundo plano.');
+    'Importación del último mes: ' + resumenScan_(imp) + (imp.done ? '.' : '. Continúa en segundo plano.') + url.aviso;
   ui.alert('Luca', msg, ui.ButtonSet.OK);
-  return { modo: 'autorizar', trigger: trigger, import: imp };
+  return { modo: 'autorizar', trigger: trigger, import: imp, execUrl: url };
+}
+
+/**
+ * En Autorizar (acción del usuario, admite red): vuelve a resolver la URL /exec para que una "Nueva
+ * implementación" quede en `conexiones.execUrl` sin pasar por el sidebar. No toca `conexiones.iphone.execUrl`
+ * (es la URL grabada en el atajo): si difiere, solo avisa. Nunca lanza: no debe romper el escaneo.
+ * @return {{url:string, cambio:boolean, aviso:string}}
+ */
+function refrescarExecUrl_(sheetId, config) {
+  var a = config.ajustes || {};
+  var antes = execUrlGuardada_(config);
+  var out = { url: antes, cambio: false, aviso: '' };
+  try {
+    var res = resolverExecUrl_(sheetId, config);
+    if (!res.verified || res.url === antes) return out;
+    out.url = res.url; out.cambio = true;
+    out.aviso = '\nURL de tu aplicación web ' + (antes ? 'actualizada' : 'detectada') + ': ' + res.url;
+    var iphone = str_(a['conexiones.iphone.execUrl']).trim();
+    if (iphone && iphone !== res.url) out.aviso += '\nTu atajo del iPhone usa la URL anterior: vuelve a copiar el prompt desde el panel de Luca.';
+  } catch (e) { Logger.log('refrescarExecUrl_: ' + (e && e.message || e)); }
+  return out;
 }
 
 var MENU_ACTIONS_ = {

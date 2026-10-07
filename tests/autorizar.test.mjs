@@ -72,6 +72,26 @@ test('Autorizar con buzón vacío sigue siendo idempotente: la segunda vez escan
   assert.equal(n, 1);
 });
 
+test('Autorizar / Escanear ahora: adopta la URL de una "Nueva implementación" sin tocar la del atajo del iPhone', () => {
+  const vieja = 'https://script.google.com/macros/s/VIEJA/exec';
+  const nueva = 'https://script.google.com/macros/s/NUEVA/exec';
+  const ok = { getResponseCode: () => 200, getContentText: () => JSON.stringify({ ok: true, app: 'luca' }) };
+  const h = makeHarness({ execUrl: nueva, gmailMessages: [], fetch: () => ok, spreadsheets: { [SID]: { Ajustes: [['key', 'value'],
+    ['gmail.cursor', String(Math.floor(Date.now() / 1000))], ['conexiones.execUrl', vieja],
+    ['conexiones.execUrl.verifiedAt', '2026-10-01T00:00:00Z'], ['conexiones.iphone.execUrl', vieja]] } } });
+  const r = h.api.menuAction('lucaMenu1', SID, configFor(h, SID), () => {});
+  assert.equal(r.modo, 'scan');
+  assert.equal(r.execUrl.cambio, true);
+  const a = configFor(h, SID).ajustes;
+  assert.equal(a['conexiones.execUrl'], nueva);
+  assert.equal(a['conexiones.iphone.execUrl'], vieja, 'la del atajo solo cambia al regenerar el prompt');
+  assert.match(h.alerts[0][1], /actualizada: .*NUEVA/);
+  assert.match(h.alerts[0][1], /atajo del iPhone usa la URL anterior/);
+  // Segunda vez: nada que avisar.
+  h.api.menuAction('lucaMenu1', SID, configFor(h, SID), () => {});
+  assert.doesNotMatch(h.alerts[1][1], /URL/);
+});
+
 test('estadoLuca resume versión, cursor, último escaneo, importación y conexiones en una llamada', () => {
   const h = makeHarness({ execUrl: 'https://script.google.com/macros/s/TEST/exec', spreadsheets: { [SID]: {} }, gmailMessages: [reciente] });
   const antes = h.api.dispatch('estadoLuca', [], SID, configFor(h, SID));

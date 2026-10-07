@@ -237,15 +237,18 @@ function execUrlResponde_(url) {
 }
 
 /**
- * Resuelve CON red la URL buena: prueba candidatas (manual, guardada, viva), se queda con la primera que
+ * Resuelve CON red la URL buena: prueba candidatas (manual, viva, MCP, guardada), se queda con la primera que
  * responde y la guarda como verificada. Solo se usa en acciones del usuario (no en cada escaneo).
+ * La viva va antes que la guardada: tras una "Nueva implementación" la anterior sigue respondiendo (no se
+ * archiva sola) y, si fuera primero, la URL nunca avanzaría. Si getUrl() da una rota, no responde y se cae
+ * a la siguiente (2026-10-07).
  * @return {{url:string, verified:boolean, candidatas:Array<{url:string, ok:boolean}>}}
  */
 function resolverExecUrl_(sheetId, config) {
   var a = (config && config.ajustes) || {};
   var cands = [];
-  // Candidatas: la que pegó el usuario, la última que funcionó con el MCP, la guardada y la que da Google.
-  [str_(a['conexiones.execUrl.manual']).trim(), str_(a['conexiones.mcp.execUrl']).trim(), execUrlGuardada_(config), execUrlLive_(config)].forEach(function (u) {
+  // Candidatas: la que pegó el usuario, la que da Google, la última que funcionó con el MCP y la guardada.
+  [str_(a['conexiones.execUrl.manual']).trim(), execUrlLive_(config), str_(a['conexiones.mcp.execUrl']).trim(), execUrlGuardada_(config)].forEach(function (u) {
     if (u && cands.indexOf(u) < 0) cands.push(u);
   });
   var probadas = [];

@@ -110,6 +110,7 @@ export default function ConectarIphone({ requestedStep }: { requestedStep: Wizar
                   <>Arriba a la derecha: <b>Implementar → Nueva implementación</b>.</>,
                   <>⚙️ Tipo: <b>Aplicación web</b> · Ejecutar como: <b>Yo</b> · Acceso: <b>Cualquier usuario</b> → Implementar.</>,
                   <>Copia la URL que termina en <code>/exec</code> y pégala en tu Sheet → menú <b>Luca → Activar conexiones</b>. Tu script la valida y la guarda.</>,
+                  <>Para publicar cambios más adelante no crees otra: <b>Gestionar implementaciones → ✏️ → Versión: Nueva versión</b> mantiene la misma URL (y el atajo sigue funcionando).</>,
                 ]}</NumSteps>
                 <div className="flex flex-wrap gap-2">
                   <a className="btn primary" href={sheetUrl} target="_blank" rel="noreferrer">Abrir mi Sheet <IconExterno size={15} /></a>
