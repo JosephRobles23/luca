@@ -17,9 +17,10 @@ type Props = {
   months: string[];
   fuentes: string[];
   categorias: string[];
+  onClear: () => void;
 };
 
-export default function Filtros({ f, setF, counts, months, fuentes, categorias }: Props) {
+export default function Filtros({ f, setF, counts, months, fuentes, categorias, onClear }: Props) {
   const more = moreFiltersCount(f);
   const [open, setOpen] = useState(more > 0);
   const panel = useId();
@@ -33,10 +34,15 @@ export default function Filtros({ f, setF, counts, months, fuentes, categorias }
           <span className="sr-only">Buscar</span>
           <input id="f-q" type="search" className="h-full min-w-0 flex-1 bg-transparent text-sm text-ink outline-none placeholder:text-muted"
             placeholder="Comercio, persona, asunto…" value={f.q} style={{ outline: "none" }} onChange={(e) => setF({ q: e.target.value })} data-testid="filter-q" />
+          {f.q && (
+            <button type="button" className="grid h-[22px] w-[22px] flex-none place-items-center rounded-full bg-strong text-body hover:text-ink" aria-label="Borrar búsqueda" onClick={() => setF({ q: "" })}>
+              <IconCerrar size={12} />
+            </button>
+          )}
         </label>
         <button type="button" className="btn" aria-expanded={open} aria-controls={panel} onClick={() => setOpen((o) => !o)}>
           <IconAjustes />Más filtros
-          {more > 0 && <span className="num grid h-5 min-w-5 place-items-center rounded-full bg-strong px-1.5 text-[11px] text-ink">{more}</span>}
+          {more > 0 && <span className="num grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1.5 text-[11px] text-white">{more}</span>}
           <IconChevron dir={open ? "up" : "down"} size={16} />
         </button>
       </div>
@@ -76,15 +82,20 @@ export default function Filtros({ f, setF, counts, months, fuentes, categorias }
       </div>
 
       {active.length > 0 && (
-        <ul className="flex flex-wrap items-center gap-1.5" aria-label="Filtros activos">
-          {active.map((c) => (
-            <li key={c.key}>
-              <button type="button" className="chip bg-sunken" onClick={() => setF({ [c.key]: "" })} aria-label={`Quitar filtro ${c.label}`}>
-                {c.label}<IconCerrar size={14} />
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="mr-0.5 text-[12px] text-muted">Filtrando por</span>
+          <ul className="flex flex-wrap items-center gap-1.5" aria-label="Filtros activos">
+            {active.map((c) => (
+              <li key={c.key}>
+                <button type="button" className="inline-flex h-7 items-center gap-1 rounded-full bg-primary-soft pl-[11px] pr-1.5 text-[12.5px] font-medium text-primary transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_22%,var(--primary-soft))]"
+                  onClick={() => setF({ [c.key]: "" })} aria-label={`Quitar filtro ${c.label}`}>
+                  {c.label}<IconCerrar size={13} />
+                </button>
+              </li>
+            ))}
+          </ul>
+          {active.length > 1 && <button type="button" className="px-1 text-[12.5px] font-medium text-body hover:text-ink hover:underline hover:underline-offset-4" onClick={onClear}>Limpiar todo</button>}
+        </div>
       )}
     </form>
   );

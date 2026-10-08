@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   parseFilters, filtersToQuery, hasFilters, moreFiltersCount, applyFilters, countByTipo, expenseTotal, countLabel,
   activeFilterChips, monthsOf, fuentesOf, canMarkTransfer, parseAmount, sanitizeAmountInput, quickDates, firstError, EMPTY_FILTERS,
+  sortTxs, filterTotals, barsMonth, dailyBars, highlightParts, toCsv,
 } from "./movimientos.ts";
 
 const tx = (o) => ({ id: "x", fecha: "2026-10-04T10:00:00-05:00", tipo: "expense", monto: 10, moneda: "PEN", tipoCambio: null, comercio: "", contraparte: "", contraparteKey: "", categoria: "", categoriaOrigen: "", medio: "", canal: "", fuente: "bcp_email", operacion: "", gmailId: "", flags: [], asunto: "", creadoEn: "", ...o });
@@ -87,4 +88,51 @@ test("quickDates y firstError", () => {
   assert.deepEqual(plain(quickDates("2026-10-01")), { hoy: "2026-10-01", ayer: "2026-09-30" });
   assert.equal(firstError({ comercio: "x", monto: "y" }), "monto");
   assert.equal(firstError({}), null);
+});
+
+test("sortTxs: recientes primero o mayor monto en soles (USD convertido); no muta la lista", () => {
+  const a = tx({ id: "a", fecha: "2026-10-01T10:00:00-05:00", monto: 50 });
+  const b = tx({ id: "b", fecha: "2026-10-03T10:00:00-05:00", monto: 20, moneda: "USD", tipoCambio: 3.7 });
+  const c = tx({ id: "c", fecha: "2026-10-02T10:00:00-05:00", monto: 90 });
+  const list = [a, b, c];
+  assert.deepEqual(sortTxs(list, "fecha", 3.5).map((t) => t.id), ["b", "c", "a"]);
+  assert.deepEqual(sortTxs(list, "monto", 3.5).map((t) => t.id), ["c", "b", "a"]);
+  assert.deepEqual(list.map((t) => t.id), ["a", "b", "c"]);
+});
+
+test("filterTotals: gastos, ingresos y Yape aparte; entre cuentas no suma", () => {
+  const t = filterTotals([
+    tx({ monto: 10 }), tx({ monto: 5, moneda: "USD", tipoCambio: 4 }), tx({ tipo: "income", monto: 100 }),
+    tx({ tipo: "transfer_in", monto: 30 }), tx({ tipo: "internal_transfer", monto: 500 }),
+  ], 3.5);
+  assert.deepEqual(plain(t), { expense: 30, expenseCount: 2, income: 100, incomeCount: 1, yape: 30, yapeCount: 1 });
+});
+
+test("barsMonth y dailyBars: mes filtrado u hoy; sin Vivienda; días futuros marcados", () => {
+  assert.equal(barsMonth({ ...EMPTY_FILTERS, mes: "2026-09" }, "2026-10-08"), "2026-09");
+  assert.equal(barsMonth(EMPTY_FILTERS, "2026-10-08"), "2026-10");
+  const bars = dailyBars([
+    tx({ fecha: "2026-10-01T09:00:00-05:00", monto: 1300, categoria: "Vivienda" }),
+    tx({ fecha: "2026-10-02T09:00:00-05:00", monto: 12.5 }), tx({ fecha: "2026-10-02T19:00:00-05:00", monto: 7.5 }),
+    tx({ fecha: "2026-10-03T09:00:00-05:00", tipo: "income", monto: 99 }), tx({ fecha: "2026-09-02T09:00:00-05:00", monto: 40 }),
+  ], "2026-10", "2026-10-08", 3.5);
+  assert.equal(bars.length, 31);
+  assert.equal(bars[0].amount, 0);
+  assert.equal(bars[1].amount, 20);
+  assert.equal(bars[2].amount, 0);
+  assert.equal(bars[7].future, false);
+  assert.equal(bars[8].future, true);
+});
+
+test("highlightParts: ignora acentos y mayúsculas; null si no hay coincidencia", () => {
+  assert.deepEqual(highlightParts("Menú El Rincón", "rincon"), ["Menú El ", "Rincón", ""]);
+  assert.deepEqual(highlightParts("PLAZA VEA", "plaza"), ["", "PLAZA", " VEA"]);
+  assert.equal(highlightParts("RAPPI", "uber"), null);
+  assert.equal(highlightParts("RAPPI", "  "), null);
+});
+
+test("toCsv: encabezado, comillas escapadas y monto en soles", () => {
+  const csv = toCsv([tx({ id: "t1", comercio: 'Café "Bueno"', monto: 2, moneda: "USD", tipoCambio: 3.75 })], 3.5).split("\n");
+  assert.equal(csv[0], '"id","fecha","tipo","comercio","contraparte","categoria","moneda","monto","monto_pen","fuente","medio"');
+  assert.match(csv[1], /^"t1",.*"Café ""Bueno""",.*"USD","2","7.5","bcp_email",""$/);
 });

@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Resumen de Luca v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: panel de Luca (DESIGN.md) — barra lateral + rejilla bento de 12 columnas sin huecos:
+   banda de KPIs → ritmo diario/acumulado + radar → categorías · comercios · pendientes → 6 meses · movimientos. */
+:root {
+  --primary: #d9623b; --primary-2: #d9623b; --primary-strong: #bf5230; --primary-soft: #fbe6dc; --on-primary: #ffffff;
+  --ink: #1d1a17; --body: #57524b; --muted: #716a60;
+  --line: #e6ddd1; --line-soft: #efe8de; --line-strong: #d3c8b8;
+  --canvas: #f4efe8; --card: #fffdf9; --raised: #ffffff; --strong: #ebe4d9; --sunken: #efe9e0;
+  --selected-bg: #1d1a17; --selected-fg: #f4efe8; --nav-on-bg: #fffdf9; --nav-on-fg: #1d1a17;
+  --success: #1a7a59; --success-soft: #dcefe5; --warning: #92600f; --warning-soft: #f6ead2;
+  --cat-peach: #dfa88f; --cat-mint: #9fc9a2; --cat-blue: #9fbbe0; --cat-lavender: #c0a8dd; --cat-gold: #c08532;
+  --cat-rose: #e3a3b4; --cat-sand: #d8c08f; --cat-teal: #8ec5c0; --cat-none: #cfc6b8;
+  /* Series de comparación (validadas: naranja de Luca · azul · aguamarina) */
+  --s1: #d9623b; --s2: #2a78d6; --s3: #1baf7a;
+  --grid: #ece4d8; --axis: #d3c8b8;
+  --font: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --r-card: 16px; --r-md: 10px; --r-sm: 8px;
+  --ease: cubic-bezier(.2,.7,.2,1);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --primary: #d9623b; --primary-2: #f08a5d; --primary-soft: #2e1710;
+    --ink: #ede7dd; --body: #c4bdb3; --muted: #8b857c;
+    --line: #272727; --line-soft: #1d1d1d; --line-strong: #333333;
+    --canvas: #0b0b0b; --card: #171717; --raised: #1f1f1f; --strong: #242424; --sunken: #111111;
+    --selected-bg: #d9623b; --selected-fg: #0b0b0b; --nav-on-bg: #2e1710; --nav-on-fg: #f08a5d;
+    --success: #6fbf8a; --success-soft: #13241a; --warning: #e2b25a; --warning-soft: #2a2010;
+    --cat-none: #3d3d3d;
+    --s1: #d9623b; --s2: #3987e5; --s3: #199e70;
+    --grid: #232323; --axis: #333333;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --primary: #d9623b; --primary-2: #f08a5d; --primary-soft: #2e1710;
+  --ink: #ede7dd; --body: #c4bdb3; --muted: #8b857c;
+  --line: #272727; --line-soft: #1d1d1d; --line-strong: #333333;
+  --canvas: #0b0b0b; --card: #171717; --raised: #1f1f1f; --strong: #242424; --sunken: #111111;
+  --selected-bg: #d9623b; --selected-fg: #0b0b0b; --nav-on-bg: #2e1710; --nav-on-fg: #f08a5d;
+  --success: #6fbf8a; --success-soft: #13241a; --warning: #e2b25a; --warning-soft: #2a2010;
+  --cat-none: #3d3d3d;
+  --s1: #d9623b; --s2: #3987e5; --s3: #199e70;
+  --grid: #232323; --axis: #333333;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body { margin: 0; background: var(--canvas); color: var(--ink); font-family: var(--font); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 6px; }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.cur { color: var(--muted); font-weight: 400; }
+
+/* ---------- Shell ---------- */
+.shell { display: grid; grid-template-columns: 236px minmax(0, 1fr); min-height: 100vh; }
+.side { position: sticky; top: env(safe-area-inset-top, 0px); height: 100vh; border-right: 1px solid var(--line); padding: 20px 14px; display: flex; flex-direction: column; gap: 4px; }
+.logo { display: flex; align-items: center; gap: 10px; padding: 4px 10px 18px; font-weight: 600; font-size: 17px; letter-spacing: -.02em; }
+.logo i { width: 28px; height: 28px; border-radius: 9px; background: var(--primary); display: grid; place-items: center; color: var(--on-primary); font-style: normal; font-size: 15px; }
+.nav { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px; color: var(--body); text-decoration: none; font-weight: 500; }
+.nav:hover { background: var(--strong); }
+.nav.on { background: var(--nav-on-bg); color: var(--nav-on-fg); box-shadow: 0 0 0 1px var(--line); }
+.nav svg { width: 18px; height: 18px; flex: none; }
+.nav .count { margin-left: auto; font-family: var(--mono); font-size: 11px; background: var(--primary-soft); color: var(--primary); border-radius: 99px; padding: 1px 7px; }
+.side .spacer { flex: 1; }
+.side .note { font-size: 12px; color: var(--muted); padding: 10px; border: 1px dashed var(--line-strong); border-radius: 12px; }
+
+.main { min-width: 0; padding: 24px 32px 40px; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 14px; }
+
+/* ---------- Header ---------- */
+.head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.head h1 { margin: 0; font-size: clamp(24px, 3vw, 30px); font-weight: 500; letter-spacing: -.03em; text-wrap: balance; }
+.head p { margin: 2px 0 0; color: var(--muted); font-size: 13.5px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dot-live { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px var(--success-soft); }
+.tag-demo { font-family: var(--mono); font-size: 10px; letter-spacing: .4px; text-transform: uppercase; background: var(--strong); color: var(--muted); border-radius: 4px; padding: 2px 6px; }
+.head-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.month { display: inline-flex; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 12px; height: 40px; }
+.month button { border: 0; background: none; width: 36px; height: 38px; cursor: pointer; color: var(--body); border-radius: 10px; }
+.month button:hover:not(:disabled) { color: var(--ink); background: var(--strong); }
+.month button:disabled { opacity: .35; cursor: default; }
+.month span { min-width: 118px; text-align: center; font-weight: 500; }
+.icon-btn { height: 40px; min-width: 40px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--raised); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; }
+.icon-btn:hover { border-color: var(--muted); }
+.btn-primary { height: 40px; padding: 0 14px; border-radius: 10px; border: 0; background: var(--primary-strong); color: var(--on-primary); font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.btn-primary:hover { filter: brightness(1.06); }
+.btn-primary:active, .icon-btn:active { transform: translateY(1px); }
+
+/* ---------- Bento ---------- */
+.bento { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 14px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); padding: 18px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.c-12 { grid-column: span 12; } .c-8 { grid-column: span 8; } .c-7 { grid-column: span 7; } .c-6 { grid-column: span 6; }
+.c-5 { grid-column: span 5; } .c-4 { grid-column: span 4; }
+.card-h { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.card-h h2 { margin: 0; font-size: 15px; font-weight: 600; letter-spacing: -.1px; }
+.card-h .sub { margin: 2px 0 0; color: var(--muted); font-size: 12.5px; }
+.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .88px; text-transform: uppercase; color: var(--muted); }
+.link { font-size: 13px; font-weight: 500; color: var(--body); text-decoration: none; background: none; border: 0; cursor: pointer; padding: 0; }
+.link:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
+
+.seg { display: inline-flex; background: var(--strong); border-radius: 11px; padding: 3px; gap: 2px; }
+.seg button { border: 0; background: none; height: 28px; padding: 0 11px; border-radius: 8px; cursor: pointer; font-size: 12.5px; font-weight: 500; color: var(--body); }
+.seg button[aria-pressed="true"] { background: var(--raised); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / .08), 0 0 0 1px var(--line); }
+
+/* ---------- KPI band ---------- */
+.kpis { display: grid; grid-template-columns: minmax(0, 1.55fr) repeat(3, minmax(0, 1fr)); padding: 0; gap: 0; overflow: hidden; }
+.kpi { padding: 18px; display: flex; flex-direction: column; gap: 6px; min-width: 0; border-left: 1px solid var(--line); }
+.kpi:first-child { border-left: 0; }
+.kpi .val { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 22px; font-weight: 500; letter-spacing: -.03em; white-space: nowrap; }
+.kpi.hero .val { font-size: clamp(34px, 4.4vw, 48px); letter-spacing: -.045em; line-height: 1.05; }
+.kpi .meta { font-size: 12px; color: var(--muted); }
+.kpi-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.pill { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 9px; border-radius: 99px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.pill.up { background: var(--primary-soft); color: var(--primary); }
+.pill.down { background: var(--success-soft); color: var(--success); }
+.pill.same { background: var(--strong); color: var(--body); }
+.spark { height: 46px; margin-top: auto; }
+.pace { display: grid; gap: 6px; }
+.pace-bar { position: relative; height: 8px; border-radius: 99px; background: var(--strong); }
+.pace-bar .fill { position: absolute; inset: 0 auto 0 0; border-radius: 99px; background: var(--primary); transition: width .6s var(--ease); }
+.pace-bar .mark { position: absolute; top: -4px; bottom: -4px; width: 2px; border-radius: 2px; background: var(--primary-2); transform: translateX(-50%); transition: left .6s var(--ease); }
+.pace-legend { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+.pace-legend b { color: var(--ink); font-weight: 600; }
+
+/* ---------- Charts ---------- */
+.chart { width: 100%; min-width: 0; }
+.ch-cum { height: 230px; }
+.ch-daily { height: 110px; margin-top: -6px; }
+.ch-radar { height: 300px; }
+.ch-donut { height: 170px; }
+.ch-6m { flex: 1; min-height: 220px; }
+.insights { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.insights div { background: var(--card); padding: 10px 12px; min-width: 0; }
+.insights b { display: block; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 15px; font-weight: 500; }
+.insights span { font-size: 11.5px; color: var(--muted); }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 6px; }
+.legend button { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 99px; border: 1px solid var(--line); background: var(--card); cursor: pointer; font-size: 12px; color: var(--body); }
+.legend button[aria-pressed="false"] { opacity: .45; text-decoration: line-through; }
+.legend i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.legend i.dash { height: 3px; border-radius: 2px; }
+
+/* ---------- Lists ---------- */
+.cat-list, .mer-list, .tx-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.cat-item { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 10px; cursor: pointer; border: 0; background: none; width: 100%; text-align: left; }
+.cat-item:hover, .cat-item[aria-pressed="true"] { background: var(--sunken); }
+.cat-item .sw { width: 12px; height: 12px; border-radius: 4px; }
+.cat-item .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cat-item .pct { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.cat-item .amt { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 500; text-align: right; }
+.cat-item .pct { white-space: nowrap; }
+.donut-wrap { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+
+.mer { display: grid; gap: 5px; padding: 7px 4px; }
+.mer-top { display: flex; justify-content: space-between; gap: 10px; }
+.mer-top .n { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mer-top .n small { color: var(--muted); font-size: 11.5px; margin-left: 4px; }
+.mer-top .a { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 500; font-size: 13px; white-space: nowrap; }
+.mer-bar { height: 6px; border-radius: 99px; background: var(--strong); overflow: hidden; }
+.mer-bar span { display: block; height: 100%; border-radius: 99px; transition: width .6s var(--ease); }
+
+.pend { display: grid; gap: 8px; }
+.pend-item { background: var(--sunken); border-radius: 12px; padding: 10px 12px; display: grid; gap: 8px; transition: opacity .22s, transform .22s; }
+.pend-item.done { opacity: 0; transform: translateX(8px); }
+.pend-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+.pend-top .n { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pend-top .d { font-size: 11.5px; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.chip { height: 26px; padding: 0 10px; border-radius: 99px; border: 1px solid var(--line); background: var(--card); font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+.chip:hover { border-color: var(--line-strong); }
+.chip.sug { border-color: var(--primary); color: var(--primary); }
+.chip i { width: 8px; height: 8px; border-radius: 50%; }
+.count-badge { font-family: var(--mono); font-size: 12px; background: var(--warning-soft); color: var(--warning); border-radius: 99px; padding: 2px 9px; font-weight: 500; }
+.empty { color: var(--muted); font-size: 13px; padding: 18px 8px; text-align: center; border: 1px dashed var(--line-strong); border-radius: 12px; }
+
+.day-h { display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; letter-spacing: .88px; text-transform: uppercase; color: var(--muted); padding: 10px 8px 4px; }
+.day-h span:last-child { font-family: var(--mono); letter-spacing: 0; text-transform: none; font-weight: 500; }
+.tx { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 6px 8px; border-radius: 10px; }
+.tx:hover { background: var(--sunken); }
+.av { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-weight: 600; font-size: 13px; color: #1d1a17; }
+.tx .n { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+.tx .m { font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; white-space: nowrap; overflow: hidden; }
+.src { font-family: var(--mono); font-size: 9.5px; letter-spacing: .4px; text-transform: uppercase; background: var(--strong); color: var(--muted); border-radius: 4px; padding: 1px 5px; }
+.tx .a { font-family: var(--mono); font-variant-numeric: tabular-nums; font-weight: 500; white-space: nowrap; }
+.tx .a.in { color: var(--success); }
+.filter-on { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; background: var(--selected-bg); color: var(--selected-fg); border: 0; border-radius: 99px; height: 26px; padding: 0 10px; cursor: pointer; }
+.tx-scroll { max-height: 352px; overflow-y: auto; margin: 0 -6px; padding: 0 6px; scrollbar-width: thin; }
+
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); opacity: 0; background: var(--ink); color: var(--canvas); padding: 10px 16px; border-radius: 12px; font-size: 13.5px; transition: .22s var(--ease); pointer-events: none; z-index: 10; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+.rise { animation: rise .32s var(--ease) both; animation-delay: calc(var(--i, 0) * 40ms); }
+@keyframes rise { from { opacity: .001; transform: translateY(8px); } }
+@media (prefers-reduced-motion: reduce) { .rise { animation: none; } * { transition: none !important; } }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1180px) {
+  .c-8, .c-4.radar { grid-column: span 12; }
+  .c-4 { grid-column: span 6; }
+  .c-4.pending { grid-column: span 12; }
+  .c-5, .c-7 { grid-column: span 12; }
+}
+@media (max-width: 1023px) {
+  .shell { grid-template-columns: minmax(0, 1fr); }
+  .side { display: none; }
+  .main { padding: 18px 16px 40px; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpi.hero { grid-column: span 2; }
+  .kpi:nth-child(2) { border-left: 0; }
+  .kpi:not(.hero) { border-top: 1px solid var(--line); }
+}
+@media (max-width: 680px) {
+  .c-4 { grid-column: span 12; }
+  .kpis { grid-template-columns: minmax(0, 1fr); }
+  .kpi.hero { grid-column: auto; }
+  .kpi { border-left: 0; border-top: 1px solid var(--line); }
+  .kpi.hero { border-top: 0; }
+  .insights { grid-template-columns: minmax(0, 1fr); }
+  .donut-wrap { grid-template-columns: minmax(0, 1fr); }
+  .head-actions { width: 100%; }
+  .month { flex: 1; justify-content: space-between; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="side" aria-label="Navegación">
+    <div class="logo"><i>L</i>Luca</div>
+    <a class="nav on" href="#resumen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>Resumen</a>
+    <a class="nav" href="#movimientos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h10"/></svg>Movimientos<span class="count" id="navCount">0</span></a>
+    <a class="nav" href="#agregar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Agregar</a>
+    <a class="nav" href="#conexiones"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 15l6-6M7 11l-2 2a3.5 3.5 0 005 5l2-2M17 13l2-2a3.5 3.5 0 00-5-5l-2 2"/></svg>Conexiones</a>
+    <a class="nav" href="#ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 00-.1-1.2l2-1.5-2-3.4-2.3.9a7 7 0 00-2-1.2L14.2 3h-4l-.4 2.6a7 7 0 00-2 1.2l-2.4-.9-2 3.4 2 1.5A7 7 0 005.3 12c0 .4 0 .8.1 1.2l-2 1.5 2 3.4 2.4-.9a7 7 0 002 1.2l.4 2.6h4l.4-2.6a7 7 0 002-1.2l2.3.9 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg>Ajustes</a>
+    <div class="spacer"></div>
+    <div class="note">Maqueta interactiva del Resumen. Datos de ejemplo, no son tuyos.</div>
+  </aside>
+
+  <main class="main">
+    <div class="wrap">
+      <header class="head rise" style="--i:0">
+        <div>
+          <h1>Hola, Joseph</h1>
+          <p><span class="dot-live" aria-hidden="true"></span>Escaneado hace 6 min · <span class="tag-demo">Datos de ejemplo</span></p>
+        </div>
+        <div class="head-actions">
+          <div class="month" role="group" aria-label="Mes">
+            <button id="prevM" aria-label="Mes anterior">‹</button>
+            <span id="monthLbl">Octubre 2026</span>
+            <button id="nextM" aria-label="Mes siguiente">›</button>
+          </div>
+          <button class="icon-btn" id="themeBtn" aria-label="Cambiar tema" title="Cambiar tema">◐</button>
+          <button class="btn-primary" id="addBtn">+ Agregar</button>
+        </div>
+      </header>
+
+      <div class="bento">
+        <!-- Banda de KPIs -->
+        <section class="card kpis c-12 rise" style="--i:1" aria-label="Indicadores del mes">
+          <div class="kpi hero">
+            <div class="kpi-row"><span class="eyebrow" id="kSpentLbl">Gastado en octubre</span><span class="pill" id="kDelta"></span></div>
+            <div class="val"><span class="cur">S/</span> <span id="kSpent">0.00</span></div>
+            <div class="pace">
+              <div class="pace-bar" role="img" id="paceBar"><span class="fill" id="paceFill"></span><span class="mark" id="paceMark"></span></div>
+              <div class="pace-legend"><span id="paceL"></span><span id="paceR"></span></div>
+            </div>
+          </div>
+          <div class="kpi">
+            <span class="eyebrow">Ingresos</span>
+            <div class="val"><span class="cur">S/</span> <span id="kInc">0.00</span></div>
+            <span class="meta" id="kIncMeta"></span>
+            <div class="chart spark" id="sparkInc"></div>
+          </div>
+          <div class="kpi">
+            <span class="eyebrow">Te queda</span>
+            <div class="val" id="kNetWrap"><span class="cur">S/</span> <span id="kNet">0.00</span></div>
+            <span class="meta" id="kNetMeta"></span>
+            <div class="chart spark" id="sparkNet"></div>
+          </div>
+          <div class="kpi">
+            <span class="eyebrow">Yape recibido</span>
+            <div class="val"><span class="cur">S/</span> <span id="kYape">0.00</span></div>
+            <span class="meta" id="kYapeMeta"></span>
+            <div class="chart spark" id="sparkYape"></div>
+          </div>
+        </section>
+
+        <!-- Ritmo: acumulado + diario -->
+        <section class="card c-8 rise" style="--i:2" aria-labelledby="h-ritmo">
+          <div class="card-h">
+            <div><h2 id="h-ritmo">Ritmo del mes</h2><p class="sub">Gasto acumulado contra el mes anterior y gasto de cada día (barras sin el alquiler; fines de semana más intensos)</p></div>
+            <div class="legend" id="cumLegend"></div>
+          </div>
+          <div class="chart ch-cum" id="chCum"></div>
+          <div class="chart ch-daily" id="chDaily"></div>
+          <div class="insights" id="insights"></div>
+        </section>
+
+        <!-- Radar -->
+        <section class="card c-4 radar rise" style="--i:3" aria-labelledby="h-radar">
+          <div class="card-h">
+            <div><h2 id="h-radar">Perfil de gasto</h2><p class="sub" id="radarSub">Por categoría, sin Vivienda (gasto fijo)</p></div>
+            <div class="seg" role="group" aria-label="Unidad del radar">
+              <button aria-pressed="true" data-unit="pen">S/</button>
+              <button aria-pressed="false" data-unit="pct">% del mes</button>
+            </div>
+          </div>
+          <div class="chart ch-radar" id="chRadar"></div>
+          <div class="legend" id="radarLegend"></div>
+        </section>
+
+        <!-- Categorías -->
+        <section class="card c-4 rise" style="--i:4" aria-labelledby="h-cat">
+          <div class="card-h"><div><h2 id="h-cat">En qué se fue</h2><p class="sub">Toca una categoría para filtrar</p></div></div>
+          <div class="donut-wrap">
+            <div class="chart ch-donut" id="chDonut"></div>
+            <ul class="cat-list" id="catList"></ul>
+          </div>
+        </section>
+
+        <!-- Comercios -->
+        <section class="card c-4 rise" style="--i:5" aria-labelledby="h-mer">
+          <div class="card-h"><div><h2 id="h-mer">Comercios principales</h2><p class="sub" id="merSub"></p></div><button class="link">Ver todos</button></div>
+          <ul class="mer-list" id="merList"></ul>
+        </section>
+
+        <!-- Pendientes -->
+        <section class="card c-4 pending rise" style="--i:6" aria-labelledby="h-pend">
+          <div class="card-h"><div><h2 id="h-pend">Por categorizar</h2><p class="sub">Un toque y se guarda en tu Sheet</p></div><span class="count-badge" id="pendCount">0</span></div>
+          <div class="pend" id="pendList"></div>
+        </section>
+
+        <!-- 6 meses -->
+        <section class="card c-5 rise" style="--i:7" aria-labelledby="h-6m">
+          <div class="card-h"><div><h2 id="h-6m">Últimos 6 meses</h2><p class="sub">Toca una barra para ir a ese mes</p></div></div>
+          <div class="chart ch-6m" id="ch6m"></div>
+        </section>
+
+        <!-- Movimientos -->
+        <section class="card c-7 rise" style="--i:8" aria-labelledby="h-tx">
+          <div class="card-h">
+            <div><h2 id="h-tx">Movimientos del mes</h2><p class="sub" id="txSub"></p></div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span id="txFilter"></span><button class="link">Ver todos</button></div>
+          </div>
+          <div class="tx-scroll"><ul class="tx-list" id="txList"></ul></div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- ECharts de la web (npm install en apps/web): local, sin depender de que la red permita el CDN -->
+<script src="../../apps/web/node_modules/echarts/dist/echarts.min.js"></script>
+<script>
+(function () {
+  "use strict";
+  // ---------- Datos de ejemplo deterministas (no son del usuario) ----------
+  const TODAY = { y: 2026, m: 10, d: 8 };
+  const MONTHS = ["2026-05", "2026-06", "2026-07", "2026-08", "2026-09", "2026-10"];
+  const MES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  const MES_C = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+  const CAT_VAR = { Vivienda: "--cat-sand", Supermercado: "--cat-mint", "Comidas fuera": "--cat-peach", Transporte: "--cat-teal", Servicios: "--cat-gold", Suscripciones: "--cat-lavender", Salud: "--cat-rose", Ocio: "--cat-blue", Transferencias: "--cat-blue", "Sin categoría": "--cat-none" };
+  const CATS = ["Supermercado", "Comidas fuera", "Transporte", "Servicios", "Suscripciones", "Salud", "Ocio", "Transferencias"];
+
+  function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  const dim = (ym) => { const [y, m] = ym.split("-").map(Number); return new Date(Date.UTC(y, m, 0)).getUTCDate(); };
+  const r2 = (n) => Math.round(n * 100) / 100;
+
+  function genMonth(ym, idx) {
+    const R = rng(1000 + idx * 97);
+    const pick = (a) => a[Math.floor(R() * a.length)];
+    const between = (a, b) => r2(a + R() * (b - a));
+    const days = dim(ym);
+    const limit = ym === "2026-10" ? TODAY.d : days;
+    const mult = [0.92, 1.05, 0.98, 1.12, 1.0, 1.08][idx];
+    const out = [];
+    let id = 0;
+    const add = (d, o) => { if (d > limit) return; const h = 8 + Math.floor(R() * 14), mi = Math.floor(R() * 60); out.push(Object.assign({ id: ym + "-" + (id++), d, time: String(h).padStart(2, "0") + ":" + String(mi).padStart(2, "0"), tipo: "expense", fuente: "bcp_email" }, o)); };
+    add(1, { tipo: "income", monto: 6500, name: "Sueldo", cat: "Ingreso", fuente: "manual" });
+    add(1, { monto: 1300, name: "Alquiler Dpto", cat: "Vivienda", fuente: "manual" });
+    add(3, { monto: 13.2, name: "APPLE.COM/BILL", cat: "Suscripciones" });
+    add(4, { tipo: "transfer_in", monto: between(20, 80), name: "María Qui*", cat: "", fuente: "yape_push" });
+    add(2, { monto: between(6, 18), name: "Bodega Don Lucho", cat: "", fuente: "yape_push" });
+    add(5, { monto: between(9, 30), name: "Mercado Surquillo", cat: "", fuente: "bcp_email" });
+    add(7, { monto: between(12, 40), name: "Juan Pér*", cat: "", fuente: "yape_push" });
+    if (R() < 0.7) add(6 + Math.floor(R() * 20), { tipo: "income", monto: r2(between(350, 1400)), name: pick(["Freelance diseño", "Reembolso Xertica", "Venta Marketplace"]), cat: "Ingreso", fuente: "manual" });
+    add(5, { monto: 44.9, name: "Netflix", cat: "Suscripciones" });
+    add(7, { monto: 21.9, name: "Spotify", cat: "Suscripciones" });
+    add(14, { monto: between(78, 104), name: "Luz del Sur", cat: "Servicios", fuente: "yape_email" });
+    add(16, { monto: between(38, 52), name: "Sedapal", cat: "Servicios", fuente: "yape_email" });
+    add(20, { monto: 99, name: "Claro Hogar", cat: "Servicios" });
+    const nSup = 4 + Math.floor(R() * 3);
+    for (let i = 0; i < nSup; i++) add(1 + Math.floor(R() * days), { monto: r2(between(58, 210) * mult), name: pick(["PLAZA VEA SAN BORJA", "TOTTUS LA MOLINA", "WONG BENAVIDES", "METRO SURCO"]), cat: "Supermercado" });
+    const nCom = 9 + Math.floor(R() * 6);
+    for (let i = 0; i < nCom; i++) add(1 + Math.floor(R() * days), { monto: r2(between(12, 95) * mult), name: pick(["RAPPI", "Shimaya Ramen", "Quokka Coffee Shop", "LA LUCHA SANGUCHERIA", "Menú El Rincón", "Starbucks Larco"]), cat: "Comidas fuera" });
+    const nTra = 10 + Math.floor(R() * 6);
+    for (let i = 0; i < nTra; i++) { const metro = R() < 0.6; add(1 + Math.floor(R() * days), metro ? { monto: 10, name: "Metropolitano y Corredores", cat: "Transporte", fuente: "yape_email" } : { monto: between(14, 38), name: pick(["UBER TRIP", "CABIFY"]), cat: "Transporte" }); }
+    const nSal = 1 + Math.floor(R() * 3);
+    for (let i = 0; i < nSal; i++) add(1 + Math.floor(R() * days), { monto: between(18, 95), name: pick(["INKAFARMA", "MIFARMA"]), cat: "Salud" });
+    const nOci = 1 + Math.floor(R() * 3);
+    for (let i = 0; i < nOci; i++) add(1 + Math.floor(R() * days), { monto: r2(between(28, 140) * mult), name: pick(["Cineplanet", "Joinnus", "Steam"]), cat: "Ocio" });
+    const nP2p = 3 + Math.floor(R() * 4);
+    for (let i = 0; i < nP2p; i++) add(1 + Math.floor(R() * days), { monto: between(2, 60), name: pick(["Fleming Alonso", "Angie Yare Victori", "Carlos Roj*", "Ana Luc*"]), cat: "Transferencias", fuente: "yape_push" });
+    const nPend = 2 + Math.floor(R() * 3);
+    for (let i = 0; i < nPend; i++) add(1 + Math.floor(R() * days), { monto: between(6, 48), name: pick(["Bodega Don Lucho", "TAMBO+ JAVIER PRADO", "Mercado Surquillo", "OXXO AREQUIPA", "Juan Pér*"]), cat: "", fuente: pick(["bcp_email", "yape_push"]) });
+    const nIn = 2 + Math.floor(R() * 3);
+    for (let i = 0; i < nIn; i++) add(1 + Math.floor(R() * days), { tipo: "transfer_in", monto: between(15, 140), name: pick(["María Qui*", "Juan Pér*", "Lucía Ram*"]), cat: "", fuente: "yape_push" });
+    return out.sort((a, b) => (b.d - a.d) || (a.time < b.time ? 1 : -1));
+  }
+  const DATA = {}; MONTHS.forEach((m, i) => { DATA[m] = genMonth(m, i); });
+
+  // ---------- Agregados (paridad con summarize() de lib/ledger.ts) ----------
+  function summary(ym) {
+    const txs = DATA[ym] || [];
+    const exp = txs.filter((t) => t.tipo === "expense");
+    const sum = (a) => r2(a.reduce((s, t) => s + t.monto, 0));
+    const byCat = new Map();
+    exp.forEach((t) => { const k = t.cat || "Sin categoría"; byCat.set(k, (byCat.get(k) || 0) + t.monto); });
+    const expense = sum(exp);
+    const days = dim(ym);
+    const daily = Array.from({ length: days }, () => 0);
+    exp.forEach((t) => { daily[t.d - 1] += t.monto; });
+    const mer = new Map();
+    exp.forEach((t) => { const m = mer.get(t.name) || { amount: 0, count: 0, cat: t.cat }; m.amount += t.monto; m.count++; mer.set(t.name, m); });
+    return {
+      ym, txs, expense, income: sum(txs.filter((t) => t.tipo === "income")),
+      yape: sum(txs.filter((t) => t.tipo === "transfer_in")), yapeN: txs.filter((t) => t.tipo === "transfer_in").length,
+      byCat: Array.from(byCat, ([name, amount]) => ({ name, amount: r2(amount), pct: expense ? amount / expense * 100 : 0 })).sort((a, b) => b.amount - a.amount),
+      daily: daily.map(r2), days,
+      merchants: Array.from(mer, ([name, m]) => ({ name, amount: r2(m.amount), count: m.count, cat: m.cat })).sort((a, b) => b.amount - a.amount).slice(0, 6),
+      pending: exp.filter((t) => !t.cat),
+    };
+  }
+
+  // ---------- Utilidades ----------
+  const $ = (id) => document.getElementById(id);
+  const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const fmt = (n) => n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmt0 = (n) => n.toLocaleString("es-PE", { maximumFractionDigits: 0 });
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  const catColor = (c) => css(CAT_VAR[c] || "--cat-sand");
+  const monthName = (ym) => MES[Number(ym.slice(5)) - 1];
+  const isCurrent = (ym) => ym === "2026-10";
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("on"), 2200); }
+  function countUp(el, to) {
+    if (reduce) { el.textContent = fmt(to); return; }
+    const from = parseFloat((el.dataset.v || "0")); const t0 = performance.now(); el.dataset.v = to;
+    (function step(t) { const k = Math.min(1, (t - t0) / 600), e = 1 - Math.pow(1 - k, 3); el.textContent = fmt(from + (to - from) * e); if (k < 1) requestAnimationFrame(step); })(t0);
+  }
+
+  // ---------- Estado ----------
+  const state = { month: "2026-10", catFilter: "", radarUnit: "pen", cumHidden: {}, radarHidden: {}, resolved: {} };
+  const charts = {};
+  // Sin la librería (CDN bloqueado), los gráficos quedan como aviso y el resto de la página igual se pinta.
+  const NOOP = { setOption() {}, on() {}, resize() {} };
+  function chart(id) {
+    if (!window.echarts) { $(id).innerHTML = '<div class="empty">No se pudo cargar la librería de gráficos.</div>'; return NOOP; }
+    if (!charts[id]) charts[id] = echarts.init($(id), null, { renderer: "svg" });
+    return charts[id];
+  }
+  const grad = (c, a, b) => (window.echarts ? new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: c + a }, { offset: 1, color: c + b }]) : c);
+
+  function base() {
+    return {
+      ink: css("--ink"), body: css("--body"), muted: css("--muted"), grid: css("--grid"), axis: css("--axis"), card: css("--card"),
+      s1: css("--s1"), s2: css("--s2"), s3: css("--s3"), strong: css("--strong"), primary: css("--primary"), primary2: css("--primary-2"),
+      font: css("--font"), mono: css("--mono"),
+    };
+  }
+  function tip(T) {
+    return { backgroundColor: T.card, borderColor: T.axis, borderWidth: 1, padding: [8, 10], textStyle: { color: T.ink, fontFamily: T.font, fontSize: 12 }, extraCssText: "border-radius:10px;box-shadow:0 8px 24px rgb(0 0 0 / .12);" };
+  }
+
+  // ---------- KPIs ----------
+  function renderKpis(s, prev) {
+    $("kSpentLbl").textContent = "Gastado en " + monthName(s.ym);
+    countUp($("kSpent"), s.expense); countUp($("kInc"), s.income); countUp($("kYape"), s.yape);
+    const net = r2(s.income - s.expense); countUp($("kNet"), Math.abs(net));
+    $("kNetWrap").style.color = net < 0 ? css("--primary") : "";
+    $("kNetWrap").querySelector(".cur").textContent = net < 0 ? "−S/" : "S/";
+    $("kIncMeta").textContent = s.income ? "Sueldo y otros ingresos" : "Sin ingresos registrados";
+    $("kNetMeta").textContent = s.income ? Math.round(net / s.income * 100) + " % de tus ingresos" : "Sin ingresos este mes";
+    $("kYapeMeta").textContent = s.yapeN + (s.yapeN === 1 ? " yapeo" : " yapeos") + " · no cuenta como ingreso";
+    const pm = prev ? prev.expense : 0;
+    const d = $("kDelta");
+    if (pm) {
+      // Comparación justa: mismo número de días del mes anterior si el mes está en curso.
+      const day = isCurrent(s.ym) ? TODAY.d : s.days;
+      const prevTo = prev.daily.slice(0, day).reduce((a, b) => a + b, 0);
+      const pct = prevTo ? Math.round((s.expense - prevTo) / prevTo * 100) : 0;
+      d.className = "pill " + (pct > 0 ? "up" : pct < 0 ? "down" : "same");
+      d.textContent = (pct > 0 ? "↑ " : pct < 0 ? "↓ " : "= ") + Math.abs(pct) + " % vs " + MES_C[Number(prev.ym.slice(5)) - 1] + (isCurrent(s.ym) ? " al día " + day : "");
+      d.hidden = false;
+    } else d.hidden = true;
+    const ratio = pm ? Math.min(s.expense / pm, 1.2) : 0;
+    const dayRatio = isCurrent(s.ym) ? TODAY.d / s.days : 1;
+    $("paceFill").style.width = (Math.min(ratio, 1) * 100) + "%";
+    $("paceMark").style.left = (dayRatio * 100) + "%";
+    $("paceMark").hidden = !isCurrent(s.ym);
+    const pctPrev = pm ? Math.round(s.expense / pm * 100) : null;
+    $("paceL").innerHTML = pctPrev == null ? "Sin mes anterior para comparar" : "<b>" + pctPrev + " %</b> de lo gastado en " + monthName(prev.ym);
+    $("paceR").textContent = isCurrent(s.ym) ? "Día " + TODAY.d + " de " + s.days : "Mes cerrado";
+    $("paceBar").setAttribute("aria-label", $("paceL").textContent + ". " + $("paceR").textContent);
+  }
+
+  function spark(id, values, color) {
+    const T = base();
+    chart(id).setOption({
+      animationDuration: reduce ? 0 : 600,
+      grid: { left: 2, right: 2, top: 6, bottom: 2 },
+      xAxis: { type: "category", show: false, data: values.map((_, i) => MES_C[Number(MONTHS[i].slice(5)) - 1]), boundaryGap: false },
+      yAxis: { type: "value", show: false, min: (v) => v.min - (v.max - v.min) * 0.15 },
+      tooltip: Object.assign(tip(T), { trigger: "axis", formatter: (p) => p[0].name + "<br><b style='font-family:" + T.mono + "'>S/ " + fmt(p[0].value) + "</b>", axisPointer: { type: "line", lineStyle: { color: T.axis } } }),
+      series: [{ type: "line", data: values, smooth: 0.35, symbol: "circle", symbolSize: (v, p) => (p.dataIndex === values.length - 1 ? 7 : 0), showSymbol: true, lineStyle: { width: 2, color }, itemStyle: { color, borderColor: T.card, borderWidth: 2 },
+        areaStyle: { color: grad(color, "33", "00") } }],
+    }, true);
+  }
+
+  // ---------- Ritmo: acumulado + diario ----------
+  function renderPace(s, prev) {
+    const T = base();
+    const days = Array.from({ length: s.days }, (_, i) => i + 1);
+    const lastDay = isCurrent(s.ym) ? TODAY.d : s.days;
+    let acc = 0; const cum = s.daily.map((v, i) => (i < lastDay ? (acc += v, r2(acc)) : null));
+    let pacc = 0; const pcum = prev ? days.map((d) => (d <= prev.days ? (pacc += prev.daily[d - 1], r2(pacc)) : null)) : [];
+    // Proyección lineal sin el alquiler (gasto fijo del día 1).
+    const fixed = s.txs.filter((t) => t.cat === "Vivienda").reduce((a, t) => a + t.monto, 0);
+    const proj = isCurrent(s.ym) ? days.map((d) => (d < lastDay ? null : r2(fixed + (cum[lastDay - 1] - fixed) / lastDay * d))) : [];
+    const projEnd = proj.length ? proj[proj.length - 1] : null;
+
+    const series = [
+      { key: "cur", name: "Este mes", color: T.s1, dash: false },
+      { key: "prev", name: prev ? "Mes anterior" : "", color: T.s2, dash: true },
+    ];
+    if (projEnd) series.push({ key: "proj", name: "Proyección", color: T.s1, dash: true, dotted: true });
+    $("cumLegend").innerHTML = series.filter((x) => x.name).map((x) => '<button aria-pressed="' + !state.cumHidden[x.key] + '" data-k="' + x.key + '"><i class="' + (x.dash ? "dash" : "") + '" style="background:' + x.color + (x.dotted ? ";opacity:.55" : "") + '"></i>' + x.name + "</button>").join("");
+
+    const tipFmt = (ps) => {
+      const d = ps[0].axisValue; const rows = ps.filter((p) => p.value != null).map((p) => "<div style='display:flex;justify-content:space-between;gap:16px'><span>" + p.marker + p.seriesName + "</span><b style='font-family:" + T.mono + "'>S/ " + fmt(p.value) + "</b></div>").join("");
+      return "<div style='font-weight:600;margin-bottom:4px'>" + d + " de " + monthName(s.ym) + "</div>" + rows;
+    };
+    const axisCommon = { axisLine: { lineStyle: { color: T.axis } }, axisTick: { show: false }, axisLabel: { color: T.muted, fontFamily: T.mono, fontSize: 11 } };
+    chart("chCum").setOption({
+      animationDuration: reduce ? 0 : 700, animationEasing: "cubicOut",
+      grid: { left: 52, right: 16, top: 12, bottom: 4 },
+      tooltip: Object.assign(tip(T), { trigger: "axis", formatter: tipFmt, axisPointer: { type: "line", lineStyle: { color: T.axis, type: "dashed" } } }),
+      xAxis: Object.assign({ type: "category", data: days, boundaryGap: false, axisLabel: { show: false } }, { axisLine: { show: false }, axisTick: { show: false } }),
+      yAxis: { type: "value", splitNumber: 4, splitLine: { lineStyle: { color: T.grid } }, axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: T.muted, fontFamily: T.mono, fontSize: 11, formatter: (v) => (v >= 1000 ? (v / 1000).toLocaleString("es-PE") + " k" : v) } },
+      series: [
+        { name: "Este mes", type: "line", data: state.cumHidden.cur ? [] : cum, smooth: 0.25, symbol: "circle", symbolSize: 6, showSymbol: false, lineStyle: { width: 2.5, color: T.s1 }, itemStyle: { color: T.s1, borderColor: T.card, borderWidth: 2 },
+          areaStyle: { color: grad(T.s1, "40", "00") },
+          markPoint: isCurrent(s.ym) && !state.cumHidden.cur ? { symbol: "circle", symbolSize: 10, itemStyle: { color: T.s1, borderColor: T.card, borderWidth: 3 }, label: { show: false }, data: [{ coord: [lastDay - 1, cum[lastDay - 1]] }] } : undefined },
+        { name: "Mes anterior", type: "line", data: state.cumHidden.prev ? [] : pcum, smooth: 0.25, symbol: "none", lineStyle: { width: 2, type: [5, 4], color: T.s2 }, itemStyle: { color: T.s2 } },
+        { name: "Proyección", type: "line", data: state.cumHidden.proj ? [] : proj, symbol: "none", lineStyle: { width: 2, type: [2, 4], color: T.s1, opacity: 0.7 }, itemStyle: { color: T.s1 } },
+      ],
+    }, true);
+
+    const weekday = (d) => new Date(Date.UTC(Number(s.ym.slice(0, 4)), Number(s.ym.slice(5)) - 1, d)).getUTCDay();
+    chart("chDaily").setOption({
+      animationDuration: reduce ? 0 : 600,
+      grid: { left: 52, right: 16, top: 8, bottom: 22 },
+      tooltip: Object.assign(tip(T), { trigger: "axis", axisPointer: { type: "shadow", shadowStyle: { color: T.strong, opacity: 0.6 } },
+        formatter: (ps) => { const p = ps[0]; const dd = p.dataIndex + 1; const list = s.txs.filter((t) => t.tipo === "expense" && t.d === dd && t.cat !== "Vivienda").slice(0, 4).map((t) => "<div style='display:flex;justify-content:space-between;gap:14px;color:" + T.body + "'><span>" + esc(t.name) + "</span><span style='font-family:" + T.mono + "'>" + fmt(t.monto) + "</span></div>").join("");
+          return "<div style='font-weight:600'>" + dd + " de " + monthName(s.ym) + " · <span style='font-family:" + T.mono + "'>S/ " + fmt(p.value || 0) + "</span></div>" + list; } }),
+      xAxis: Object.assign({ type: "category", data: days }, axisCommon, { axisLabel: { color: T.muted, fontFamily: T.mono, fontSize: 10.5, interval: (i) => (i + 1) % 5 === 0 || i === 0 } }),
+      yAxis: { type: "value", splitNumber: 2, splitLine: { lineStyle: { color: T.grid } }, axisLabel: { color: T.muted, fontFamily: T.mono, fontSize: 10.5 } },
+      series: [{ name: "Gasto del día", type: "bar", barMaxWidth: 12, barCategoryGap: "30%",
+        data: s.daily.map((v, i) => ({ value: i < lastDay ? r2(v - (i === 0 ? fixed : 0)) : null, itemStyle: { color: weekday(i + 1) % 6 === 0 ? T.primary2 : T.s1, opacity: weekday(i + 1) % 6 === 0 ? 1 : 0.55, borderRadius: [4, 4, 0, 0] } })),
+        emphasis: { itemStyle: { opacity: 1 } } }],
+    }, true);
+    if (window.echarts) echarts.connect([chart("chCum"), chart("chDaily")]);
+
+    const spentDays = s.daily.slice(0, lastDay).filter((v) => v > 0).length;
+    const variable = s.daily.slice(0, lastDay).reduce((a, b) => a + b, 0) - fixed;
+    const maxIdx = s.daily.slice(0, lastDay).reduce((mi, v, i, a) => (v - (i === 0 ? fixed : 0) > a[mi] - (mi === 0 ? fixed : 0) ? i : mi), 1);
+    $("insights").innerHTML = [
+      ["S/ " + fmt(variable / lastDay), "Promedio diario sin alquiler"],
+      [projEnd ? "S/ " + fmt0(projEnd) : "S/ " + fmt0(s.expense), projEnd ? "Proyección a fin de mes" : "Total del mes cerrado"],
+      [(maxIdx + 1) + " " + MES_C[Number(s.ym.slice(5)) - 1] + " · S/ " + fmt0(s.daily[maxIdx]), "Día más caro · gasto en " + spentDays + " de " + lastDay + " días"],
+    ].map(([b, t]) => "<div><b>" + b + "</b><span>" + t + "</span></div>").join("");
+  }
+
+  // ---------- Radar ----------
+  function renderRadar(s) {
+    const T = base();
+    const idx = MONTHS.indexOf(s.ym);
+    const prev = idx > 0 ? summary(MONTHS[idx - 1]) : null;
+    const avgMonths = MONTHS.slice(Math.max(0, idx - 3), idx).map(summary);
+    const unit = state.radarUnit;
+    const val = (sm, c) => { if (!sm) return 0; const hit = sm.byCat.find((x) => x.name === c); if (!hit) return 0; return unit === "pct" ? r2(hit.pct) : hit.amount; };
+    const avg = (c) => (avgMonths.length ? r2(avgMonths.reduce((a, sm) => a + val(sm, c), 0) / avgMonths.length) : 0);
+    const series = [
+      { key: "cur", name: "Este mes", color: T.s1, values: CATS.map((c) => val(s, c)), dash: "solid" },
+      { key: "prev", name: "Mes anterior", color: T.s2, values: CATS.map((c) => val(prev, c)), dash: [5, 4] },
+      { key: "avg", name: "Promedio 3 meses", color: T.s3, values: CATS.map(avg), dash: [2, 3] },
+    ];
+    const shown = series.filter((x) => !state.radarHidden[x.key]);
+    const maxV = Math.max(1, ...shown.flatMap((x) => x.values));
+    const step = unit === "pct" ? 5 : maxV > 600 ? 200 : 100;
+    const max = Math.ceil(maxV / step) * step;
+    $("radarSub").textContent = (unit === "pct" ? "Porcentaje del gasto de cada mes" : "Soles por categoría") + ", sin Vivienda (gasto fijo)";
+    $("radarLegend").innerHTML = series.map((x) => '<button aria-pressed="' + !state.radarHidden[x.key] + '" data-k="' + x.key + '"><i class="' + (x.dash === "solid" ? "" : "dash") + '" style="background:' + x.color + '"></i>' + x.name + "</button>").join("");
+    const short = { "Comidas fuera": "Comidas", Supermercado: "Súper", Suscripciones: "Suscrip.", Transferencias: "Transf.", Transporte: "Transp." };
+    chart("chRadar").setOption({
+      animationDuration: reduce ? 0 : 700,
+      tooltip: Object.assign(tip(T), { trigger: "item", formatter: (p) => "<div style='font-weight:600;margin-bottom:4px'>" + p.seriesName + "</div>" + CATS.map((c, i) => "<div style='display:flex;justify-content:space-between;gap:16px'><span style='color:" + T.body + "'>" + c + "</span><b style='font-family:" + T.mono + "'>" + (unit === "pct" ? p.value[i].toFixed(1) + " %" : "S/ " + fmt(p.value[i])) + "</b></div>").join("") }),
+      radar: {
+        radius: "62%", center: ["50%", "52%"], splitNumber: 4, shape: "polygon",
+        indicator: CATS.map((c) => ({ name: short[c] || c, max })),
+        axisName: { color: T.body, fontFamily: T.font, fontSize: 11.5 },
+        splitLine: { lineStyle: { color: T.grid } }, splitArea: { show: false }, axisLine: { lineStyle: { color: T.grid } },
+      },
+      series: [{ type: "radar", symbol: "circle", symbolSize: 6, emphasis: { lineStyle: { width: 3 } },
+        data: shown.map((x) => ({ name: x.name, value: x.values, lineStyle: { color: x.color, width: x.key === "cur" ? 2.5 : 2, type: x.dash }, itemStyle: { color: x.color, borderColor: T.card, borderWidth: 2 },
+          areaStyle: x.key === "cur" ? { color: x.color, opacity: 0.18 } : { opacity: 0 } })) }],
+    }, true);
+  }
+
+  // ---------- Categorías ----------
+  function renderCats(s) {
+    const T = base();
+    const data = s.byCat;
+    chart("chDonut").setOption({
+      animationDuration: reduce ? 0 : 700,
+      tooltip: Object.assign(tip(T), { trigger: "item", formatter: (p) => "<b>" + p.name + "</b><br><span style='font-family:" + T.mono + "'>S/ " + fmt(p.value) + " · " + p.percent.toFixed(0) + " %</span>" }),
+      title: { text: "S/ " + fmt0(s.expense), subtext: state.catFilter || "gasto total", left: "center", top: "34%", textStyle: { color: T.ink, fontFamily: T.mono, fontSize: 15, fontWeight: 500 }, subtextStyle: { color: T.muted, fontFamily: T.font, fontSize: 11 }, itemGap: 8 },
+      series: [{ type: "pie", radius: ["62%", "88%"], padAngle: 2, itemStyle: { borderRadius: 5, borderColor: T.card, borderWidth: 2 }, label: { show: false }, emphasis: { scale: true, scaleSize: 4 },
+        data: data.map((c) => ({ name: c.name, value: c.amount, itemStyle: { color: catColor(c.name), opacity: state.catFilter && state.catFilter !== c.name ? 0.3 : 1 } })) }],
+    }, true);
+    $("catList").innerHTML = data.slice(0, 7).map((c) => '<li><button class="cat-item" aria-pressed="' + (state.catFilter === c.name) + '" data-cat="' + esc(c.name) + '"><span class="sw" style="background:' + catColor(c.name) + '"></span><span class="name">' + esc(c.name) + '</span><span class="pct">' + Math.round(c.pct) + ' %</span><span class="amt">' + fmt(c.amount) + "</span></button></li>").join("");
+  }
+
+  // ---------- Comercios ----------
+  function renderMerchants(s) {
+    const max = s.merchants[0] ? s.merchants[0].amount : 1;
+    $("merSub").textContent = s.merchants.length + " con más gasto en " + monthName(s.ym);
+    $("merList").innerHTML = s.merchants.map((m) => '<li class="mer"><div class="mer-top"><span class="n">' + esc(m.name) + "<small>" + m.count + (m.count === 1 ? " compra" : " compras") + '</small></span><span class="a">S/ ' + fmt(m.amount) + '</span></div><div class="mer-bar"><span style="width:0;background:' + catColor(m.cat || "Sin categoría") + '" data-w="' + (m.amount / max * 100) + '"></span></div></li>').join("");
+    requestAnimationFrame(() => requestAnimationFrame(() => document.querySelectorAll("#merList .mer-bar span").forEach((el) => { el.style.width = el.dataset.w + "%"; })));
+  }
+
+  // ---------- Pendientes ----------
+  const QUICK = ["Comidas fuera", "Supermercado", "Transporte", "Transferencias"];
+  function renderPending(s) {
+    const list = s.pending.filter((t) => !state.resolved[t.id]);
+    $("pendCount").textContent = list.length;
+    $("navCount").textContent = list.length;
+    if (!list.length) { $("pendList").innerHTML = '<div class="empty">Todo categorizado en ' + monthName(s.ym) + ".</div>"; return; }
+    $("pendList").innerHTML = list.slice(0, 2).map((t) => {
+      const sug = /Juan|Lucho|Mercado/.test(t.name) ? (/Juan/.test(t.name) ? "Transferencias" : "Supermercado") : "";
+      const chips = (sug ? [sug] : []).concat(QUICK.filter((c) => c !== sug)).slice(0, 4);
+      return '<div class="pend-item" data-id="' + t.id + '"><div class="pend-top"><span class="n">' + esc(t.name) + '</span><span class="num">S/ ' + fmt(t.monto) + '</span></div><div class="pend-top"><span class="d">' + t.d + " " + MES_C[Number(s.ym.slice(5)) - 1] + " · " + t.time + '</span><span class="src">' + (t.fuente === "yape_push" ? "iPhone" : "BCP") + '</span></div><div class="chips">' +
+        chips.map((c) => '<button class="chip' + (c === sug ? " sug" : "") + '" data-cat="' + esc(c) + '"><i style="background:' + catColor(c) + '"></i>' + (c === sug ? "Sugerida: " : "") + esc(c) + "</button>").join("") + '<button class="chip" data-cat="__otra">Otra…</button></div></div>';
+    }).join("") + (list.length > 2 ? '<button class="link" style="justify-self:start">Ver los ' + list.length + " pendientes</button>" : "");
+  }
+
+  // ---------- 6 meses ----------
+  function render6m() {
+    const T = base();
+    const sums = MONTHS.map((m) => summary(m).expense);
+    chart("ch6m").setOption({
+      animationDuration: reduce ? 0 : 600,
+      grid: { left: 46, right: 8, top: 22, bottom: 24 },
+      tooltip: Object.assign(tip(T), { trigger: "axis", axisPointer: { type: "shadow", shadowStyle: { color: T.strong, opacity: 0.6 } }, formatter: (p) => "<b>" + MES[Number(MONTHS[p[0].dataIndex].slice(5)) - 1] + "</b><br><span style='font-family:" + T.mono + "'>S/ " + fmt(p[0].value) + "</span>" + (MONTHS[p[0].dataIndex] === "2026-10" ? "<br><span style='color:" + T.muted + "'>en curso, día " + TODAY.d + "</span>" : "") }),
+      xAxis: { type: "category", data: MONTHS.map((m) => MES_C[Number(m.slice(5)) - 1]), axisLine: { lineStyle: { color: T.axis } }, axisTick: { show: false }, axisLabel: { color: T.muted, fontFamily: T.font, fontSize: 11.5 } },
+      yAxis: { type: "value", splitNumber: 3, splitLine: { lineStyle: { color: T.grid } }, axisLabel: { color: T.muted, fontFamily: T.mono, fontSize: 10.5, formatter: (v) => (v >= 1000 ? (v / 1000).toLocaleString("es-PE") + " k" : v) } },
+      series: [{ type: "bar", barWidth: "46%", cursor: "pointer",
+        label: { show: true, position: "top", color: T.muted, fontFamily: T.mono, fontSize: 10.5, formatter: (p) => (MONTHS[p.dataIndex] === state.month ? fmt0(p.value) : "") },
+        data: sums.map((v, i) => ({ value: v, itemStyle: { color: MONTHS[i] === state.month ? T.s1 : T.strong, borderRadius: [5, 5, 0, 0] } })),
+        emphasis: { itemStyle: { color: T.primary2 } } }],
+    }, true);
+  }
+
+  // ---------- Movimientos ----------
+  function renderTx(s) {
+    const txs = s.txs.filter((t) => !state.catFilter || (t.cat || (t.tipo === "expense" ? "Sin categoría" : "")) === state.catFilter);
+    $("txSub").textContent = txs.length + " movimientos" + (state.catFilter ? " en " + state.catFilter : " en " + monthName(s.ym));
+    $("txFilter").innerHTML = state.catFilter ? '<button class="filter-on" id="clearFilter">' + esc(state.catFilter) + " ✕</button>" : "";
+    if (!txs.length) { $("txList").innerHTML = '<li class="empty">Sin movimientos con ese filtro.</li>'; return; }
+    const byDay = new Map(); txs.forEach((t) => { if (!byDay.has(t.d)) byDay.set(t.d, []); byDay.get(t.d).push(t); });
+    const wd = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+    let html = "";
+    byDay.forEach((list, d) => {
+      const dt = new Date(Date.UTC(Number(s.ym.slice(0, 4)), Number(s.ym.slice(5)) - 1, d));
+      const total = list.filter((t) => t.tipo === "expense").reduce((a, t) => a + t.monto, 0);
+      const label = isCurrent(s.ym) && d === TODAY.d ? "Hoy" : isCurrent(s.ym) && d === TODAY.d - 1 ? "Ayer" : wd[dt.getUTCDay()] + " " + d;
+      html += '<li class="day-h"><span>' + label + "</span><span>" + (total ? "−S/ " + fmt(total) : "") + "</span></li>";
+      list.forEach((t) => {
+        const cat = t.cat || (t.tipo === "transfer_in" ? "Yape recibido" : "Sin categoría");
+        const inc = t.tipo !== "expense";
+        html += '<li class="tx"><span class="av" style="background:' + (inc ? css("--cat-mint") : catColor(t.cat || "Sin categoría")) + '">' + esc(t.name.replace(/^[^A-Za-zÁÉÍÓÚÑ0-9]+/, "")[0] || "·") + '</span><div style="min-width:0"><div class="n">' + esc(t.name) + '</div><div class="m">' + esc(cat) + ' · <span class="src">' + (t.fuente === "yape_push" ? "iPhone" : t.fuente === "manual" ? "Manual" : t.fuente === "yape_email" ? "Yape" : "BCP") + "</span> · " + t.time + '</div></div><span class="a' + (inc ? " in" : "") + '">' + (inc ? "+" : "−") + "S/ " + fmt(t.monto) + "</span></li>";
+      });
+    });
+    $("txList").innerHTML = html;
+  }
+
+  // ---------- Orquestación ----------
+  function render() {
+    const idx = MONTHS.indexOf(state.month);
+    const s = summary(state.month);
+    const prev = idx > 0 ? summary(MONTHS[idx - 1]) : null;
+    const name = monthName(state.month);
+    $("monthLbl").textContent = name[0].toUpperCase() + name.slice(1) + " " + state.month.slice(0, 4);
+    $("prevM").disabled = idx === 0; $("nextM").disabled = idx === MONTHS.length - 1;
+    renderKpis(s, prev);
+    const sums = MONTHS.map(summary);
+    const T = base();
+    spark("sparkInc", sums.map((x) => x.income), T.s3);
+    spark("sparkNet", sums.map((x) => r2(x.income - x.expense)), T.s2);
+    spark("sparkYape", sums.map((x) => x.yape), T.s1);
+    renderPace(s, prev); renderRadar(s); renderCats(s); renderMerchants(s); renderPending(s); render6m(); renderTx(s);
+  }
+  function setMonth(m) { if (!DATA[m] || m === state.month) return; state.month = m; state.catFilter = ""; render(); }
+
+  document.addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.id === "prevM") setMonth(MONTHS[MONTHS.indexOf(state.month) - 1]);
+    else if (b.id === "nextM") setMonth(MONTHS[MONTHS.indexOf(state.month) + 1]);
+    else if (b.id === "themeBtn") {
+      const root = document.documentElement;
+      const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+      root.dataset.theme = dark ? "light" : "dark"; render();
+    } else if (b.id === "addBtn") toast("En la app abriría Agregar movimiento.");
+    else if (b.id === "clearFilter") { state.catFilter = ""; const s = summary(state.month); renderCats(s); renderTx(s); }
+    else if (b.dataset.unit) { state.radarUnit = b.dataset.unit; b.parentElement.querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); renderRadar(summary(state.month)); }
+    else if (b.closest("#radarLegend")) { const k = b.dataset.k; const on = Object.keys(state.radarHidden).filter((x) => state.radarHidden[x]).length; if (!state.radarHidden[k] && on >= 2) return toast("Deja al menos una serie visible."); state.radarHidden[k] = !state.radarHidden[k]; renderRadar(summary(state.month)); }
+    else if (b.closest("#cumLegend")) { const k = b.dataset.k; state.cumHidden[k] = !state.cumHidden[k]; const idx = MONTHS.indexOf(state.month); renderPace(summary(state.month), idx > 0 ? summary(MONTHS[idx - 1]) : null); }
+    else if (b.classList.contains("cat-item")) { state.catFilter = state.catFilter === b.dataset.cat ? "" : b.dataset.cat; const s = summary(state.month); renderCats(s); renderTx(s); }
+    else if (b.classList.contains("chip")) {
+      const item = b.closest(".pend-item"); const cat = b.dataset.cat;
+      if (cat === "__otra") return toast("En la app abriría la lista completa de categorías.");
+      item.classList.add("done"); state.resolved[item.dataset.id] = cat;
+      toast("Guardado en tu Sheet: " + cat);
+      setTimeout(() => renderPending(summary(state.month)), reduce ? 0 : 240);
+    }
+  });
+  document.addEventListener("keydown", (e) => { if (e.target.closest("input,textarea")) return; if (e.key === "ArrowLeft") $("prevM").click(); if (e.key === "ArrowRight") $("nextM").click(); });
+
+  function bindCharts() {
+    chart("ch6m").on("click", (p) => setMonth(MONTHS[p.dataIndex]));
+    chart("chDonut").on("click", (p) => { state.catFilter = state.catFilter === p.name ? "" : p.name; const s = summary(state.month); renderCats(s); renderTx(s); });
+  }
+  const ro = new ResizeObserver(() => Object.values(charts).forEach((c) => c.resize()));
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { if (!document.documentElement.dataset.theme) render(); });
+
+  render();
+  if (window.echarts) { bindCharts(); document.querySelectorAll(".chart").forEach((el) => ro.observe(el)); }
+})();
+</script>
+</body>
+</html>

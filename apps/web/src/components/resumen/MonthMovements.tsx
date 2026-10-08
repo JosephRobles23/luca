@@ -16,18 +16,30 @@ const CHIPS: { id: MovFilter; label: string }[] = [
   { id: "all", label: "Todos" }, { id: "consumo", label: "Consumos" }, { id: "transferencia", label: "Transferencias" }, { id: "pendiente", label: "Por categorizar" },
 ];
 
-type Props = { txs: Tx[]; month: string; name: string; today: string; usdRate: number; className?: string; style?: React.CSSProperties };
+type Props = {
+  txs: Tx[]; month: string; name: string; today: string; usdRate: number;
+  /** Categoría elegida en "En qué se fue" ("" = todas; "Sin categoría" = gastos sin categoría). */
+  categoria?: string; onClearCategoria?: () => void;
+  className?: string; style?: React.CSSProperties;
+};
 
-export default function MonthMovements({ txs, month, name, today, usdRate, className = "", style }: Props) {
+export default function MonthMovements({ txs, month, name, today, usdRate, categoria = "", onClearCategoria, className = "", style }: Props) {
   const [f, setF] = useState<MovFilter>("all");
-  const counts = useMemo(() => movementCounts(txs), [txs]);
-  const list = useMemo(() => filterMovements(txs, f), [txs, f]);
+  const scoped = useMemo(() => (categoria ? txs.filter((t) => t.tipo === "expense" && (t.categoria || "Sin categoría") === categoria) : txs), [txs, categoria]);
+  const counts = useMemo(() => movementCounts(scoped), [scoped]);
+  const list = useMemo(() => filterMovements(scoped, f), [scoped, f]);
   const view = useMemo(() => capGroups(groupByDay(list, today, usdRate), LIMIT), [list, today, usdRate]);
 
   return (
     <section className={`card !p-0 ${className}`} style={style} aria-labelledby="mv-h">
       <div className="flex items-center justify-between gap-3 px-5 pt-[18px]">
         <h2 id="mv-h" className="card-title">Movimientos de {name}</h2>
+        <span className="ml-auto" />
+        {categoria && (
+          <button type="button" className="chip !min-h-[26px] !text-[12px]" aria-pressed="true" onClick={onClearCategoria} aria-label={`Quitar filtro ${categoria}`} data-testid="movements-category">
+            {categoria} ✕
+          </button>
+        )}
         <Link className="text-[13px] font-medium text-body underline-offset-4 hover:text-ink hover:underline" href={`/app/movimientos?mes=${month}`}>Ver todos</Link>
       </div>
       <div className="flex gap-1.5 overflow-x-auto border-b border-line px-5 pb-3.5 pt-3 [scrollbar-width:none]" role="group" aria-label="Filtrar movimientos">
@@ -38,7 +50,7 @@ export default function MonthMovements({ txs, month, name, today, usdRate, class
         ))}
       </div>
 
-      <div data-testid="dashboard-movements">
+      <div data-testid="dashboard-movements" className="max-h-[620px] overflow-y-auto [scrollbar-width:thin]">
         {view.groups.length === 0 && (
           <p className="px-5 py-7 text-center text-sm text-muted">{f === "pendiente" ? "Todo categorizado. Buen trabajo." : "No hay movimientos de este tipo en el mes."}</p>
         )}

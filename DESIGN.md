@@ -139,10 +139,15 @@ etiquetas de sección usan `eyebrow`; los títulos de tarjeta `card-title` (15px
 - **Panel**: barra lateral 236px · contenido máx. 1180px con padding 32px (escritorio) / 16px (móvil, +110px
   abajo por la barra inferior).
 - **Resumen**: topbar (buscador + acciones) → saludo con frescura del escaneo + selector de mes ‹ › →
-  configuración plegable → aviso de versión → fila superior (gasto del mes 1.5fr + por categorizar 1fr) →
-  fila media (en qué se fue + últimos 6 meses) → movimientos del mes agrupados por día.
-- **Movimientos**: título + total filtrado → buscador + chips de tipo + "Más filtros" (mes, fuente,
-  categoría) → lista agrupada por día con detalle desplegable por fila.
+  configuración plegable → aviso de versión → banda de indicadores (gasto 1.55fr + Ingresos · Te queda · Yape)
+  → rejilla de 12 columnas sin huecos: ritmo del mes (8) + perfil de gasto (4) · en qué se fue + comercios
+  principales + por categorizar (4 + 4 + 4) · últimos 6 meses (5) + movimientos del mes (7, alto máx. con scroll).
+  Referencia: `docs/html/maqueta-resumen-v2.html`.
+- **Movimientos**: título + "N en tu Sheet" + CSV → banda de totales de lo filtrado (gastos con barras por día ·
+  ingresos · recibido por Yape · por categorizar, que filtra) → buscador + chips de tipo + "Más filtros" (mes,
+  fuente, categoría) + "Filtrando por" con "Limpiar todo" → lista con orden (recientes / mayor monto), agrupada
+  por día, búsqueda resaltada, detalle desplegable por fila y "Mostrar más" de 40 en 40.
+  Referencia: `docs/html/maqueta-movimientos-v2.html`.
 - **Agregar**: formulario centrado máx. 560px; el monto es el protagonista (amount-hero editable).
 - **Conexiones / Ajustes**: columna máx. 760px de tarjetas con estado en pastilla.
 - **Portada**: hero centrado → captura del panel → camino de los datos → mosaico de funciones → preguntas →
@@ -165,9 +170,20 @@ Nivel 0 `canvas` · nivel 1 `card` con `line` · nivel 1b `sunken` dentro de una
 - **Barra inferior (móvil)**: Resumen · Movimientos · **Agregar** (botón naranja elevado) · Conexiones · Ajustes.
 - **Topbar**: buscador (Enter → `/app/movimientos?q=`; tecla `/` lo enfoca) · Actualizar · Agregar.
 - **Selector de mes**: ‹ mes › ; tocar el mes abre la lista completa; ← → con teclado.
-- **Gasto del mes**: eyebrow · cifra `amount-hero` que cuenta hasta su valor · delta vs mes anterior en
-  pastilla (`success` si baja, `primary-soft` si sube) · **barra de ritmo**: relleno = gasto / gasto del mes
-  anterior; marca = día de hoy / días del mes · trío Ingresos / Te queda / Yape recibido.
+- **Gasto del mes** (banda de indicadores): eyebrow · cifra `amount-hero` que cuenta hasta su valor · delta vs
+  el mes anterior **al mismo día** en pastilla (`success` si baja, `primary-soft` si sube) · **barra de ritmo**:
+  relleno = gasto / gasto del mes anterior; marca = día de hoy / días del mes · Ingresos / Te queda / Yape
+  recibido, cada uno con su minicurva de 6 meses.
+- **Gráficos** (ECharts en SVG, `components/charts/EChart.tsx`): leen los tokens del tema en cada dibujo y se
+  redibujan al cambiar de tema. Series de comparación `--chart-1/2/3` (naranja de Luca · azul · aguamarina,
+  validadas para daltonismo en claro y oscuro); categorías con sus pasteles `cat-*`. Una sola escala por gráfico
+  (nunca dos ejes Y). Tooltip en tarjeta del tema; leyendas `.legend-chip` que ocultan series (apagada = tachada).
+- **Ritmo del mes**: acumulado del mes contra el anterior (punteado) y proyección a fin de mes sin el gasto fijo
+  (punteado tenue), sobre barras de gasto diario sin Vivienda con fines de semana más intensos; ambos comparten
+  puntero. Debajo: promedio diario, proyección y día más caro.
+- **Perfil de gasto**: radar por categoría (sin Vivienda) de este mes, el anterior y el promedio de 3 meses, en
+  S/ o % del mes; siempre queda al menos una serie visible.
+- **En qué se fue**: dona + lista; tocar una categoría filtra los movimientos del mes (chip para quitarlo).
 - **Por categorizar**: cada pendiente en `sunken` con chips de las 4 categorías más usadas + "Otra…"
   (lista completa) y, si existe, la sugerencia por comercio o persona ya categorizados. Al elegir: chip con
   rebote, check que se dibuja, "Guardado en tu Sheet", y la fila sale con colapso de altura.

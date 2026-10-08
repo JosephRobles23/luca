@@ -14,13 +14,13 @@ import { useLedger } from "../LedgerProvider";
 import { DrawCheck } from "../motion";
 import { SRC_LABEL } from "../ui";
 
-export default function MovRow({ t, usdRate, className, style }: { t: Tx; usdRate: number; className?: string; style?: CSSProperties }) {
+export default function MovRow({ t, usdRate, highlight, className, style }: { t: Tx; usdRate: number; highlight?: string; className?: string; style?: CSSProperties }) {
   const amountSub = t.moneda === "USD"
     ? <>≈ {fmtPEN(toBase(t, usdRate))}<span className="block">TC {t.tipoCambio ?? usdRate}{t.tipoCambio ? "" : " (Ajustes)"}</span></>
     : undefined;
   const meta = t.flags.length ? t.flags.map((fl) => <span key={fl} className="tag text-warning" title="Señal del parser">{fl}</span>) : undefined;
   return (
-    <TxRow t={t} usdRate={usdRate} testId={`mov-${t.id}`} amountSub={amountSub} meta={meta} style={style}
+    <TxRow t={t} usdRate={usdRate} testId={`mov-${t.id}`} amountSub={amountSub} meta={meta} style={style} highlight={highlight}
       className={`rounded-xl transition-colors has-[>button[aria-expanded=true]]:bg-sunken ${className ?? ""}`}
       detail={<MovDetail t={t} />} />
   );

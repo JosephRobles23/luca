@@ -77,6 +77,65 @@ export function activeFilterChips(f: Filters, srcLabel: Record<string, string> =
   return out;
 }
 
+/** Filas por página en la lista ("Mostrar más" suma otra página). */
+export const PAGE_SIZE = 40;
+
+export type Sort = "fecha" | "monto";
+
+/** Orden de la lista: más recientes primero, o mayor monto en soles primero (empate: más reciente). */
+export function sortTxs(txs: Tx[], sort: Sort, usdRate: number): Tx[] {
+  const byDate = (a: Tx, b: Tx) => (a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : 0);
+  return txs.slice().sort(sort === "monto" ? (a, b) => toBase(b, usdRate) - toBase(a, usdRate) || byDate(a, b) : byDate);
+}
+
+export type FilterTotals = { expense: number; expenseCount: number; income: number; incomeCount: number; yape: number; yapeCount: number };
+
+/** Totales de lo filtrado para la banda de Movimientos. Entre cuentas no suma en ningún lado. */
+export function filterTotals(txs: Tx[], usdRate: number): FilterTotals {
+  const of = (tipo: string) => txs.filter((t) => t.tipo === tipo);
+  const sum = (xs: Tx[]) => Math.round(xs.reduce((s, t) => s + toBase(t, usdRate), 0) * 100) / 100;
+  const e = of("expense"), i = of("income"), y = of("transfer_in");
+  return { expense: sum(e), expenseCount: e.length, income: sum(i), incomeCount: i.length, yape: sum(y), yapeCount: y.length };
+}
+
+/** Mes de las barras de la banda: el filtrado, o el de hoy si no hay filtro de mes. */
+export const barsMonth = (f: Filters, today: string) => (/^\d{4}-\d{2}$/.test(f.mes) ? f.mes : today.slice(0, 7));
+
+/**
+ * Gasto por día de `month` dentro de lo filtrado, sin Vivienda (el alquiler aplastaría el resto). `future` marca
+ * los días que aún no pasan en el mes en curso.
+ */
+export function dailyBars(txs: Tx[], month: string, today: string, usdRate: number): { day: number; amount: number; future: boolean }[] {
+  const [y, m] = month.split("-").map(Number);
+  const days = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const out = Array.from({ length: days }, (_, i) => ({ day: i + 1, amount: 0, future: month === today.slice(0, 7) && i + 1 > Number(today.slice(8, 10)) }));
+  txs.forEach((t) => {
+    if (t.tipo !== "expense" || monthOf(t.fecha) !== month || t.categoria === "Vivienda") return;
+    const d = Number(t.fecha.slice(8, 10));
+    if (d >= 1 && d <= days) out[d - 1].amount += toBase(t, usdRate);
+  });
+  return out.map((b) => ({ ...b, amount: Math.round(b.amount * 100) / 100 }));
+}
+
+/** Texto partido para resaltar la búsqueda (sin acentos ni mayúsculas): `[antes, coincidencia, después]` o `null`. */
+export function highlightParts(text: string, q: string): [string, string, string] | null {
+  const needle = fold(q.trim());
+  if (!needle || !text) return null;
+  const i = fold(text).indexOf(needle);
+  if (i < 0) return null;
+  return [text.slice(0, i), text.slice(i, i + needle.length), text.slice(i + needle.length)];
+}
+
+const fold = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+/** CSV de lo filtrado (lo que se ve, en el orden de la lista). Comillas dobles escapadas; monto_pen en soles. */
+export function toCsv(txs: Tx[], usdRate: number): string {
+  const head = ["id", "fecha", "tipo", "comercio", "contraparte", "categoria", "moneda", "monto", "monto_pen", "fuente", "medio"];
+  const q = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const rows = txs.map((t) => [t.id, t.fecha, t.tipo, t.comercio, t.contraparte, t.categoria, t.moneda, t.monto, Math.round(toBase(t, usdRate) * 100) / 100, t.fuente, t.medio]);
+  return [head, ...rows].map((r) => r.map(q).join(",")).join("\n");
+}
+
 /** Meses con movimientos (YYYY-MM), del más reciente al más antiguo. */
 export const monthsOf = (txs: Tx[]) => Array.from(new Set(txs.map((t) => monthOf(t.fecha)))).sort().reverse();
 

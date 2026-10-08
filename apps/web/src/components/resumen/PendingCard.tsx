@@ -12,7 +12,7 @@ import { pendingMeta } from "@/lib/resumen";
 import CategoryChips from "../CategoryChips";
 import { SRC_LABEL } from "../ui";
 
-const SHOW = 3;   // a la vista en el Resumen; el resto en Movimientos
+const SHOW = 2;   // a la vista en el Resumen; el resto en Movimientos
 const HOLD_MS = 1100;   // confirmación visible antes de colapsar
 const COLLAPSE_MS = 240;
 
@@ -41,7 +41,7 @@ export default function PendingCard({ pending, month, className = "", style }: P
 
   const n = pending.length;
   return (
-    <section className={`card grid content-start gap-3.5 ${className}`} style={style} data-testid="pending-card" aria-labelledby="pend-h">
+    <section className={`card grid min-w-0 content-start gap-3.5 [&>*]:min-w-0 ${className}`} style={style} data-testid="pending-card" aria-labelledby="pend-h">
       <div className="flex items-center justify-between gap-3">
         <h2 id="pend-h" className="card-title flex items-center gap-2">
           Por categorizar
@@ -58,9 +58,9 @@ export default function PendingCard({ pending, month, className = "", style }: P
           <span className="text-[13px] text-muted">Cada gasto del mes tiene su categoría. Los nuevos aparecerán aquí.</span>
         </div>
       ) : (
-        <ul className="grid gap-2.5">
+        <ul className="grid min-w-0 gap-2.5">
           {visible.map(({ tx, leaving: l }, i) => (
-            <li key={tx.id} className={`sunken grid gap-3 p-3.5 ${l?.collapsing ? "collapse-out" : ""}`} style={l?.collapsing ? ({ "--h": "360px" } as React.CSSProperties) : undefined}>
+            <li key={tx.id} className={`sunken grid min-w-0 gap-3 p-3.5 [&>*]:min-w-0 ${l?.collapsing ? "collapse-out" : ""}`} style={l?.collapsing ? ({ "--h": "360px" } as React.CSSProperties) : undefined}>
               <div className="flex justify-between gap-3">
                 <div className="min-w-0">
                   <b className="block truncate font-semibold">{txLabel(tx)}</b>

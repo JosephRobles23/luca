@@ -4,6 +4,7 @@
 import { useId, useState, type ReactNode } from "react";
 import { fmtMoney, fmtPEN, toBase, txLabel, type Tx } from "@/lib/ledger";
 import { catColor } from "@/lib/categorias";
+import { highlightParts } from "@/lib/movimientos";
 import CategoryIcon from "./CategoryIcon";
 import { SRC_LABEL } from "./ui";
 
@@ -30,23 +31,29 @@ type Props = {
   /** Extra al final de la línea secundaria (flags, etc.). */
   meta?: ReactNode;
   testId?: string;
+  /** Texto buscado: se resalta en el nombre. */
+  highlight?: string;
   className?: string;
   style?: React.CSSProperties;
 };
 
-export default function TxRow({ t, usdRate, detail, detailLabel = "Ver detalle", amountSub, meta, testId, className = "", style }: Props) {
+export default function TxRow({ t, usdRate, detail, detailLabel = "Ver detalle", amountSub, meta, testId, highlight = "", className = "", style }: Props) {
   const [open, setOpen] = useState(false);
   const id = useId();
   const dim = t.tipo === "internal_transfer";
   const neutral = dim || !t.categoria;
   const sub = amountSub ?? (t.moneda === "USD" ? <>≈ {fmtPEN(toBase(t, usdRate))}</> : null);
+  const label = txLabel(t);
+  const hit = highlightParts(label, highlight);
 
   const head = (
     <>
       <span className={`grid h-9 w-9 flex-none place-items-center rounded-[10px] text-[13px] font-semibold ${neutral ? "text-body" : "text-[#1d1a17]"}`}
         style={{ background: dim ? "var(--strong)" : catColor(t.categoria) }} aria-hidden><CategoryIcon categoria={t.categoria} tipo={t.tipo} /></span>
       <span className="min-w-0">
-        <span className={`block truncate text-[14.5px] ${dim ? "font-medium text-muted" : "font-semibold"}`}>{txLabel(t)}</span>
+        <span className={`block truncate text-[14.5px] ${dim ? "font-medium text-muted" : "font-semibold"}`}>
+          {hit ? <>{hit[0]}<mark className="rounded-[3px] bg-[color-mix(in_srgb,var(--primary)_22%,transparent)] px-px text-inherit">{hit[1]}</mark>{hit[2]}</> : label}
+        </span>
         <span className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[12.5px] text-muted">
           {txKind(t)}<span className="tag">{SRC_LABEL[t.fuente] ?? t.fuente}</span>{meta}
         </span>
