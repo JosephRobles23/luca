@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="apps/web/public/Portada-luca.png" alt="Luca — automatización de finanzas personales" width="720">
+  <img src="apps/web/public/luca-architecture.jpg" alt="Luca — automatización de finanzas personales" width="720">
 </p>
 
 <h1 align="center">Luca</h1>
