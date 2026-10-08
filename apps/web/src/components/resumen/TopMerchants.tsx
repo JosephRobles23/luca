@@ -14,7 +14,7 @@ export default function TopMerchants({ data, month, anim, className = "", style 
     <section className={`card ${className}`} style={style} aria-labelledby="mer-h">
       <h2 id="mer-h" className="card-title mb-3">Comercios principales</h2>
       {top.length ? (
-        <ul className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
+        <ul className="grid gap-y-0.5">
           {top.map((m, i) => (
             <li key={m.name}>
               <Link href={merchantHref(m.name, month)} className="-mx-2 block rounded-lg px-2 py-2 transition-colors hover:bg-sunken">

@@ -1,20 +1,24 @@
 "use client";
 
 /**
- * Movimientos (DESIGN.md §Layout · Movimientos): título + total filtrado → buscador, chips de tipo y
- * "Más filtros" → lista agrupada por día con detalle desplegable por fila.
+ * Movimientos (DESIGN.md §Layout · Movimientos): título + CSV → banda de totales de lo filtrado (gastos con barras
+ * por día, ingresos, Yape, por categorizar) → buscador, chips de tipo y "Más filtros" → lista con orden (recientes o
+ * mayor monto), agrupada por día, con la búsqueda resaltada, detalle desplegable por fila y "Mostrar más".
  */
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState, type CSSProperties } from "react";
 import { fmtPEN, todayLima } from "@/lib/ledger";
-import { groupByDay } from "@/lib/dias";
+import { groupByDay, scanFreshness } from "@/lib/dias";
 import {
-  EMPTY_FILTERS, applyFilters, countByTipo, countLabel, expenseTotal, filtersToQuery, fuentesOf, hasFilters, monthsOf, parseFilters, type Filters,
+  EMPTY_FILTERS, PAGE_SIZE, PENDING, applyFilters, barsMonth, countByTipo, countLabel, dailyBars, filterTotals, filtersToQuery, fuentesOf,
+  hasFilters, monthsOf, parseFilters, sortTxs, toCsv, type Filters, type Sort,
 } from "@/lib/movimientos";
+import { useToast } from "./Toast";
+import MovTotals from "./movimientos/MovTotals";
 import { useLedger } from "./LedgerProvider";
 import { useFirstView } from "./motion";
-import { IconMas } from "./icons";
+import { IconDescargar, IconMas } from "./icons";
 import Filtros from "./movimientos/Filtros";
 import MovRow from "./movimientos/MovRow";
 
@@ -40,8 +44,12 @@ function MovimientosInner() {
   // Los filtros viven en estado local (fuente de verdad mientras la página está montada) y se reflejan en la
   // URL con un pequeño retraso para que los enlaces del Resumen y las recargas los conserven.
   const [f, setFState] = useState<Filters>(() => parseFilters(params));
-  const setF = (patch: Partial<Filters>) => setFState((prev) => ({ ...prev, ...patch }));
-  const clear = () => setFState(EMPTY_FILTERS);
+  const [sort, setSort] = useState<Sort>("fecha");
+  const [page, setPage] = useState(1);
+  const setF = (patch: Partial<Filters>) => { setFState((prev) => ({ ...prev, ...patch })); setPage(1); };
+  const clear = () => { setFState(EMPTY_FILTERS); setPage(1); };
+  const { toast } = useToast();
+  const [now] = useState(() => Date.now());
 
   // Cambio de URL que no hicimos nosotros (buscador global, enlace del Resumen): manda la URL.
   const search = params.toString();
@@ -69,8 +77,14 @@ function MovimientosInner() {
   const fuentes = useMemo(() => fuentesOf(txs), [txs]);
   const list = useMemo(() => applyFilters(txs, f), [txs, f]);
   const counts = useMemo(() => countByTipo(txs, f), [txs, f]);
-  const total = useMemo(() => expenseTotal(list, usdRate), [list, usdRate]);
-  const groups = useMemo(() => groupByDay(list, todayLima(), usdRate), [list, usdRate]);
+  const today = todayLima();
+  const totals = useMemo(() => filterTotals(list, usdRate), [list, usdRate]);
+  const bMonth = barsMonth(f, today);
+  const bars = useMemo(() => dailyBars(list, bMonth, today, usdRate), [list, bMonth, today, usdRate]);
+  const pending = useMemo(() => applyFilters(txs, { ...f, categoria: PENDING, tipo: "expense" }).length, [txs, f]);
+  const sorted = useMemo(() => sortTxs(list, sort, usdRate), [list, sort, usdRate]);
+  const shown = sorted.slice(0, page * PAGE_SIZE);
+  const groups = useMemo(() => (sort === "fecha" ? groupByDay(shown, today, usdRate) : null), [shown, sort, today, usdRate]);
 
   if (state.phase !== "ready") return null;
   if (!state.data.hasMovimientos) {
@@ -84,47 +98,78 @@ function MovimientosInner() {
   }
 
   const filtered = hasFilters(f);
+  const pendingOn = f.categoria === PENDING;
+  const ajustes = state.data.ajustes;
   let row = 0;
+  const renderRow = (t: (typeof shown)[number]) => {
+    const i = row++;
+    const rise = first && i < RISE_ROWS;
+    return <MovRow key={t.id} t={t} usdRate={usdRate} highlight={f.q} className={rise ? "rise" : undefined} style={rise ? ({ "--i": i } as CSSProperties) : undefined} />;
+  };
+
+  function downloadCsv() {
+    const blob = new Blob(["\ufeff" + toCsv(sorted, usdRate)], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `luca-movimientos${f.mes ? `-${f.mes}` : ""}.csv`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    toast(`${countLabel(sorted.length)} exportados a CSV`);
+  }
 
   return (
-    <div className="grid gap-5">
-      <header className="flex items-start justify-between gap-3">
+    <div className="grid gap-4">
+      <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
           <h1 className="page-title">Movimientos</h1>
-          <p className="mt-1 text-sm text-muted" data-testid="movs-count">
-            <span className="num text-ink">{list.length}</span> {list.length === 1 ? "movimiento" : "movimientos"} · gastos <span className="num text-ink">{fmtPEN(total)}</span>
-            {filtered ? <> · <button type="button" className="underline underline-offset-2 hover:text-ink" onClick={clear}>limpiar filtros</button></> : null}
-          </p>
+          <p className="mt-1 text-sm text-muted"><span className="num">{txs.length}</span> en tu Sheet · {scanFreshness(ajustes["scan.lastRunAt"], now)}</p>
         </div>
-        <Link className="btn primary icon flex-none sm:w-auto sm:px-4 lg:hidden" href="/app/agregar" aria-label="Agregar movimiento"><IconMas /><span className="hidden sm:inline">Agregar</span></Link>
+        <div className="flex items-center gap-2">
+          <button type="button" className="btn" onClick={downloadCsv} disabled={!list.length} title="Descargar lo filtrado como CSV" data-testid="movs-csv"><IconDescargar />CSV</button>
+          <Link className="btn primary icon flex-none sm:w-auto sm:px-4 lg:hidden" href="/app/agregar" aria-label="Agregar movimiento"><IconMas /><span className="hidden sm:inline">Agregar</span></Link>
+        </div>
       </header>
 
-      <Filtros f={f} setF={setF} counts={counts} months={months} fuentes={fuentes} categorias={categorias} />
+      <MovTotals totals={totals} bars={bars} barsMonth={bMonth} pending={pending} pendingOn={pendingOn}
+        onPending={() => setF(pendingOn ? { categoria: "" } : { categoria: PENDING, tipo: "expense" })} />
+
+      <Filtros f={f} setF={setF} counts={counts} months={months} fuentes={fuentes} categorias={categorias} onClear={clear} />
 
       {!list.length ? (
-        <section className="card grid justify-items-start gap-3 py-8">
+        <section className="card grid justify-items-start gap-3 py-8" data-testid="movs-empty">
           <p className="text-[15px] text-body">{filtered ? "Nada que mostrar con estos filtros." : "Aún no hay movimientos. Llegarán solos cuando tu script lea el correo."}</p>
           {filtered
             ? <button type="button" className="btn sm" onClick={clear}>Limpiar filtros</button>
             : <Link className="btn sm" href="/app/agregar">Agregar uno a mano</Link>}
         </section>
       ) : (
-        <div className="card px-2 py-1 sm:px-3" data-testid="movs-list" role="region" aria-label={countLabel(list.length)}>
-          {groups.map((g) => (
+        <div className="card px-2 pb-2 pt-1 sm:px-3" data-testid="movs-list" role="region" aria-label={countLabel(list.length)}>
+          <div className="flex flex-wrap items-center justify-between gap-2.5 px-2 pb-1 pt-2.5">
+            <p className="text-[13px] text-muted" data-testid="movs-count">
+              <b className="num font-semibold text-ink">{list.length}</b> {list.length === 1 ? "movimiento" : "movimientos"} · gastos <span className="num text-ink">{fmtPEN(totals.expense)}</span>
+              {shown.length < list.length && <> · mostrando <span className="num">{shown.length}</span></>}
+            </p>
+            <div className="segmented" role="group" aria-label="Orden">
+              <button type="button" aria-pressed={sort === "fecha"} onClick={() => { setSort("fecha"); setPage(1); }}>Recientes</button>
+              <button type="button" aria-pressed={sort === "monto"} onClick={() => { setSort("monto"); setPage(1); }}>Mayor monto</button>
+            </div>
+          </div>
+          {groups ? groups.map((g) => (
             <section key={g.day} aria-label={g.label}>
-              <h2 className="sticky top-0 z-[1] flex items-center justify-between gap-3 border-b border-line-soft bg-card px-3 pb-2 pt-3.5 text-[12.5px] font-medium text-muted">
+              <h2 className="sticky top-0 z-[1] flex items-center justify-between gap-3 border-b border-line-soft bg-card px-3 pb-2 pt-3.5 text-[11px] font-semibold uppercase tracking-[.88px] text-muted">
                 <span>{g.label}</span>
-                {g.expense > 0 && <span className="num">−{fmtPEN(g.expense)}</span>}
+                {g.expense > 0 && <span className="num text-[12px] font-medium normal-case tracking-normal">−{fmtPEN(g.expense)}</span>}
               </h2>
-              <ul className="grid gap-0.5 py-1.5">
-                {g.txs.map((t) => {
-                  const i = row++;
-                  const rise = first && i < RISE_ROWS;
-                  return <MovRow key={t.id} t={t} usdRate={usdRate} className={rise ? "rise" : undefined} style={rise ? ({ "--i": i } as CSSProperties) : undefined} />;
-                })}
-              </ul>
+              <ul className="grid gap-0.5 py-1.5">{g.txs.map(renderRow)}</ul>
             </section>
-          ))}
+          )) : (
+            <ul className="grid gap-0.5 py-1.5" aria-label="Ordenados por monto">{shown.map(renderRow)}</ul>
+          )}
+          {shown.length < list.length && (
+            <div className="flex justify-center pb-2 pt-3">
+              <button type="button" className="btn" onClick={() => setPage((p) => p + 1)} data-testid="movs-more">Mostrar más</button>
+            </div>
+          )}
         </div>
       )}
     </div>

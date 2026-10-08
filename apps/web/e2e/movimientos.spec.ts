@@ -132,3 +132,93 @@ test.describe("Movimientos y alta manual", () => {
     await expect(row).toContainText("cena e2e");
   });
 });
+
+test.describe("Movimientos: totales, orden, búsqueda y exportación", () => {
+  test.beforeEach(async ({ page }) => {
+    await login(page);
+    await waitForDashboard(page);
+    await page.goto("/app/movimientos");
+    await expect(page.getByTestId("movs-list").locator("li").first()).toBeVisible();
+  });
+
+  test("la banda suma lo filtrado y 'Por categorizar' filtra los pendientes", async ({ page }) => {
+    const totals = page.getByTestId("movs-totals");
+    await expect(totals.getByTestId("movs-bars").locator("span")).not.toHaveCount(0);
+    // El total de gastos de la banda es el mismo que el del encabezado de la lista.
+    const head = await page.getByTestId("movs-count").innerText();
+    const expense = (await totals.getByTestId("movs-total-expense").innerText()).replace(/\s+/g, " ").trim();
+    expect(head.replace(/\s+/g, " ")).toContain(expense);
+    await page.getByTestId("filter-tipo").getByRole("button", { name: /^Ingresos/ }).click();
+    await expect(totals.getByTestId("movs-total-expense")).toContainText("0.00");
+
+    await page.getByTestId("filter-tipo").getByRole("button", { name: /^Todos/ }).click();
+    const toggle = page.getByTestId("movs-pending-toggle");
+    const pending = Number((await toggle.locator(".num").innerText()).trim());
+    expect(pending).toBeGreaterThan(0);
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-pressed", "true");
+    await expect(page).toHaveURL(/categoria=__pending__/);
+    await expect(page.getByTestId("movs-count")).toContainText(new RegExp(`^${pending} `));
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+    await expect(page).not.toHaveURL(/categoria=/);
+  });
+
+  test("ordenar por mayor monto deja la lista sin días y de mayor a menor", async ({ page }) => {
+    const list = page.getByTestId("movs-list");
+    await expect(list.locator("section h2").first()).toBeVisible();
+    await page.getByRole("group", { name: "Orden" }).getByRole("button", { name: "Mayor monto" }).click();
+    await expect(list.locator("section h2")).toHaveCount(0);
+    const amounts = await list.locator("li > button .num").evaluateAll((els) =>
+      els.slice(0, 6).map((e) => Number((e.textContent ?? "").replace(/[^\d.]/g, ""))));
+    expect(amounts.length).toBeGreaterThan(2);
+    // Montos de la lista (en su moneda): los primeros en soles van de mayor a menor.
+    expect(amounts[0]).toBeGreaterThanOrEqual(amounts[2]);
+    await page.getByRole("group", { name: "Orden" }).getByRole("button", { name: "Recientes" }).click();
+    await expect(list.locator("section h2").first()).toBeVisible();
+  });
+
+  test("la búsqueda se resalta y 'Limpiar todo' quita todos los filtros", async ({ page }) => {
+    await page.getByTestId("filter-q").fill("plaza");
+    const list = page.getByTestId("movs-list");
+    await expect(list.locator("mark").first()).toHaveText(/plaza/i);
+    await page.getByTestId("filter-tipo").getByRole("button", { name: /^Gastos/ }).click();
+    await expect(page.getByRole("list", { name: "Filtros activos" }).getByRole("listitem")).toHaveCount(2);
+    await page.getByRole("button", { name: "Borrar búsqueda" }).click();
+    await expect(page.getByTestId("filter-q")).toHaveValue("");
+    await page.getByTestId("filter-q").fill("plaza");
+    await page.getByRole("button", { name: "Limpiar todo" }).click();
+    await expect(page.getByTestId("filter-q")).toHaveValue("");
+    await expect(page.getByRole("list", { name: "Filtros activos" })).toHaveCount(0);
+    await expect(page.getByTestId("filter-tipo").getByRole("button", { name: /^Todos/ })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("'Mostrar más' pagina de 40 en 40", async ({ page }) => {
+    const all = Number((await page.getByTestId("movs-count").innerText()).split(" ")[0]);
+    const rows = page.getByTestId("movs-list").locator("li[data-testid^='mov-']");
+    if (all <= 40) {
+      await expect(rows).toHaveCount(all);
+      await expect(page.getByTestId("movs-more")).toHaveCount(0);
+      return;
+    }
+    await expect(rows).toHaveCount(40);
+    await expect(page.getByTestId("movs-count")).toContainText("mostrando 40");
+    await page.getByTestId("movs-more").click();
+    await expect(rows).toHaveCount(Math.min(80, all));
+  });
+
+  test("CSV descarga lo filtrado con encabezado", async ({ page }) => {
+    await page.getByTestId("filter-q").fill("plaza vea");
+    await expect(page.getByTestId("movs-list").locator("li").first()).toContainText("PLAZA VEA");
+    const n = Number((await page.getByTestId("movs-count").innerText()).split(" ")[0]);
+    const [download] = await Promise.all([page.waitForEvent("download"), page.getByTestId("movs-csv").click()]);
+    expect(download.suggestedFilename()).toMatch(/^luca-movimientos.*\.csv$/);
+    const text = (await (await download.createReadStream()).toArray()).map(String).join("").replace(/^﻿/, "");
+    const lines = text.split("\n");
+    expect(lines[0]).toBe('"id","fecha","tipo","comercio","contraparte","categoria","moneda","monto","monto_pen","fuente","medio"');
+    expect(lines.length - 1).toBe(n);
+    expect(lines.slice(1).every((l) => /PLAZA VEA/i.test(l))).toBe(true);
+    await expect(toast(page)).toContainText("exportados a CSV");
+    await page.screenshot({ path: `${SHOTS}/21-movimientos-v2.png`, fullPage: true });
+  });
+});
