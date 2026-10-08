@@ -13,7 +13,7 @@ import { getMcpAuthContext } from 'agents/mcp/server';
 import type { Env } from './env';
 import { getTenant } from './storage';
 import { callGas } from './gasClient';
-import { toolShapes, toolDescriptions, TOOL_NAMES, type ToolName } from './schemas';
+import { toolShapes, toolDescriptions, toolTitles, toolAnnotations, TOOL_NAMES, type ToolName } from './schemas';
 
 export const SERVER_INFO = { name: 'luca', version: '0.1.0' } as const;
 
@@ -41,8 +41,10 @@ export function buildServer(env: Env): McpServer {
   const server = new McpServer(SERVER_INFO);
   for (const name of TOOL_NAMES) {
     server.registerTool(name, {
+      title: toolTitles[name],
       description: toolDescriptions[name],
-      inputSchema: toolShapes[name]
+      inputSchema: toolShapes[name],
+      annotations: { title: toolTitles[name], ...toolAnnotations[name] }
     }, async (args: Record<string, unknown>) => proxy(env, name, args ?? {}));
   }
   return server;

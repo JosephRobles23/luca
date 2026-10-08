@@ -18,6 +18,18 @@ test('las 6 tools v0 existen con descripción', { skip }, () => {
   for (const n of mod.TOOL_NAMES) assert.ok(mod.toolDescriptions[n].length > 20, n);
 });
 
+test('cada tool declara título y readOnlyHint explícito: solo add_expense escribe, ninguna destruye', { skip }, () => {
+  for (const n of mod.TOOL_NAMES) {
+    assert.ok(mod.toolTitles[n], n);
+    const a = mod.toolAnnotations[n];
+    assert.equal(typeof a.readOnlyHint, 'boolean', n);
+    assert.equal(a.openWorldHint, false, n);
+    assert.equal(a.readOnlyHint, n !== 'add_expense', n);
+  }
+  assert.equal(mod.toolAnnotations.add_expense.destructiveHint, false);
+  assert.equal(mod.toolAnnotations.add_expense.idempotentHint, false);
+});
+
 test('month: YYYY-MM estricto', { skip }, () => {
   ok('get_summary', { month: '2026-10' });
   ok('category_breakdown', { month: '2026-01' });

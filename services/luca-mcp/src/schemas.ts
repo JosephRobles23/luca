@@ -74,6 +74,36 @@ export const toolDescriptions: Record<ToolName, string> = {
     'sin escribir; confirma con el usuario y reenvía con force:true para registrarlo igual. Pide confirmación antes de llamar.'
 };
 
+/** Títulos legibles que muestran los clientes (ChatGPT, Claude) en la lista de tools y en las confirmaciones. */
+export const toolTitles: Record<ToolName, string> = {
+  get_summary: 'Resumen del mes',
+  category_breakdown: 'Gasto por categoría',
+  top_merchants: 'Comercios con más gasto',
+  list_transactions: 'Buscar movimientos',
+  budget_status: 'Estado del presupuesto',
+  add_expense: 'Registrar gasto'
+};
+
+export interface ToolAnnotations {
+  readOnlyHint: boolean; destructiveHint?: boolean; idempotentHint?: boolean; openWorldHint: boolean;
+}
+
+/**
+ * Hints MCP de cada tool. Sin `readOnlyHint` el cliente debe suponer escritura: ChatGPT pedía confirmar
+ * cada consulta y, en turnos en los que solo expone tools de lectura (openai-apps-sdk-examples#240),
+ * no le llegaba ninguna de Luca (2026-10-08). `openWorldHint: false`: solo tocan la hoja del usuario.
+ */
+const READ: ToolAnnotations = { readOnlyHint: true, openWorldHint: false };
+export const toolAnnotations: Record<ToolName, ToolAnnotations> = {
+  get_summary: READ,
+  category_breakdown: READ,
+  top_merchants: READ,
+  list_transactions: READ,
+  budget_status: READ,
+  // Añade una fila; no borra ni modifica. No idempotente: repetirla con force:true duplica el gasto.
+  add_expense: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false }
+};
+
 /** URL de Web App de Apps Script (/exec). Misma regla que usa /enroll. */
 export function isExecUrl(url: string): boolean {
   return /^https:\/\/script\.google\.com\/[^?#]*\/exec$/i.test(String(url || ''));
