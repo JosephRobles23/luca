@@ -38,7 +38,7 @@ export default function RadarCard({ txs, month, usdRate, className = "", style }
           data.cats.map((c, i) => `<div style="display:flex;justify-content:space-between;gap:16px"><span style="color:${T.body}">${c}</span><b style="font-family:${T.mono}">${fmt(p.value[i])}</b></div>`).join(""),
       },
       radar: {
-        radius: "68%", center: ["50%", "53%"], splitNumber: 4, shape: "polygon",
+        radius: "60%", center: ["50%", "52%"], splitNumber: 4, shape: "polygon",
         indicator: data.cats.map((c) => ({ name: SHORT[c] ?? c, max: data.max })),
         axisName: { color: T.body, fontFamily: T.font, fontSize: 12.5 },
         splitLine: { lineStyle: { color: T.grid } }, splitArea: { show: false }, axisLine: { lineStyle: { color: T.grid } },
