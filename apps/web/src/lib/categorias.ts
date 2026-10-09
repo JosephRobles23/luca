@@ -45,6 +45,21 @@ export function topCategories(txs: Tx[], categorias: string[], n = 4): string[] 
   return ranked.slice(0, n);
 }
 
+/** Movimiento con una persona (Yape P2P, transferencia): contraparte sin comercio. */
+export const isPersonTx = (tx: Tx) => !tx.comercio && !!(tx.contraparte || tx.contraparteKey);
+
+/**
+ * Chips de categorización rápida: las `n` más usadas, con la sugerencia por comercio/persona delante y, si la
+ * contraparte es una persona, Transferencias (si sigue en la lista del usuario). El resto va en "+N más".
+ */
+export function quickCategories(txs: Tx[], categorias: string[], ctx: { persona?: boolean; suggestion?: string | null }, n = 4): string[] {
+  let top = topCategories(txs, categorias, n);
+  const lead = (c: string) => { if (!top.includes(c)) top = [c, ...top.slice(0, n - 1)]; };
+  if (ctx.persona && categorias.includes("Transferencias")) lead("Transferencias");
+  if (ctx.suggestion) lead(ctx.suggestion);
+  return top;
+}
+
 /**
  * Categoría sugerida para un pendiente: la más reciente asignada a otro movimiento del mismo comercio
  * o de la misma persona (`contraparte_key`, si no el nombre). Sin coincidencias → null. Sin LLM (ADR-004).

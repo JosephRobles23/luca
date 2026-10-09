@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { SHOTS, login, waitForDashboard, money, toast } from "./helpers";
+import { SHOTS, login, waitForDashboard, money, toast, pick, expectCategory } from "./helpers";
 
 test.describe("Landing → entrar → dashboard", () => {
   test("la landing presenta propuesta, pasos, privacidad y legales", async ({ page }) => {
@@ -44,15 +44,19 @@ test.describe("Landing → entrar → dashboard", () => {
     await waitForDashboard(page);
     const before = await page.getByTestId("kpi-expense").getByTestId("kpi-value").innerText();
     const select = page.getByTestId("month-select");
-    const options = await select.locator("option").allTextContents();
+    await select.click();
+    const opts = page.getByRole("listbox", { name: "Elegir mes" }).getByRole("option");
+    await expect(opts.first()).toBeVisible();
+    const options = await opts.allInnerTexts();
+    const values = await opts.evaluateAll((els) => els.map((el) => el.getAttribute("data-value")!));
     expect(options.length).toBeGreaterThanOrEqual(3);
-    await select.selectOption({ index: 1 });
+    await opts.nth(1).click();
     await expect(page.getByTestId("kpi-expense").getByTestId("kpi-value")).not.toHaveText(before);
     // El título de la lista usa el nombre largo en minúsculas ("Movimientos de septiembre").
     await expect(page.locator("h2", { hasText: /^Movimientos de / })).toContainText(options[1].split(" ")[0].toLowerCase());
     // ‹ › y las flechas del teclado recorren los meses; las barras de 6 meses también eligen mes.
     await page.getByRole("button", { name: /^Mes siguiente/ }).click();
-    await expect(select).toHaveValue(await select.locator("option").first().getAttribute("value") as string);
+    await expect(select).toHaveAttribute("data-value", values[0]);
     await select.focus();
     await page.keyboard.press("ArrowLeft");
     await expect(page.getByTestId("kpi-expense").getByTestId("kpi-value")).not.toHaveText(before);
@@ -74,22 +78,22 @@ test.describe("Landing → entrar → dashboard", () => {
     const pending = page.getByTestId("pending-card");
     await expect(pending).toBeVisible();
     const countBefore = Number((await pending.locator("h2").innerText()).replace(/\D/g, ""));
-    const firstSelect = pending.locator("select").first();
-    const testId = await firstSelect.getAttribute("data-testid");
+    const firstMore = pending.locator('[data-testid^="cat-"]').first();
+    const testId = await firstMore.getAttribute("data-testid");
     const txId = testId!.replace(/^cat-/, "");
-    await firstSelect.selectOption("Comidas fuera");
-    await expect(toast(page)).toContainText("Categoría guardada: Comidas fuera");
+    const chosen = await pick(page, firstMore);
+    await expect(toast(page)).toContainText(`Categoría guardada: ${chosen}`);
     await expect(pending.locator("h2")).toContainText(String(countBefore - 1));
     // La fila guardada se queda un momento en el Resumen (confirmación + colapso): esperar a estar en Movimientos.
     await page.getByRole("link", { name: "Movimientos" }).click();
     await expect(page).toHaveURL(/\/app\/movimientos/);
     // En Movimientos la categoría vive en el detalle desplegable de la fila.
     await page.getByTestId(`mov-${txId}`).getByRole("button", { name: "Ver detalle" }).click();
-    await expect(page.getByTestId(`cat-${txId}`)).toHaveValue("Comidas fuera");
+    await expectCategory(page.getByTestId(`mov-${txId}`), chosen);
     // Y sobrevive a una recarga completa (el mock persiste en localStorage igual que la Sheet real).
     await page.reload();
     await page.getByTestId(`mov-${txId}`).getByRole("button", { name: "Ver detalle" }).click();
-    await expect(page.getByTestId(`cat-${txId}`)).toHaveValue("Comidas fuera");
+    await expectCategory(page.getByTestId(`mov-${txId}`), chosen);
     await expect(page.getByTestId(`mov-${txId}`)).toContainText("origen: user");
   });
 

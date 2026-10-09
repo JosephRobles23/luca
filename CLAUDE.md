@@ -55,6 +55,7 @@ los usuarios no se actualizan solas (ADR-006 §5).
 | Research con fuentes | `docs/research/` |
 | Spikes y resultados | `spikes/README.md` |
 | Guías de usuario/operador (GCP, iOS 27) | `docs/guides/` |
+| Maquetas HTML (leer `docs/html/CLAUDE.md` antes de crear o editar una) | `docs/html/` |
 
 ## Infraestructura (no es del usuario final)
 - **GCP** `luca-510610` (cuenta `gavynenita@gmail.com`). Dos clientes OAuth: **"Luca Web"**

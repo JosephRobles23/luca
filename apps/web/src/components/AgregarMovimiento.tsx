@@ -8,7 +8,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useId, useMemo, useState } from "react";
 import { todayLima } from "@/lib/ledger";
-import { catColor, topCategories } from "@/lib/categorias";
+import { catColor, quickCategories } from "@/lib/categorias";
+import Dropdown from "./Dropdown";
 import { validateManual, type ManualInput } from "@/lib/sheets-ops";
 import { firstError, parseAmount, quickDates, sanitizeAmountInput } from "@/lib/movimientos";
 import { useLedger } from "./LedgerProvider";
@@ -40,8 +41,8 @@ export default function AgregarMovimiento() {
   const categorias = useMemo(() => (state.phase === "ready" ? state.data.categorias : []), [state]);
   const chips = useMemo(() => {
     if (tipo === "income") return categorias.includes("Ingreso") ? ["Ingreso"] : [];
-    return topCategories(txs, categorias, 5);
-  }, [tipo, txs, categorias]);
+    return quickCategories(txs, categorias, { persona: quien === "contraparte" }, 4);
+  }, [tipo, quien, txs, categorias]);
 
   if (state.phase !== "ready") return null;
   const hasTab = state.data.hasMovimientos;
@@ -73,6 +74,7 @@ export default function AgregarMovimiento() {
 
   const cur = moneda === "USD" ? "$" : "S/";
   const otherValue = chips.includes(categoria) ? "" : categoria;
+  const rest = categorias.filter((c) => !chips.includes(c));
 
   return (
     <form className="mx-auto grid w-full max-w-[560px] gap-5" onSubmit={submit} noValidate data-testid="manual-form">
@@ -145,10 +147,13 @@ export default function AgregarMovimiento() {
                 <i className="sw" style={{ background: catColor(c) }} aria-hidden />{c}
               </button>
             ))}
-            <select className={`chip appearance-none pr-3 ${otherValue ? "on" : ""}`} aria-label="Otra categoría" value={otherValue} onChange={(e) => setCategoria(e.target.value)}>
-              <option value="">{otherValue ? "Por categorizar" : "Otra…"}</option>
-              {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
+            {rest.length > 0 && (
+              <Dropdown value={otherValue} onChange={setCategoria} placeholder={`+${rest.length} más`}
+                options={[...(otherValue ? [{ value: "", label: "Quitar categoría" }] : []), ...rest.map((c) => ({ value: c, label: c, color: catColor(c) }))]}
+                ariaLabel={`Más categorías (${rest.length})`} header={`${rest.length} categorías más`} className={`chip more ${otherValue ? "on" : ""}`}>
+                {otherValue ? <><i className="sw" style={{ background: catColor(otherValue) }} aria-hidden />{otherValue}</> : undefined}
+              </Dropdown>
+            )}
           </div>
           <p className="mt-1.5 text-[12.5px] text-muted">{categoria ? <>Se guardará como <b className="font-medium text-body">{categoria}</b>.</> : "Sin categoría: quedará por categorizar."}</p>
         </div>

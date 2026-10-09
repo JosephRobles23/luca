@@ -127,6 +127,32 @@ body { background: var(--canvas); color: var(--ink); -webkit-font-smoothing: ant
 .chip[aria-pressed="true"], .chip[aria-checked="true"], .chip.on { background: var(--selected-bg); color: var(--selected-fg); border-color: var(--selected-bg); }
 .chip:active { transform: scale(.96); }
 .chip .sw { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+/* Chip que abre más opciones ("+8 más"): borde punteado para que se lea como desplegable. */
+.chip.more { border-style: dashed; border-color: var(--line-strong); color: var(--ink); }
+.chip.more.on { border-style: solid; }
+.chip.on .dd-caret, .chip[aria-pressed="true"] .dd-caret { color: inherit; opacity: .7; }
+/* Desplegable (Dropdown.tsx): select nativo en táctil, menú de la app con ratón. */
+.dd { position: relative; display: inline-flex; max-width: 100%; }
+.dd-caret { flex: none; color: var(--muted); transition: transform .15s var(--ease-out); }
+.dd-trigger { cursor: pointer; text-align: left; }
+.dd-trigger[aria-expanded="true"] .dd-caret { transform: rotate(180deg); }
+.input.dd-trigger { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.dd-native { appearance: none; -webkit-appearance: none; padding-right: 30px !important; }
+.dd-native + .dd-caret { position: absolute; right: 10px; top: 50%; translate: 0 -50%; pointer-events: none; }
+.dd-menu { position: fixed; z-index: 60; max-width: min(320px, calc(100vw - 32px)); max-height: 340px; overflow-y: auto;
+  display: grid; gap: 1px; padding: 6px; border: 1px solid var(--line); border-radius: 14px; outline: none;
+  background: color-mix(in srgb, var(--raised) 86%, transparent); -webkit-backdrop-filter: blur(16px) saturate(1.5); backdrop-filter: blur(16px) saturate(1.5);
+  box-shadow: 0 14px 36px -14px rgba(40, 25, 10, .32), 0 2px 6px -2px rgba(40, 25, 10, .08);
+  transform-origin: top left; animation: dd-in .16s var(--ease-out) both; }
+.dd-menu.up { transform-origin: bottom left; }
+.dd-head { font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 6px 10px 5px; }
+.dd-opt { display: flex; align-items: center; gap: 10px; min-height: 34px; padding: 0 10px; border-radius: 9px; font-size: 13.5px; font-weight: 400; color: var(--ink); cursor: pointer; white-space: nowrap; }
+.dd-opt.active { background: var(--strong); }
+.dd-opt .sw { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.dd-check { color: var(--primary); font-size: 13px; }
+.dd-keys { display: flex; gap: 10px; margin-top: 4px; padding: 7px 10px 3px; border-top: 1px solid var(--line-soft); font-size: 11px; color: var(--muted); white-space: nowrap; }
+.dd-keys kbd { font-family: var(--font-geist-mono), ui-monospace, monospace; font-size: 10.5px; background: var(--strong); border-radius: 4px; padding: 0 4px; margin-right: 2px; }
+@keyframes dd-in { from { opacity: 0; transform: scale(.96) translateY(-4px); } }
 /* Leyenda de gráfico que oculta/muestra una serie: neutra; apagada se atenúa y se tacha (no usa el estilo "elegido"). */
 .legend-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 26px; padding: 0 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--card);
   font: inherit; font-size: 12px; font-weight: 500; color: var(--body); cursor: pointer; white-space: nowrap; transition: opacity .15s, border-color .15s; }
