@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { SHOTS, login, waitForDashboard, toast } from "./helpers";
+import { SHOTS, login, waitForDashboard, toast, pick, expectCategory } from "./helpers";
 
 test.describe("Movimientos y alta manual", () => {
   test("filtros por tipo, categoría y texto", async ({ page }) => {
@@ -25,19 +25,21 @@ test.describe("Movimientos y alta manual", () => {
     await tipo.getByRole("button", { name: /^Todos/ }).click();
     await expect(page).not.toHaveURL(/tipo=/);
     await page.getByRole("button", { name: "Más filtros" }).click();
-    await page.getByTestId("filter-categoria").selectOption("__pending__");
+    await pick(page, page.getByTestId("filter-categoria"), "__pending__");
     await expect(page).toHaveURL(/categoria=__pending__/);
     await expect(page.getByRole("list", { name: "Filtros activos" })).toContainText("Por categorizar");
     await tipo.getByRole("button", { name: /^Gastos/ }).click();
     const list = page.getByTestId("movs-list");
     await expect(list.locator("li").first()).toBeVisible();
     await expect(list.locator("li").first()).toContainText("Por categorizar");
-    // El detalle de un pendiente abre la categorización con "Otra…" vacío.
+    // El detalle de un pendiente abre la categorización con "+N más" sin elegir.
     await list.locator("li").first().getByRole("button", { name: "Ver detalle" }).click();
-    await expect(list.locator("li").first().locator("select")).toBeVisible();
-    for (const sel of await list.locator("select").all()) await expect(sel).toHaveValue("");
+    const more = list.locator("li").first().locator('[data-testid^="cat-"]');
+    await expect(more).toBeVisible();
+    await expect(more).toHaveAttribute("data-value", "");
+    await expect(more).toContainText(/^\+\d+ más/);
 
-    await page.getByTestId("filter-categoria").selectOption("");
+    await pick(page, page.getByTestId("filter-categoria"), "");
     await tipo.getByRole("button", { name: /^Todos/ }).click();
     await page.getByTestId("filter-q").fill("plaza vea");
     await expect(list.locator("li").first()).toContainText("PLAZA VEA");
@@ -70,9 +72,10 @@ test.describe("Movimientos y alta manual", () => {
     const n = await rows.count();
     expect(n).toBeGreaterThanOrEqual(2); // el mismo comercio aparece en varios meses
     await rows.first().getByRole("button", { name: "Ver detalle" }).click();
-    await rows.first().locator("select").selectOption("Comidas fuera");
-    await expect(toast(page)).toContainText("Categoría guardada");
-    await expect(rows.first().locator("select")).toHaveValue("Comidas fuera");
+    const more = rows.first().locator('[data-testid^="cat-"]');
+    const chosen = await pick(page, more);
+    await expect(toast(page)).toContainText(`Categoría guardada: ${chosen}`);
+    await expectCategory(rows.first(), chosen);
     // Aprendido en la pestaña Comercios del mock (misma lógica que la Sheet real).
     const learned = await page.evaluate(() => {
       const store = JSON.parse(localStorage.getItem("luca.mock.store")!);
@@ -80,7 +83,7 @@ test.describe("Movimientos y alta manual", () => {
       return sheet.Comercios.find((r) => r[0] === "la lucha sangucheria");
     });
     expect(learned).toBeTruthy();
-    expect(learned![2]).toBe("Comidas fuera");
+    expect(learned![2]).toBe(chosen);
     expect(learned![3]).toBe("user");
   });
 
@@ -91,9 +94,12 @@ test.describe("Movimientos y alta manual", () => {
     const p2p = page.getByTestId("movs-list").locator("li").first();
     await expect(p2p).toBeVisible();
     await p2p.getByRole("button", { name: "Ver detalle" }).click();
+    // Con una persona, Transferencias es uno de los chips rápidos (sin abrir "+N más").
+    const chipTransfer = p2p.getByRole("group", { name: /^Categoría de/ }).getByRole("button", { name: "Transferencias", exact: true });
+    await expect(chipTransfer).toHaveAttribute("aria-pressed", "false");
     await p2p.getByRole("button", { name: "Marcar como transferencia" }).click();
     await expect(toast(page)).toContainText("Transferencias");
-    await expect(p2p.locator("select")).toHaveValue("Transferencias");
+    await expect(chipTransfer).toHaveAttribute("aria-pressed", "true");
 
     await page.goto("/app/movimientos?q=ZARA");
     const card = page.getByTestId("movs-list").locator("li").first();
@@ -118,7 +124,9 @@ test.describe("Movimientos y alta manual", () => {
 
     await page.getByLabel("Monto").fill("12,50");
     await page.getByLabel("Comercio", { exact: true }).fill("Chifa Lung Fung");
-    await page.getByRole("combobox", { name: "Otra categoría" }).selectOption("Comidas fuera");
+    // Una categoría fuera de los chips, desde "+N más".
+    const cat = await pick(page, page.getByTestId("manual-form").getByRole("button", { name: /^Más categorías/ }));
+    await expect(page.getByTestId("manual-form")).toContainText(`Se guardará como ${cat}.`);
     await page.getByLabel("Nota (opcional)").fill("cena e2e");
     await page.screenshot({ path: `${SHOTS}/05-agregar.png`, fullPage: true });
     await page.getByRole("button", { name: "Agregar", exact: true }).click();
@@ -127,6 +135,7 @@ test.describe("Movimientos y alta manual", () => {
     const row = page.getByTestId("movs-list").locator("li", { hasText: "Chifa Lung Fung" });
     await expect(row).toBeVisible();
     await expect(row).toContainText("S/ 12.50");
+    await expect(row).toContainText(cat);
     await row.getByRole("button", { name: "Ver detalle" }).click();
     await expect(row).toContainText(/manual:[0-9a-f-]{36}/);
     await expect(row).toContainText("cena e2e");

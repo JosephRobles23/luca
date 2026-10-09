@@ -1,13 +1,15 @@
 "use client";
 
 /**
- * Categorización con un toque (DESIGN.md §Components · Por categorizar): chips de las 4 categorías más usadas,
- * la sugerencia por comercio/persona y "Otra…" (select nativo con la lista completa, `data-testid=cat-{id}`).
+ * Categorización con un toque (DESIGN.md §Components · Por categorizar): 4 chips (sugerencia por comercio/persona,
+ * Transferencias si la contraparte es una persona, y las más usadas) y "+N más" con el resto (`Dropdown`,
+ * `data-testid=cat-{id}`).
  * Escribe `categoria` + `categoria_origen=user` y aprende en `Comercios` (vía recategorize).
  */
 import { useMemo, useState } from "react";
 import type { Tx } from "@/lib/ledger";
-import { catColor, suggestCategory, topCategories } from "@/lib/categorias";
+import { catColor, isPersonTx, quickCategories, suggestCategory } from "@/lib/categorias";
+import Dropdown from "./Dropdown";
 import { useLedger } from "./LedgerProvider";
 import { DrawCheck } from "./motion";
 
@@ -18,11 +20,9 @@ export default function CategoryChips({ tx, onSaved }: { tx: Tx; onSaved?: (cate
   const txs = useMemo(() => (state.phase === "ready" ? state.data.txs : []), [state]);
   const categorias = useMemo(() => (state.phase === "ready" ? state.data.categorias : []), [state]);
   const suggestion = useMemo(() => suggestCategory(tx, txs), [tx, txs]);
-  const chips = useMemo(() => {
-    const top = topCategories(txs, categorias, 4);
-    return suggestion && !top.includes(suggestion) ? [suggestion, ...top.slice(0, 3)] : top;
-  }, [txs, categorias, suggestion]);
+  const chips = useMemo(() => quickCategories(txs, categorias, { persona: isPersonTx(tx), suggestion }, 4), [tx, txs, categorias, suggestion]);
   const opts = tx.categoria && !categorias.includes(tx.categoria) ? [tx.categoria, ...categorias] : categorias;
+  const rest = opts.filter((c) => !chips.includes(c));
 
   async function pick(c: string) {
     if (!c || saving) return;
@@ -39,11 +39,14 @@ export default function CategoryChips({ tx, onSaved }: { tx: Tx; onSaved?: (cate
             <i className="sw" style={{ background: catColor(c) }} aria-hidden />{c}{saving === c ? "…" : ""}
           </button>
         ))}
-        <select className="chip appearance-none pr-3" aria-label="Otra categoría" data-testid={`cat-${tx.id}`} value={current} disabled={!!saving}
-          onChange={(e) => pick(e.target.value)}>
-          <option value="">Otra…</option>
-          {opts.map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
+        {rest.length > 0 && (
+          <Dropdown value={rest.includes(current) ? current : ""} onChange={pick} disabled={!!saving} testId={`cat-${tx.id}`}
+            options={rest.map((c) => ({ value: c, label: c, color: catColor(c) }))} placeholder={`+${rest.length} más`}
+            ariaLabel={`Más categorías (${rest.length})`} header={`${rest.length} categorías más`}
+            className={`chip more ${rest.includes(current) ? "on" : ""}`}>
+            {rest.includes(current) ? <><i className="sw" style={{ background: catColor(current) }} aria-hidden />{current}</> : undefined}
+          </Dropdown>
+        )}
       </div>
       {saved ? (
         <span className="flex items-center gap-2 text-[13px] font-medium text-success" role="status"><DrawCheck size={18} />Guardado en tu Sheet. Los próximos de este comercio irán solos.</span>

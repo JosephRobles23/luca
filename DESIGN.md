@@ -170,6 +170,9 @@ Nivel 0 `canvas` · nivel 1 `card` con `line` · nivel 1b `sunken` dentro de una
 - **Barra inferior (móvil)**: Resumen · Movimientos · **Agregar** (botón naranja elevado) · Conexiones · Ajustes.
 - **Topbar**: buscador (Enter → `/app/movimientos?q=`; tecla `/` lo enfoca) · Actualizar · Agregar.
 - **Selector de mes**: ‹ mes › ; tocar el mes abre la lista completa; ← → con teclado.
+- **Desplegable** (`Dropdown.tsx`, todo selector de un valor): con puntero táctil, `<select>` nativo (el teléfono
+  usa su selector; en iPhone, el de iOS). Con ratón, menú de la app en portal: `raised` translúcido con desenfoque,
+  radio 14 px, punto de color por categoría, ✓ en la elegida, ↑ ↓ / letra / Enter / Esc; se abre hacia donde cabe.
 - **Gasto del mes** (banda de indicadores): eyebrow · cifra `amount-hero` que cuenta hasta su valor · delta vs
   el mes anterior **al mismo día** en pastilla (`success` si baja, `primary-soft` si sube) · **barra de ritmo**:
   relleno = gasto / gasto del mes anterior; marca = día de hoy / días del mes · Ingresos / Te queda / Yape
@@ -184,8 +187,9 @@ Nivel 0 `canvas` · nivel 1 `card` con `line` · nivel 1b `sunken` dentro de una
 - **Perfil de gasto**: radar por categoría (sin Vivienda) de este mes, el anterior y el promedio de 3 meses, en
   S/ o % del mes; siempre queda al menos una serie visible.
 - **En qué se fue**: dona + lista; tocar una categoría filtra los movimientos del mes (chip para quitarlo).
-- **Por categorizar**: cada pendiente en `sunken` con chips de las 4 categorías más usadas + "Otra…"
-  (lista completa) y, si existe, la sugerencia por comercio o persona ya categorizados. Al elegir: chip con
+- **Por categorizar**: cada pendiente en `sunken` con 4 chips (la sugerencia por comercio o persona ya
+  categorizados, Transferencias si la contraparte es una persona, y las más usadas) + "+N más" con el resto
+  (Desplegable, chip de borde punteado). Al elegir: chip con
   rebote, check que se dibuja, "Guardado en tu Sheet", y la fila sale con colapso de altura.
 - **Configuración plegable**: anillo de progreso n/3 + checklist; desaparece al completar u omitir.
 - **Fila de movimiento**: avatar con inicial sobre el color de su categoría · comercio o persona · categoría y

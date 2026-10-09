@@ -2,13 +2,15 @@
 
 /**
  * Filtros de Movimientos (DESIGN.md §Layout · Movimientos): buscador, chips de tipo con contadores,
- * "Más filtros" desplegable (mes, fuente, categoría) y los filtros activos como chips descartables.
+ * "Más filtros" desplegable (mes, fuente, categoría con `Dropdown`) y los filtros activos como chips descartables.
  */
 import { useId, useState } from "react";
 import { monthLabel } from "@/lib/ledger";
 import { PENDING, TIPO_CHIPS, activeFilterChips, moreFiltersCount, type Filters } from "@/lib/movimientos";
 import { IconAjustes, IconBuscar, IconCerrar, IconChevron } from "../icons";
-import { Field, SRC_LABEL, Select } from "../ui";
+import { catColor } from "@/lib/categorias";
+import Dropdown from "../Dropdown";
+import { Field, SRC_LABEL } from "../ui";
 
 type Props = {
   f: Filters;
@@ -59,23 +61,16 @@ export default function Filtros({ f, setF, counts, months, fuentes, categorias, 
         <div>
           <div className="grid gap-3 pt-1 sm:grid-cols-3">
             <Field label="Mes" htmlFor="f-mes">
-              <Select id="f-mes" value={f.mes} onChange={(e) => setF({ mes: e.target.value })}>
-                <option value="">Todos</option>
-                {months.map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}
-              </Select>
+              <Dropdown id="f-mes" value={f.mes} onChange={(v) => setF({ mes: v })} className="input" wrapClassName="w-full"
+                options={[{ value: "", label: "Todos" }, ...months.map((m) => ({ value: m, label: monthLabel(m) }))]} />
             </Field>
             <Field label="Fuente" htmlFor="f-fuente">
-              <Select id="f-fuente" value={f.fuente} onChange={(e) => setF({ fuente: e.target.value })}>
-                <option value="">Todas</option>
-                {fuentes.map((s) => <option key={s} value={s}>{SRC_LABEL[s] ?? s}</option>)}
-              </Select>
+              <Dropdown id="f-fuente" value={f.fuente} onChange={(v) => setF({ fuente: v })} className="input" wrapClassName="w-full"
+                options={[{ value: "", label: "Todas" }, ...fuentes.map((s) => ({ value: s, label: SRC_LABEL[s] ?? s }))]} />
             </Field>
             <Field label="Categoría" htmlFor="f-cat">
-              <Select id="f-cat" value={f.categoria} onChange={(e) => setF({ categoria: e.target.value })} data-testid="filter-categoria">
-                <option value="">Todas</option>
-                <option value={PENDING}>Por categorizar</option>
-                {categorias.map((c) => <option key={c} value={c}>{c}</option>)}
-              </Select>
+              <Dropdown id="f-cat" testId="filter-categoria" value={f.categoria} onChange={(v) => setF({ categoria: v })} className="input" wrapClassName="w-full"
+                options={[{ value: "", label: "Todas" }, { value: PENDING, label: "Por categorizar", color: catColor("") }, ...categorias.map((c) => ({ value: c, label: c, color: catColor(c) }))]} />
             </Field>
           </div>
         </div>

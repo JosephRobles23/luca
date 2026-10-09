@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode, type SelectHTMLAttributes } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 /** Campo con etiqueta accesible. */
 export function Field({ label, htmlFor, hint, error, children }: { label: string; htmlFor: string; hint?: string; error?: string; children: ReactNode }) {
@@ -21,11 +21,6 @@ export function Notice({ kind = "info", children, action }: { kind?: "info" | "w
       {action}
     </div>
   );
-}
-
-/** Select nativo con estilo de la app. */
-export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select {...props} className={`input ${props.className ?? ""}`} />;
 }
 
 /** Botón que copia texto al portapapeles y confirma en línea. */

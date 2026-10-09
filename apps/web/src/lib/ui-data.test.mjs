@@ -1,7 +1,7 @@
 // Tests de presentación: colores y uso de categorías, sugerencia por comercio, agrupación por día y ritmo del mes.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { catVar, catColor, txInitial, topCategories, suggestCategory } from "./categorias.ts";
+import { catVar, catColor, txInitial, topCategories, suggestCategory, quickCategories, isPersonTx } from "./categorias.ts";
 import { dayLabel, groupByDay, pace, daysInMonth, prevDay, scanFreshness } from "./dias.ts";
 
 const tx = (o) => ({ id: "x", fecha: "2026-10-04T10:00:00-05:00", tipo: "expense", monto: 10, moneda: "PEN", tipoCambio: null, comercio: "", contraparte: "", contraparteKey: "", categoria: "", categoriaOrigen: "", medio: "", canal: "", fuente: "bcp_email", operacion: "", gmailId: "", flags: [], asunto: "", creadoEn: "", ...o });
@@ -26,6 +26,24 @@ test("topCategories: por uso, solo vigentes, sin Ingreso y completando con la li
   const txs = [tx({ categoria: "Transporte" }), tx({ categoria: "Transporte" }), tx({ categoria: "Supermercado" }), tx({ categoria: "Borrada" }), tx({ categoria: "Ingreso", tipo: "income" })];
   assert.deepEqual(topCategories(txs, cats, 4), ["Transporte", "Supermercado", "Vivienda", "Comidas fuera"]);
   assert.deepEqual(topCategories([], cats, 2), ["Vivienda", "Supermercado"]);
+});
+
+test("quickCategories: sugerencia primero, Transferencias si es una persona, luego las más usadas", () => {
+  const cats = ["Vivienda", "Supermercado", "Comidas fuera", "Transporte", "Transferencias", "Salud"];
+  const txs = [tx({ categoria: "Comidas fuera" }), tx({ categoria: "Comidas fuera" }), tx({ categoria: "Supermercado" }), tx({ categoria: "Transporte" })];
+  assert.deepEqual(quickCategories(txs, cats, {}, 4), ["Comidas fuera", "Supermercado", "Transporte", "Vivienda"]);
+  assert.deepEqual(quickCategories(txs, cats, { persona: true }, 4), ["Transferencias", "Comidas fuera", "Supermercado", "Transporte"]);
+  assert.deepEqual(quickCategories(txs, cats, { persona: true, suggestion: "Salud" }, 4), ["Salud", "Transferencias", "Comidas fuera", "Supermercado"]);
+  // Sin duplicar lo que ya está entre las más usadas, ni ofrecer Transferencias si el usuario la borró.
+  assert.deepEqual(quickCategories(txs, cats, { suggestion: "Supermercado" }, 4), ["Comidas fuera", "Supermercado", "Transporte", "Vivienda"]);
+  assert.deepEqual(quickCategories(txs, cats.filter((c) => c !== "Transferencias"), { persona: true }, 3), ["Comidas fuera", "Supermercado", "Transporte"]);
+});
+
+test("isPersonTx: contraparte sin comercio (Yape P2P o transferencia a una persona)", () => {
+  assert.equal(isPersonTx(tx({ contraparte: "COSME RODRIGO QUIS" })), true);
+  assert.equal(isPersonTx(tx({ contraparteKey: "51999" })), true);
+  assert.equal(isPersonTx(tx({ comercio: "PLAZA VEA", contraparte: "x" })), false);
+  assert.equal(isPersonTx(tx({})), false);
 });
 
 test("suggestCategory: la más reciente del mismo comercio o persona; null sin coincidencias", () => {

@@ -2,10 +2,11 @@
 
 /**
  * Selector de mes ‹ mes › (DESIGN.md §Components · Selector de mes): flechas entre los meses disponibles,
- * el mes abre la lista completa (select nativo, `data-testid=month-select`) y ← → cambian de mes con el foco dentro.
+ * el mes abre la lista completa (`Dropdown`, `data-testid=month-select`) y ← → cambian de mes con el foco dentro.
  */
 import { monthTitle, stepMonth } from "@/lib/resumen";
 import { IconChevron } from "../icons";
+import Dropdown from "../Dropdown";
 
 export default function MonthPicker({ months, month, onChange }: { months: string[]; month: string; onChange: (m: string) => void }) {
   const prev = stepMonth(months, month, -1);
@@ -22,13 +23,9 @@ export default function MonthPicker({ months, month, onChange }: { months: strin
       <button type="button" className={arrow} disabled={!prev} onClick={() => prev && onChange(prev)} aria-label={prev ? `Mes anterior: ${monthTitle(prev)}` : "No hay meses anteriores"}>
         <IconChevron dir="left" />
       </button>
-      <span className="relative">
-        <select data-testid="month-select" aria-label="Elegir mes" value={month} onChange={(e) => onChange(e.target.value)}
-          className="min-h-10 cursor-pointer appearance-none rounded-[9px] bg-raised py-0 pl-3 pr-8 text-[13.5px] font-medium text-ink shadow-[0_1px_2px_rgba(0,0,0,.08)]">
-          {months.map((m) => <option key={m} value={m}>{monthTitle(m)}</option>)}
-        </select>
-        <IconChevron dir="down" size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-muted" />
-      </span>
+      <Dropdown testId="month-select" ariaLabel="Elegir mes" value={month} onChange={onChange}
+        options={months.map((m) => ({ value: m, label: monthTitle(m) }))}
+        className="flex min-h-10 items-center gap-2 rounded-[9px] bg-raised py-0 pl-3 pr-2.5 text-[13.5px] font-medium text-ink shadow-[0_1px_2px_rgba(0,0,0,.08)]" />
       <button type="button" className={arrow} disabled={!next} onClick={() => next && onChange(next)} aria-label={next ? `Mes siguiente: ${monthTitle(next)}` : "No hay meses siguientes"}>
         <IconChevron dir="right" />
       </button>
