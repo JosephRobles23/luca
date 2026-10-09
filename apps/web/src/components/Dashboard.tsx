@@ -103,8 +103,8 @@ export default function Dashboard() {
       {s.movements.length ? (
         <>
           <div className="grid gap-4 lg:grid-cols-12">
-            <PaceCard key={`ritmo-${month}`} r={ritmo} txs={txs} name={name} usdRate={rate} hasPrev={s.prevExpense > 0} {...rise(2, "lg:col-span-8")} />
-            <RadarCard key={`radar-${month}`} txs={txs} month={month} usdRate={rate} {...rise(3, "lg:col-span-4")} />
+            <PaceCard key={`ritmo-${month}`} r={ritmo} txs={txs} name={name} usdRate={rate} hasPrev={s.prevExpense > 0} {...rise(2, "lg:col-span-7")} />
+            <RadarCard key={`radar-${month}`} txs={txs} month={month} usdRate={rate} {...rise(3, "lg:col-span-5")} />
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-12">
             <CategoryBreakdown data={s.byCategory} total={s.expense} month={month} selected={cat} onPick={pickCat} {...rise(4, "lg:col-span-4")} />

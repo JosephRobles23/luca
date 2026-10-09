@@ -38,9 +38,9 @@ export default function RadarCard({ txs, month, usdRate, className = "", style }
           data.cats.map((c, i) => `<div style="display:flex;justify-content:space-between;gap:16px"><span style="color:${T.body}">${c}</span><b style="font-family:${T.mono}">${fmt(p.value[i])}</b></div>`).join(""),
       },
       radar: {
-        radius: "56%", center: ["50%", "52%"], splitNumber: 4, shape: "polygon",
+        radius: "68%", center: ["50%", "53%"], splitNumber: 4, shape: "polygon",
         indicator: data.cats.map((c) => ({ name: SHORT[c] ?? c, max: data.max })),
-        axisName: { color: T.body, fontFamily: T.font, fontSize: 11.5 },
+        axisName: { color: T.body, fontFamily: T.font, fontSize: 12.5 },
         splitLine: { lineStyle: { color: T.grid } }, splitArea: { show: false }, axisLine: { lineStyle: { color: T.grid } },
       },
       series: [{
@@ -75,8 +75,8 @@ export default function RadarCard({ txs, month, usdRate, className = "", style }
         </div>
       </div>
       {data.cats.length >= 3
-        ? <EChart build={build} className="h-[300px] w-full" ariaLabel={label} testId="radar-chart" />
-        : <p className="grid h-[300px] place-items-center rounded-xl border border-dashed border-line-strong text-center text-sm text-muted">Hacen falta gastos en al menos 3 categorías para dibujar el perfil.</p>}
+        ? <EChart build={build} className="h-[380px] w-full" ariaLabel={label} testId="radar-chart" />
+        : <p className="grid h-[380px] place-items-center rounded-xl border border-dashed border-line-strong text-center text-sm text-muted">Hacen falta gastos en al menos 3 categorías para dibujar el perfil.</p>}
       <div className="flex flex-wrap gap-1.5" role="group" aria-label="Series del radar">
         {SERIES.map((s) => (
           <button key={s.key} type="button" className="legend-chip" aria-pressed={!hidden[s.key]} onClick={() => toggle(s.key)}>

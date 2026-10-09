@@ -38,6 +38,19 @@ export function cumulative(daily: number[], upTo = daily.length): (number | null
   return daily.map((v, i) => (i < upTo ? r2((acc += v)) : null));
 }
 
+/**
+ * Gastos de un día concreto (`month` + `day`, fecha completa) sin el gasto fijo, de mayor a menor monto: los `limit`
+ * primeros y cuántos quedan fuera (tooltip de las barras diarias).
+ */
+export function dayExpenses(txs: Tx[], month: string, day: number, usdRate: number, limit = 4): { top: { tx: Tx; amount: number }[]; rest: number } {
+  const ymd = `${month}-${String(day).padStart(2, "0")}`;
+  const all = txs
+    .filter((t) => t.tipo === "expense" && t.fecha.slice(0, 10) === ymd && t.categoria !== FIXED_CATEGORY)
+    .map((tx) => ({ tx, amount: r2(toBase(tx, usdRate)) }))
+    .sort((a, b) => b.amount - a.amount);
+  return { top: all.slice(0, limit), rest: Math.max(0, all.length - limit) };
+}
+
 export type Ritmo = {
   month: string;
   days: number;

@@ -6,8 +6,8 @@
  * oculta o muestra cada serie. Diario y acumulado van en gráficos separados: un solo gráfico necesitaría dos ejes.
  */
 import { useCallback, useState } from "react";
-import { MESES_ES, toBase, txLabel, type Tx } from "@/lib/ledger";
-import { axisAmount, type Ritmo } from "@/lib/graficos";
+import { MESES_ES, txLabel, type Tx } from "@/lib/ledger";
+import { axisAmount, dayExpenses, type Ritmo } from "@/lib/graficos";
 import EChart, { alpha, tooltipBase, type ChartTheme } from "../charts/EChart";
 
 const num = (n: number) => n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -62,8 +62,9 @@ export default function PaceCard({ r, txs, name, usdRate, hasPrev, className = "
         ...tooltipBase(T), trigger: "axis", axisPointer: { type: "shadow", shadowStyle: { color: T.strong, opacity: 0.6 } },
         formatter: (ps: { dataIndex: number; value: number | null }[]) => {
           const d = ps[0].dataIndex + 1;
-          const list = txs.filter((t) => t.tipo === "expense" && Number(t.fecha.slice(8, 10)) === d && t.categoria !== "Vivienda").slice(0, 4)
-            .map((t) => `<div style="display:flex;justify-content:space-between;gap:14px;color:${T.body}"><span>${esc(txLabel(t))}</span><span style="font-family:${T.mono}">${num(toBase(t, usdRate))}</span></div>`).join("");
+          const { top, rest } = dayExpenses(txs, r.month, d, usdRate);
+          const list = top.map(({ tx, amount }) => `<div style="display:flex;justify-content:space-between;gap:14px;color:${T.body}"><span>${esc(txLabel(tx))}</span><span style="font-family:${T.mono}">${num(amount)}</span></div>`).join("")
+            + (rest ? `<div style="color:${T.muted};margin-top:2px">+${rest} más</div>` : "");
           return `<div style="font-weight:600">${d} de ${name} · <span style="font-family:${T.mono}">S/ ${num(ps[0].value ?? 0)}</span></div>${list}`;
         },
       },
