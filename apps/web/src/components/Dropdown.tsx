@@ -3,11 +3,11 @@
 /**
  * Desplegable de un valor (DESIGN.md §Components · Desplegable). Con puntero táctil es un `<select>` nativo, así el
  * teléfono usa su propio selector (en iPhone, el de iOS). Con ratón es un botón que abre un menú de la app: punto de
- * color por opción, ✓ en la elegida, ↑ ↓ Inicio Fin, letra para saltar, Enter elige, Esc cierra. El menú va en un
- * portal con `position: fixed` (las tarjetas con animación o `overflow` lo taparían o recortarían) y se abre hacia
- * arriba o hacia la izquierda si no cabe. Ambos llevan `data-value` y el mismo `data-testid` en el control.
+ * color por opción, ✓ en la elegida, ↑ ↓ Inicio Fin, letra para saltar, Enter elige, Esc cierra. El menú es un
+ * panel anclado (`useAnchoredPanel`: portal, se abre hacia donde cabe). Ambos llevan `data-value` y el mismo `data-testid` en el control.
  */
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useAnchoredPanel } from "./popover";
 import { createPortal } from "react-dom";
 import { IconChevron } from "./icons";
 
@@ -62,41 +62,20 @@ function Menu({ value, options, onChange, ariaLabel, placeholder, header, childr
   Props & { current?: DropdownOption; caret: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
-  const [pos, setPos] = useState<{ top: number; left: number; minWidth: number; up: boolean } | null>(null);
   const wrap = useRef<HTMLSpanElement>(null);
   const btn = useRef<HTMLButtonElement>(null);
   const list = useRef<HTMLDivElement>(null);
   const listId = useId();
   const typed = useRef({ s: "", t: 0 });
 
-  const close = useCallback((focus = true) => { setOpen(false); setPos(null); if (focus) btn.current?.focus(); }, []);
+  const close = useCallback((focus = true) => { setOpen(false); if (focus) btn.current?.focus(); }, []);
+  const closeOutside = useCallback(() => close(false), [close]);
+  const { pos, style } = useAnchoredPanel(open, btn, list, closeOutside);
   const choose = (i: number) => { const o = options[i]; if (!o) return; close(); if (o.value !== value) onChange(o.value); };
   const openAt = (i?: number) => { setActive(i ?? Math.max(0, options.findIndex((o) => o.value === value))); setOpen(true); };
 
-  // Se coloca junto al botón, hacia donde cabe; se recoloca al hacer scroll o cambiar el tamaño de la ventana.
-  const place = useCallback(() => {
-    if (!btn.current || !list.current) return;
-    const r = btn.current.getBoundingClientRect();
-    const h = list.current.offsetHeight, w = Math.max(list.current.offsetWidth, r.width);
-    const up = r.bottom + h + 8 > innerHeight && r.top > h + 8;
-    const left = Math.max(8, r.left + w > innerWidth - 8 ? r.right - w : r.left);
-    setPos({ top: up ? r.top - h - 6 : r.bottom + 6, left, minWidth: r.width, up });
-  }, []);
-  useLayoutEffect(() => {
-    if (!open) return;
-    place();
-    list.current?.focus({ preventScroll: true });
-    addEventListener("resize", place);
-    addEventListener("scroll", place, true);
-    return () => { removeEventListener("resize", place); removeEventListener("scroll", place, true); };
-  }, [open, place]);
+  useLayoutEffect(() => { if (open) list.current?.focus({ preventScroll: true }); }, [open]);
   useEffect(() => { if (open) list.current?.querySelector<HTMLElement>(`[data-i="${active}"]`)?.scrollIntoView({ block: "nearest" }); }, [open, active]);
-  useEffect(() => {
-    if (!open) return;
-    const out = (e: PointerEvent) => { const t = e.target as Node; if (!wrap.current?.contains(t) && !list.current?.contains(t)) close(false); };
-    document.addEventListener("pointerdown", out);
-    return () => document.removeEventListener("pointerdown", out);
-  }, [open, close]);
 
   function onListKey(e: React.KeyboardEvent) {
     const last = options.length - 1;
@@ -132,7 +111,7 @@ function Menu({ value, options, onChange, ariaLabel, placeholder, header, childr
       {open && createPortal(
         <div ref={list} id={listId} role="listbox" tabIndex={-1} aria-label={ariaLabel} aria-activedescendant={`${listId}-${active}`}
           className={`dd-menu ${pos?.up ? "up" : ""}`} onKeyDown={onListKey}
-          style={pos ? { top: pos.top, left: pos.left, minWidth: Math.max(pos.minWidth, 220) } : { top: 0, left: 0, visibility: "hidden" }}>
+          style={{ ...style, minWidth: Math.max(pos?.minWidth ?? 0, 220) }}>
           {header && <div className="dd-head" aria-hidden>{header}</div>}
           {options.map((o, i) => (
             <div key={o.value} id={`${listId}-${i}`} data-i={i} data-value={o.value} role="option" aria-selected={o.value === value}

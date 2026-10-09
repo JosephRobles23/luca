@@ -2,10 +2,9 @@
 
 /**
  * Filtros de Movimientos (DESIGN.md §Layout · Movimientos): buscador, chips de tipo con contadores,
- * "Más filtros" desplegable (mes, fuente, categoría con `Dropdown`) y los filtros activos como chips descartables.
+ * "Más filtros" desplegable (fuente y categoría con `Dropdown`; el periodo va en el encabezado) y los filtros activos como chips descartables.
  */
 import { useId, useState } from "react";
-import { monthLabel } from "@/lib/ledger";
 import { PENDING, TIPO_CHIPS, activeFilterChips, moreFiltersCount, type Filters } from "@/lib/movimientos";
 import { IconAjustes, IconBuscar, IconCerrar, IconChevron } from "../icons";
 import { catColor } from "@/lib/categorias";
@@ -16,13 +15,12 @@ type Props = {
   f: Filters;
   setF: (patch: Partial<Filters>) => void;
   counts: Record<string, number>;
-  months: string[];
   fuentes: string[];
   categorias: string[];
   onClear: () => void;
 };
 
-export default function Filtros({ f, setF, counts, months, fuentes, categorias, onClear }: Props) {
+export default function Filtros({ f, setF, counts, fuentes, categorias, onClear }: Props) {
   const more = moreFiltersCount(f);
   const [open, setOpen] = useState(more > 0);
   const panel = useId();
@@ -59,11 +57,7 @@ export default function Filtros({ f, setF, counts, months, fuentes, categorias, 
 
       <div id={panel} className="expand" data-open={open} inert={!open}>
         <div>
-          <div className="grid gap-3 pt-1 sm:grid-cols-3">
-            <Field label="Mes" htmlFor="f-mes">
-              <Dropdown id="f-mes" value={f.mes} onChange={(v) => setF({ mes: v })} className="input" wrapClassName="w-full"
-                options={[{ value: "", label: "Todos" }, ...months.map((m) => ({ value: m, label: monthLabel(m) }))]} />
-            </Field>
+          <div className="grid gap-3 pt-1 sm:grid-cols-2">
             <Field label="Fuente" htmlFor="f-fuente">
               <Dropdown id="f-fuente" value={f.fuente} onChange={(v) => setF({ fuente: v })} className="input" wrapClassName="w-full"
                 options={[{ value: "", label: "Todas" }, ...fuentes.map((s) => ({ value: s, label: SRC_LABEL[s] ?? s }))]} />
@@ -83,7 +77,7 @@ export default function Filtros({ f, setF, counts, months, fuentes, categorias, 
             {active.map((c) => (
               <li key={c.key}>
                 <button type="button" className="inline-flex h-7 items-center gap-1 rounded-full bg-primary-soft pl-[11px] pr-1.5 text-[12.5px] font-medium text-primary transition-colors hover:bg-[color-mix(in_srgb,var(--primary)_22%,var(--primary-soft))]"
-                  onClick={() => setF({ [c.key]: "" })} aria-label={`Quitar filtro ${c.label}`}>
+                  onClick={() => setF(c.clear ?? { [c.key]: "" })} aria-label={`Quitar filtro ${c.label}`}>
                   {c.label}<IconCerrar size={13} />
                 </button>
               </li>

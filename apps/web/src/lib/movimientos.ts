@@ -4,10 +4,12 @@
  */
 import { filterTxs, monthLabel, monthOf, toBase, type Tx } from "./ledger.ts";
 import { prevDay } from "./dias.ts";
+import { rangeLabel } from "./periodo.ts";
 
-export type Filters = { tipo: string; fuente: string; categoria: string; q: string; mes: string };
-export const FILTER_KEYS = ["tipo", "fuente", "categoria", "q", "mes"] as const;
-export const EMPTY_FILTERS: Filters = { tipo: "", fuente: "", categoria: "", q: "", mes: "" };
+/** `mes` ("YYYY-MM") y el rango `desde`/`hasta` ("YYYY-MM-DD", inclusivo) son el periodo: uno u otro, nunca ambos. */
+export type Filters = { tipo: string; fuente: string; categoria: string; q: string; mes: string; desde: string; hasta: string };
+export const FILTER_KEYS = ["tipo", "fuente", "categoria", "q", "mes", "desde", "hasta"] as const;
+export const EMPTY_FILTERS: Filters = { tipo: "", fuente: "", categoria: "", q: "", mes: "", desde: "", hasta: "" };
 export const PENDING = "__pending__";
 
 /** Lee los filtros de la URL (cualquier objeto con `get`, p. ej. URLSearchParams). */
@@ -26,8 +28,15 @@ export function filtersToQuery(f: Filters): string {
 
 export const hasFilters = (f: Filters) => FILTER_KEYS.some((k) => !!f[k]);
 
-/** Cuántos filtros de "Más filtros" (mes, fuente, categoría) están activos. */
-export const moreFiltersCount = (f: Filters) => [f.mes, f.fuente, f.categoria].filter(Boolean).length;
+/** Cuántos filtros de "Más filtros" (fuente, categoría) están activos; el periodo tiene su propio selector. */
+export const moreFiltersCount = (f: Filters) => [f.fuente, f.categoria].filter(Boolean).length;
+
+/** Patch de filtros para un periodo: un mes, un rango (ordenado) o, vacío, todos los meses. */
+export function setPeriod(p: { mes?: string; desde?: string; hasta?: string }): Pick<Filters, "mes" | "desde" | "hasta"> {
+  if (p.mes) return { mes: p.mes, desde: "", hasta: "" };
+  const [desde, hasta] = p.desde && p.hasta && p.desde > p.hasta ? [p.hasta, p.desde] : [p.desde ?? "", p.hasta ?? ""];
+  return { mes: "", desde, hasta };
+}
 
 /** Chips de tipo, en orden de lectura. `""` = todos. */
 export const TIPO_CHIPS: { value: string; label: string }[] = [
@@ -38,9 +47,10 @@ export const TIPO_CHIPS: { value: string; label: string }[] = [
   { value: "internal_transfer", label: "Entre cuentas" },
 ];
 
-/** Filtra (mes + filtros de ledger) y ordena del más reciente al más antiguo. */
+/** Filtra (periodo + filtros de ledger) y ordena del más reciente al más antiguo. */
 export function applyFilters(txs: Tx[], f: Filters): Tx[] {
-  const base = f.mes ? txs.filter((t) => monthOf(t.fecha) === f.mes) : txs;
+  const day = (t: Tx) => t.fecha.slice(0, 10);
+  const base = txs.filter((t) => (!f.mes || monthOf(t.fecha) === f.mes) && (!f.desde || day(t) >= f.desde) && (!f.hasta || day(t) <= f.hasta));
   return filterTxs(base, f).sort((a, b) => (a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : 0));
 }
 
@@ -64,7 +74,8 @@ export function expenseTotal(txs: Tx[], usdRate: number): number {
 /** "1 movimiento" / "N movimientos". */
 export const countLabel = (n: number) => `${n} ${n === 1 ? "movimiento" : "movimientos"}`;
 
-export type ActiveChip = { key: keyof Filters; label: string };
+/** Chip de filtro activo; `clear` es el patch que lo quita (por defecto, vaciar `key`). */
+export type ActiveChip = { key: keyof Filters; label: string; clear?: Partial<Filters> };
 
 /** Filtros activos como chips descartables ("Gastos", "Oct 2026", "BCP email", "Por categorizar", "“plaza”"). */
 export function activeFilterChips(f: Filters, srcLabel: Record<string, string> = {}): ActiveChip[] {
@@ -72,6 +83,7 @@ export function activeFilterChips(f: Filters, srcLabel: Record<string, string> =
   if (f.q.trim()) out.push({ key: "q", label: `“${f.q.trim()}”` });
   if (f.tipo) out.push({ key: "tipo", label: TIPO_CHIPS.find((c) => c.value === f.tipo)?.label ?? f.tipo });
   if (f.mes) out.push({ key: "mes", label: /^\d{4}-\d{2}$/.test(f.mes) ? monthLabel(f.mes) : f.mes });
+  if (f.desde || f.hasta) out.push({ key: "desde", label: rangeLabel(f.desde, f.hasta), clear: { desde: "", hasta: "" } });
   if (f.fuente) out.push({ key: "fuente", label: srcLabel[f.fuente] ?? f.fuente });
   if (f.categoria) out.push({ key: "categoria", label: f.categoria === PENDING ? "Por categorizar" : f.categoria });
   return out;
@@ -98,8 +110,9 @@ export function filterTotals(txs: Tx[], usdRate: number): FilterTotals {
   return { expense: sum(e), expenseCount: e.length, income: sum(i), incomeCount: i.length, yape: sum(y), yapeCount: y.length };
 }
 
-/** Mes de las barras de la banda: el filtrado, o el de hoy si no hay filtro de mes. */
-export const barsMonth = (f: Filters, today: string) => (/^\d{4}-\d{2}$/.test(f.mes) ? f.mes : today.slice(0, 7));
+/** Mes de las barras de la banda: el filtrado, el del final del rango, o el de hoy. */
+export const barsMonth = (f: Filters, today: string) =>
+  (/^\d{4}-\d{2}$/.test(f.mes) ? f.mes : /^\d{4}-\d{2}-\d{2}$/.test(f.hasta) ? f.hasta.slice(0, 7) : today.slice(0, 7));
 
 /**
  * Gasto por día de `month` dentro de lo filtrado, sin Vivienda (el alquiler aplastaría el resto). `future` marca
@@ -127,14 +140,6 @@ export function highlightParts(text: string, q: string): [string, string, string
 }
 
 const fold = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-
-/** CSV de lo filtrado (lo que se ve, en el orden de la lista). Comillas dobles escapadas; monto_pen en soles. */
-export function toCsv(txs: Tx[], usdRate: number): string {
-  const head = ["id", "fecha", "tipo", "comercio", "contraparte", "categoria", "moneda", "monto", "monto_pen", "fuente", "medio"];
-  const q = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-  const rows = txs.map((t) => [t.id, t.fecha, t.tipo, t.comercio, t.contraparte, t.categoria, t.moneda, t.monto, Math.round(toBase(t, usdRate) * 100) / 100, t.fuente, t.medio]);
-  return [head, ...rows].map((r) => r.map(q).join(",")).join("\n");
-}
 
 /** Meses con movimientos (YYYY-MM), del más reciente al más antiguo. */
 export const monthsOf = (txs: Tx[]) => Array.from(new Set(txs.map((t) => monthOf(t.fecha)))).sort().reverse();
