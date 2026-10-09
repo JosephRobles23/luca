@@ -1,7 +1,7 @@
 // Tests de las series de los gráficos del Resumen: gasto diario, ritmo y proyección, delta al mismo día, radar y 6 meses.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { lastDayOf, dailySpend, cumulative, ritmoMes, deltaAlDia, radarData, sixMonthTotals, axisAmount } from "./graficos.ts";
+import { lastDayOf, dailySpend, cumulative, dayExpenses, ritmoMes, deltaAlDia, radarData, sixMonthTotals, axisAmount } from "./graficos.ts";
 
 const tx = (o) => ({ id: "x", fecha: "2026-10-04T10:00:00-05:00", tipo: "expense", monto: 10, moneda: "PEN", tipoCambio: null, comercio: "", contraparte: "", contraparteKey: "", categoria: "", categoriaOrigen: "", medio: "", canal: "", fuente: "bcp_email", operacion: "", gmailId: "", flags: [], asunto: "", creadoEn: "", ...o });
 const d = (ymd, o) => tx({ fecha: `${ymd}T10:00:00-05:00`, ...o });
@@ -26,6 +26,20 @@ test("dailySpend y cumulative: USD convertido, sin Vivienda si se pide, null tra
   assert.deepEqual(all.slice(0, 4), [1300, 40, 0, 80]);
   assert.deepEqual(dailySpend(TXS, "2026-10", 3.7, false).slice(0, 4), [0, 40, 0, 80]);
   assert.deepEqual(cumulative([1, 2, 3, 4], 2), [1, 3, null, null]);
+});
+
+test("dayExpenses: fecha completa (no solo el día del mes), sin Vivienda, de mayor a menor y cuántos sobran", () => {
+  const txs = [
+    d("2026-09-08", { monto: 3, contraparte: "SEPTIEMBRE" }), d("2026-10-08", { monto: 1300, categoria: "Vivienda" }),
+    d("2026-10-08", { monto: 5, comercio: "A" }), d("2026-10-08", { monto: 20, comercio: "B" }), d("2026-10-08", { monto: 8, comercio: "C" }),
+    d("2026-10-08", { monto: 2, moneda: "USD", tipoCambio: 3.5, comercio: "D" }), d("2026-10-08", { monto: 1, comercio: "E" }),
+    d("2026-10-08", { tipo: "income", monto: 999 }),
+  ];
+  const r = dayExpenses(txs, "2026-10", 8, 3.7);
+  assert.deepEqual(r.top.map((x) => [x.tx.comercio, x.amount]), [["B", 20], ["C", 8], ["D", 7], ["A", 5]]);
+  assert.equal(r.rest, 1);
+  assert.deepEqual(dayExpenses(txs, "2026-09", 8, 3.7).top.map((x) => x.tx.contraparte), ["SEPTIEMBRE"]);
+  assert.deepEqual(dayExpenses(txs, "2026-10", 9, 3.7), { top: [], rest: 0 });
 });
 
 test("ritmoMes: acumulado vs mes anterior, proyección sin el fijo y datos de apoyo", () => {
