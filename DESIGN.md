@@ -139,7 +139,7 @@ etiquetas de sección usan `eyebrow`; los títulos de tarjeta `card-title` (15px
 - **Panel**: barra lateral 236px · contenido máx. 1180px con padding 32px (escritorio) / 16px (móvil, +110px
   abajo por la barra inferior).
 - **Resumen**: topbar (buscador + acciones) → saludo con frescura del escaneo + selector de mes ‹ › →
-  configuración plegable → aviso de versión → banda de indicadores (gasto 1.55fr + Ingresos · Te queda · Yape)
+  configuración plegable → aviso de versión → aviso de instalar (solo teléfonos) → banda de indicadores (gasto 1.55fr + Ingresos · Te queda · Yape)
   → rejilla de 12 columnas sin huecos: ritmo del mes (8) + perfil de gasto (4) · en qué se fue + comercios
   principales + por categorizar (4 + 4 + 4) · últimos 6 meses (5) + movimientos del mes (7, alto máx. con scroll).
   Referencia: `docs/html/maqueta-resumen-v2.html`.
@@ -197,6 +197,13 @@ Nivel 0 `canvas` · nivel 1 `card` con `line` · nivel 1b `sunken` dentro de una
   (Desplegable, chip de borde punteado). Al elegir: chip con
   rebote, check que se dibuja, "Guardado en tu Sheet", y la fila sale con colapso de altura.
 - **Configuración plegable**: anillo de progreso n/3 + checklist; desaparece al completar u omitir.
+- **Sin conexión** (ADR-011): aviso `warn` bajo la barra superior, "Sin conexión. Ves tus datos guardados en este
+  dispositivo, de hace X. Solo lectura…" + "Reintentar"; las escrituras avisan con un toast y no se intentan.
+  Sin copia de esa página: `/sin-conexion` (estática, "Reintentar" es un enlace).
+- **App en tu celular** (Ajustes): tarjeta con pastilla instalada / sin instalar; según el navegador, botón
+  "Instalar app" (diálogo del navegador), pasos de iPhone con íconos (Compartir → Añadir a pantalla de inicio →
+  entrar con Google una vez) o "ábrela en tu celular". **Aviso de instalar** en el Resumen: `notice` solo en
+  teléfonos y si se puede instalar; la X lo oculta para siempre (`luca.installNotice.hidden`).
 - **Fila de movimiento**: avatar con inicial sobre el color de su categoría · comercio o persona · categoría y
   etiqueta de origen · importe (y ≈ soles si es USD). Transferencias propias atenuadas con "no cuenta como gasto".
 - **Estados**: vacío con una frase y una acción; carga con esqueletos que respiran (no spinners).

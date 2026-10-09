@@ -14,6 +14,7 @@ import { scanFreshness } from "@/lib/dias";
 import { firstName, monthName, monthOptions } from "@/lib/resumen";
 import { useLedger } from "./LedgerProvider";
 import VersionNotice from "./VersionNotice";
+import { InstallNotice } from "./InstallApp";
 import { useFirstView } from "./motion";
 import { Notice } from "./ui";
 import MonthPicker from "./resumen/MonthPicker";
@@ -91,6 +92,7 @@ export default function Dashboard() {
       </div>
 
       <VersionNotice />
+      <InstallNotice />
 
       {iphone.silent && (
         <Notice kind="warn" action={<Link className="btn sm" href="/app/conexiones">Ver conexiones</Link>}>

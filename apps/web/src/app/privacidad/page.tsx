@@ -11,7 +11,7 @@ export const metadata = {
 
 export default function Privacidad() {
   return (
-    <LegalLayout title="Política de privacidad" updated="4 de octubre de 2026" sections={SECTIONS}>
+    <LegalLayout title="Política de privacidad" updated="9 de octubre de 2026" sections={SECTIONS}>
       <h2 id="quien-trata-tus-datos">Quién trata tus datos</h2>
       <p>
         Luca es un proyecto personal, gratuito y sin anuncios. El responsable del tratamiento es su autor, una persona natural, con contacto en
@@ -23,6 +23,7 @@ export default function Privacidad() {
         <li><b>Tu hoja de cálculo (Sheet).</b> Tus movimientos, categorías y ajustes se guardan en una Google Sheet de tu propiedad, en tu Google Drive. Luca no tiene base de datos.</li>
         <li><b>Tu script.</b> La Sheet trae una copia de un pequeño script de Apps Script que corre en tu cuenta de Google con tus permisos. Es él quien lee los correos de BCP y Yape (con el permiso que le das tú, a él, en la pantalla de Google) y escribe en tu Sheet. Ese permiso de lectura de Gmail nunca se concede a Luca ni a su web.</li>
         <li><b>Esta web (lucaa.lat).</b> Al entrar con Google pedimos tu correo (para identificarte) y el permiso <code>drive.file</code>, que solo alcanza a los archivos que crees o elijas con Luca. Tu navegador lee y escribe la Sheet directamente contra las APIs de Google con tu sesión. Nuestro servidor únicamente refresca tu token de sesión, que viaja cifrado en una cookie en tu dispositivo; no lo guarda ni ve tus datos.</li>
+        <li><b>Copia en tu dispositivo, para usar Luca sin internet.</b> Cada vez que la web lee tu Sheet guarda en tu navegador (o en la app instalada en tu celular) una copia de esa lectura, para mostrártela en solo lectura si te quedas sin conexión. Se queda solo en ese dispositivo, nunca en servidores de Luca; no incluye el token del atajo del iPhone ni la dirección de tu script, y se borra al cerrar sesión.</li>
         <li><b>El servidor MCP (mcp.lucaa.lat), opcional.</b> Si conectas una IA (Claude, ChatGPT…), el servidor reenvía cada consulta a tu script y devuelve la respuesta a tu IA, solo cuando tú se lo pides, sin retener su contenido. Guarda únicamente el vínculo técnico de la conexión (la URL de tu script y un hash del secreto). Sus registros no incluyen tus datos.</li>
         <li><b>El canal iPhone, opcional.</b> Si activas el atajo, tu iPhone envía las notificaciones de Yape directamente a tu script. Nunca pasan por infraestructura de Luca.</li>
         <li><b>Categorización con IA, opcional.</b> Si configuras una clave de un proveedor (Gemini, OpenAI o Anthropic) en tu script, para los comercios que no se resuelven con reglas se envía solo el nombre del comercio y el monto; nunca el correo. La clave se guarda en las propiedades de usuario de tu propio script.</li>

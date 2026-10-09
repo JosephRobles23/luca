@@ -7,6 +7,8 @@ import { CardHead, StatusPill } from "./conexiones/parts";
 import { IconExterno, IconIA, IconSheet, IconSistema } from "./icons";
 import { useLedger } from "./LedgerProvider";
 import { DrawCheck, useFirstView } from "./motion";
+import { InstallCard } from "./InstallApp";
+import SignOutForm from "./SignOutForm";
 import { ThemeSegmented } from "./ThemeToggle";
 import { Field, Notice, fmtDateTime } from "./ui";
 
@@ -61,6 +63,8 @@ function AjustesForm({ saved, onSaved, rise }: { saved: Saved; onSaved: (what: s
         <CardHead id="ap-h" icon={<IconSistema />} title="Apariencia" sub="Claro crema, oscuro negro, o lo que diga tu sistema. Se guarda en este navegador." />
         <div><ThemeSegmented /></div>
       </section>
+
+      <InstallCard className={rise} style={delay(2)} />
 
       <form className={`card grid gap-4 ${rise}`} style={delay(2)} onSubmit={(e) => { e.preventDefault(); run("lectura", () => saveAjustes({ "fx.usd_pen": fx.replace(",", "."), "gmail.senders": senders.trim(), "gmail.batch": String(parseInt(batch, 10) || 40) })); }} data-testid="ajustes-form">
         <CardHead title="Lectura y conversión" sub="Cómo lee tu script los correos del banco." />
@@ -120,7 +124,7 @@ function AjustesForm({ saved, onSaved, rise }: { saved: Saved; onSaved: (what: s
         <div className="flex flex-wrap gap-2">
           <a className="btn" href={sheetUrl} target="_blank" rel="noreferrer">Abrir mi Sheet <IconExterno size={15} /></a>
           <button type="button" className="btn" onClick={cambiarSheet}>Cambiar Sheet</button>
-          <form action={signOutAction} className="sm:ml-auto"><button className="btn ghost" type="submit">Cerrar sesión</button></form>
+          <SignOutForm action={signOutAction} className="sm:ml-auto"><button className="btn ghost" type="submit">Cerrar sesión</button></SignOutForm>
         </div>
       </section>
     </div>

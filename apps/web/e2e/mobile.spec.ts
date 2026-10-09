@@ -25,3 +25,23 @@ test("dashboard y movimientos a 360 px sin desbordes", async ({ page }) => {
   await expect(page.getByTestId("wiz-qr").locator("svg")).toBeVisible();
   expect(await overflow()).toBeLessThanOrEqual(0);
 });
+
+// Aviso de instalar (ADR-011): solo en teléfonos y cuando el navegador ofrece instalarla; la X lo oculta para siempre.
+test("aviso de instalar la app en el Resumen", async ({ page }, info) => {
+  test.skip(info.project.name !== "mobile", "el aviso es solo para pantallas táctiles");
+  await login(page);
+  await waitForDashboard(page);
+  await expect(page.getByTestId("install-notice")).toHaveCount(0); // sin diálogo del navegador ni iPhone
+  await page.evaluate(() => dispatchEvent(Object.assign(new Event("beforeinstallprompt", { cancelable: true }), {
+    prompt: async () => {}, userChoice: Promise.resolve({ outcome: "dismissed" }),
+  })));
+  const notice = page.getByTestId("install-notice");
+  await expect(notice).toContainText("Lleva Luca en tu celular");
+  await expect(notice.getByRole("button", { name: "Instalar" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+  await notice.getByRole("button", { name: "Ocultar este aviso" }).click();
+  await expect(notice).toHaveCount(0);
+  await page.reload();
+  await waitForDashboard(page);
+  await expect(page.getByTestId("install-notice")).toHaveCount(0);
+});

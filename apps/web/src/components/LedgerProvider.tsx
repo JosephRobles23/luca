@@ -3,13 +3,18 @@
 /**
  * Estado compartido de /app: la Sheet del usuario (Drive) y sus pestañas, más todas las acciones de
  * lectura/escritura. Los componentes de página solo presentan; la lógica pura vive en `lib/*`.
+ * Copia local (ADR-011): cada lectura correcta se guarda en el dispositivo sin secretos; si la red falla, se muestra
+ * esa copia en solo lectura (`offlineSince`) y se recarga sola al volver la conexión.
  */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { GoogleApiError, RANGES, TABS, getGoogleClient, type ClientConfig, type GoogleClient, type LedgerFile, type PickerOptions } from "@/lib/google-client";
 import { isoLima, rowsToTxs, type Tx } from "@/lib/ledger";
 import { parseAjustes, parseCategorias, usdRate, type Ajustes } from "@/lib/ajustes";
 import { buildManualRow, merchantKey, planMarkTransfer, planMerchantUpsert, planRecategorize, planRowFields, type ManualInput } from "@/lib/sheets-ops";
+import { isNetworkError, sanitizeData, usableSnapshot, type Snapshot } from "@/lib/offline";
+import { loadSnapshot, saveSnapshot } from "@/lib/offline-store";
 import { useToast } from "./Toast";
+import { postToSw } from "./Pwa";
 
 export type LedgerData = {
   rows: string[][];
@@ -32,6 +37,8 @@ export type LedgerApi = {
   mode: "google" | "mock";
   user: { name: string; email: string; image: string };
   refreshing: boolean;
+  /** Sin conexión: hora de la copia que se muestra (solo lectura); `null` con conexión. */
+  offlineSince: number | null;
   sessionExpired: boolean;
   connectionsSkipped: boolean;
   importDismissed: boolean;
@@ -88,6 +95,27 @@ export function LedgerProvider({ cfg, user, signOutAction, children }: Props) {
   const [sessionExpired, setSessionExpired] = useState(false);
   const [connectionsSkipped, setSkipped] = useState(false);
   const [importDismissed, setImportDismissed] = useState(false);
+  const [offlineSince, setOfflineSince] = useState<number | null>(null);
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; }, [state]);
+
+  /** Guarda la lectura correcta en el dispositivo y pide al service worker precargar las páginas principales. */
+  const remember = useCallback((file: LedgerFile, data: LedgerData) => {
+    setOfflineSince(null);
+    void saveSnapshot({ email: user.email, file, data: sanitizeData(data), savedAt: data.loadedAt });
+    postToSw({ type: "warm" });
+  }, [user.email]);
+
+  /** Sin red: muestra la copia de esta cuenta (y de la hoja elegida). Devuelve false si no hay copia. */
+  const fromSnapshot = useCallback(async (): Promise<boolean> => {
+    const snap = usableSnapshot(await loadSnapshot<Snapshot<LedgerData, LedgerFile>>(user.email), user.email, ls.get(LS_SHEET));
+    if (!snap) return false;
+    setSkipped(ls.get(LS_SKIP) === snap.file.id);
+    setImportDismissed(ls.get(LS_IMPORT) === snap.file.id);
+    setState({ phase: "ready", file: snap.file, data: snap.data });
+    setOfflineSince(snap.savedAt);
+    return true;
+  }, [user.email]);
 
   const fail = useCallback((e: unknown, prefix?: string) => {
     if (e instanceof GoogleApiError && e.needsReauth) { setSessionExpired(true); return; }
@@ -117,13 +145,20 @@ export function LedgerProvider({ cfg, user, signOutAction, children }: Props) {
       setSkipped(ls.get(LS_SKIP) === file.id);
       setImportDismissed(ls.get(LS_IMPORT) === file.id);
       setState({ phase: "ready", file, data });
+      remember(file, data);
     } catch (e) {
       if (e instanceof GoogleApiError && e.needsReauth) { setSessionExpired(true); return; }
+      if (isNetworkError(e, navigator.onLine)) {
+        // Ya había datos de esta hoja en pantalla: se quedan, marcados como copia. Si no, la copia del dispositivo.
+        const cur = stateRef.current;
+        if (cur.phase === "ready" && cur.file.id === file.id && !cur.error) { setOfflineSince((t) => t ?? cur.data.loadedAt); return; }
+        if (await fromSnapshot()) return;
+      }
       setState((s) => (s.phase === "ready" && s.file.id === file.id)
         ? { ...s, error: (e as Error).message }
         : { phase: "ready", file, data: { rows: [], txs: [], ajustes: {}, categorias: parseCategorias([]), comerciosRows: [], hasMovimientos: false, usdRate: usdRate({}), loadedAt: Date.now() }, error: (e as Error).message });
     }
-  }, [loadData]);
+  }, [loadData, remember, fromSnapshot]);
 
   // Al entrar: busca la Sheet de Luca en el Drive del usuario (sin base de datos nuestra).
   useEffect(() => {
@@ -139,11 +174,20 @@ export function LedgerProvider({ cfg, user, signOutAction, children }: Props) {
       } catch (e) {
         if (!alive) return;
         if (e instanceof GoogleApiError && e.needsReauth) setSessionExpired(true);
+        else if (isNetworkError(e, navigator.onLine) && await fromSnapshot()) return;
         else setState({ phase: "nofile", error: (e as Error).message });
       }
     })();
     return () => { alive = false; };
-  }, [loadLedger]);
+  }, [loadLedger, fromSnapshot]);
+
+  // Al volver la conexión, recarga sola desde la Sheet.
+  useEffect(() => {
+    if (offlineSince == null) return;
+    const back = () => { const cur = stateRef.current; if (cur.phase === "ready") void loadLedger(cur.file); };
+    addEventListener("online", back);
+    return () => removeEventListener("online", back);
+  }, [offlineSince, loadLedger]);
 
   const crearSheet = useCallback(async () => {
     setState({ phase: "nofile", busy: "Elige la plantilla de Luca en el selector…" });
@@ -217,17 +261,19 @@ export function LedgerProvider({ cfg, user, signOutAction, children }: Props) {
   /** Ejecuta una escritura, recarga y avisa. Devuelve true si fue bien. */
   const write = useCallback(async (label: string, fn: (fileId: string, data: LedgerData) => Promise<void>, okMsg: string): Promise<boolean> => {
     if (state.phase !== "ready") return false;
+    if (offlineSince != null) { toast("Sin conexión: no se puede guardar ahora. Vuelve a intentarlo con internet.", "error"); return false; }
     try {
       await fn(state.file.id, state.data);
       const data = await loadData(state.file.id);
       setState({ phase: "ready", file: state.file, data });
+      remember(state.file, data);
       toast(okMsg);
       return true;
     } catch (e) {
       fail(e, label);
       return false;
     }
-  }, [state, loadData, toast, fail]);
+  }, [state, offlineSince, loadData, remember, toast, fail]);
 
   const recategorize = useCallback((tx: Tx, categoria: string) => write("No pude recategorizar", async (fileId, data) => {
     const plan = planRecategorize(tx, categoria, data.rows, data.comerciosRows, isoLima(new Date()), { ledger: TABS.ledger, merchants: TABS.merchants });
@@ -260,9 +306,9 @@ export function LedgerProvider({ cfg, user, signOutAction, children }: Props) {
     write("No pude guardar", (fileId) => client().upsertKeyValue(fileId, TABS.settings, updates), okMsg), [write]);
 
   const api = useMemo<LedgerApi>(() => ({
-    state, mode: cfg.mode, user, refreshing, sessionExpired, connectionsSkipped, importDismissed, templateId: cfg.templateId, templateFolderId: cfg.templateFolderId, libVersion: cfg.libVersion, signOutAction,
+    state, mode: cfg.mode, user, refreshing, offlineSince, sessionExpired, connectionsSkipped, importDismissed, templateId: cfg.templateId, templateFolderId: cfg.templateFolderId, libVersion: cfg.libVersion, signOutAction,
     crearSheet, elegirExistente, elegirCopia, refresh, refreshAjustes, cambiarSheet, skipConnections, dismissImport, recategorize, markTransfer, addManual, saveAjustes,
-  }), [state, cfg.mode, cfg.templateId, cfg.templateFolderId, cfg.libVersion, user, refreshing, sessionExpired, connectionsSkipped, importDismissed, signOutAction, crearSheet, elegirExistente, elegirCopia, refresh, refreshAjustes, cambiarSheet, skipConnections, dismissImport, recategorize, markTransfer, addManual, saveAjustes]);
+  }), [state, cfg.mode, cfg.templateId, cfg.templateFolderId, cfg.libVersion, user, refreshing, offlineSince, sessionExpired, connectionsSkipped, importDismissed, signOutAction, crearSheet, elegirExistente, elegirCopia, refresh, refreshAjustes, cambiarSheet, skipConnections, dismissImport, recategorize, markTransfer, addManual, saveAjustes]);
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;
 }
