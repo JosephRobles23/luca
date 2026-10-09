@@ -25,7 +25,7 @@ var CAT_PALETA_ = ['#dfa88f', '#9fc9a2', '#9fbbe0', '#c0a8dd', '#c08532', '#e3a3
 var CAT_NINGUNA_ = '#cfc6b8';
 var CAT_FIJAS_ = {
   Vivienda: 6, Supermercado: 1, 'Comidas fuera': 0, Transporte: 7, Servicios: 4, Suscripciones: 3, Salud: 5,
-  'Educación': 2, Ropa: 5, Ocio: 0, Transferencias: 2, Otros: 6, Ingreso: 1
+  'Educación': 2, Ropa: 5, Ocio: 0, Transferencias: 2, 'Retiro de Agente': 4, Otros: 6, Ingreso: 1
 };
 
 function colorCategoria_(categoria) {

@@ -89,6 +89,22 @@ test('BCP retiro de wardadito → internal_transfer', () => {
   assert.equal(tx.merchant, 'Wardadito');
 });
 
+test('[.eml real] BCP retiro en un Agente BCP → expense de efectivo, sin LLM', () => {
+  assert.equal(api.classifyEmail(emails.bcp_agent_withdrawal_real.from, emails.bcp_agent_withdrawal_real.subject).type, 'bcp_cash_withdrawal');
+  const tx = api.parseEmail(emails.bcp_agent_withdrawal_real);
+  assert.equal(tx.kind, 'expense');
+  assert.equal(tx.channel, 'cash_withdrawal');
+  assert.equal(tx.amount, 60);
+  assert.equal(tx.currency, 'PEN');
+  assert.equal(tx.merchant, 'Agente BCP');
+  assert.equal(tx.instrument, 'debito ****4321');
+  assert.equal(tx.occurred_at, '2026-09-19T16:45:00-05:00');   // "16:45 PM" no suma 12
+  assert.equal(tx.id, 'bcp:052446');
+  assert.deepEqual(JSON.parse(JSON.stringify(tx.flags)), []);
+  // El retiro del wardadito sigue siendo una transferencia propia.
+  assert.equal(api.classifyEmail(emails.bcp_wardadito.from, emails.bcp_wardadito.subject).type, 'bcp_wardadito');
+});
+
 test('BCP pago con QR (yapeo de S/2 desde app BCP) → expense P2P con contraparte', () => {
   const tx = api.parseEmail(emails.bcp_qr_payment);
   assert.equal(tx.kind, 'expense');

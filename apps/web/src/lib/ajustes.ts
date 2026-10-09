@@ -19,7 +19,7 @@ export function parseAjustes(rows: string[][]): Ajustes {
 /** Taxonomía inicial (ADR-004 §5) si la pestaña `Categorías` no existe aún. */
 export const DEFAULT_CATEGORIAS = [
   "Vivienda", "Supermercado", "Comidas fuera", "Transporte", "Servicios", "Suscripciones", "Salud",
-  "Educación", "Ropa", "Ocio", "Transferencias", "Otros", "Ingreso",
+  "Educación", "Ropa", "Ocio", "Transferencias", "Retiro de Agente", "Otros", "Ingreso",
 ];
 
 /** Columna A de `Categorías` (ignora un posible encabezado); taxonomía por defecto si está vacía. */

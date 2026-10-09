@@ -13,7 +13,7 @@ test('primer escaneo crea Categorías (taxonomía ADR-004) y Comercios con sus e
   const cats = h.tab(SID, 'Categorías');
   assert.deepEqual(cats[0], ['categoria', 'tipo', 'descripcion']);
   const nombres = rowsBy(cats, 'categoria');
-  for (const c of ['Vivienda', 'Supermercado', 'Comidas fuera', 'Transporte', 'Servicios', 'Suscripciones', 'Salud', 'Educación', 'Ropa', 'Ocio', 'Transferencias', 'Otros', 'Ingreso']) {
+  for (const c of ['Vivienda', 'Supermercado', 'Comidas fuera', 'Transporte', 'Servicios', 'Suscripciones', 'Salud', 'Educación', 'Ropa', 'Ocio', 'Transferencias', 'Retiro de Agente', 'Otros', 'Ingreso']) {
     assert.ok(nombres.includes(c), 'falta ' + c);
   }
   assert.deepEqual(h.tab(SID, 'Comercios')[0], ['clave', 'nombre', 'categoria', 'categoria_origen', 'veces', 'actualizado_en']);
@@ -21,6 +21,15 @@ test('primer escaneo crea Categorías (taxonomía ADR-004) y Comercios con sus e
   h.api.scanGmail_(SID, configFor(h, SID), {});
   assert.equal(h.tab(SID, 'Categorías').length, cats.length);
   assert.deepEqual(JSON.parse(JSON.stringify(h.api.listarCategorias(SID, configFor(h, SID)))).slice(0, 2), ['Vivienda', 'Supermercado']);
+});
+
+test('regla determinista: retiro en Agente BCP → Retiro de Agente', () => {
+  const h = makeHarness({ spreadsheets: { [SID]: {} } });
+  const cfg = configFor(h, SID);
+  h.api.appendTransactions_(SID, cfg, [h.api.parseEmail(emails.bcp_agent_withdrawal_real)]);
+  const data = h.tab(SID, 'Movimientos');
+  assert.equal(rowsBy(data, 'categoria')[0], 'Retiro de Agente');
+  assert.equal(rowsBy(data, 'categoria_origen')[0], 'rule');
 });
 
 test('reglas deterministas: Metropolitano → Transporte, recarga → Servicios, APPLE.COM/BILL → Suscripciones, entre cuentas → Transferencias', () => {

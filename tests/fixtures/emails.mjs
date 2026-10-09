@@ -186,6 +186,20 @@ export const emails = {
       <tr><td>Fecha y hora</td></tr><tr><td>02 de octubre de 2026 - 21:05:53</td></tr>
       <tr><td>Origen</td></tr><tr><td>Wardadito Ahorro libre</td></tr><tr><td>Destino</td></tr><tr><td>AHOR. *************022</td></tr></table></body></html>`
   },
+  bcp_agent_withdrawal_real: {
+    // Diseño del .eml real (etiqueta y valor en filas separadas), anonimizado.
+    id: 'm-bcp-agente-real', from: BCP_FROM, date: new Date('2026-09-19T21:45:01Z'),
+    subject: 'Realizaste un retiro en un Agente BCP - Servicio de Notificaciones BCP',
+    html: `<html><body><p>Hola Nombre,</p><p>Realizaste un retiro de <b>S/ 60.00</b> con tu <b>Tarjeta de D&eacute;bito BCP</b> en un <b>Agente BCP</b>.</p>
+      <p>Por tu seguridad, te enviamos los datos de tu operaci&oacute;n.</p>
+      <h4>Montos</h4><table><tr><td>Monto retirado</td></tr><tr><td>S/ 60.00</td></tr><tr><td>Comisi&oacute;n por operaci&oacute;n</td></tr><tr><td>GRATIS</td></tr></table>
+      <h4>Datos de la operaci&oacute;n</h4><table><tr><td>Operaci&oacute;n realizada</td></tr><tr><td>Retiro</td></tr>
+      <tr><td>Fecha y hora</td></tr><tr><td>19 de septiembre de 2026 - 16:45 PM</td></tr>
+      <tr><td>N&uacute;mero de Tarjeta de D&eacute;bito</td></tr><tr><td>**** 4321</td></tr>
+      <tr><td>Cuenta de cargo</td></tr><tr><td>**** 0000</td></tr>
+      <tr><td>Canal</td></tr><tr><td>Agente BCP</td></tr><tr><td>C&oacute;digo de agente</td></tr><tr><td>H000000</td></tr>
+      <tr><td>N&uacute;mero de operaci&oacute;n</td></tr><tr><td>052446</td></tr></table></body></html>`
+  },
   yape_marketing: {
     id: 'm-yape-5', from: 'Yape <promos@yape.pe>', date: new Date('2026-09-10T15:00:00Z'),
     subject: '¡Tienes S/100 DSCTO. en iPad, Apple Watch y AirPods! Clic aquí 👇',

@@ -31,6 +31,7 @@ var EMAIL_TYPES_ = [
   { bank: 'bcp',  type: 'bcp_card_purchase',     re: /realizaste un consumo con tu tarjeta/ },
   { bank: 'bcp',  type: 'bcp_internal_transfer', re: /transferencia entre mis cuentas/ },
   { bank: 'bcp',  type: 'bcp_wardadito',         re: /retiro de tu wardadito/ },
+  { bank: 'bcp',  type: 'bcp_cash_withdrawal',   re: /realizaste un retiro en un agente/ },
   { bank: 'bcp',  type: 'bcp_qr_payment',        re: /constancia de pago con qr/ },
   { bank: 'bcp',  type: 'bcp_rejected',          re: /se rechazo tu compra/ },
   // Avisos no transaccionales (se ignoran, no quedan como desconocidos)
@@ -315,6 +316,18 @@ var TX_BUILDERS_ = {
       amount: amt ? amt.amount : null, currency: amt ? amt.currency : '',
       occurred_at: parseDateEs(field_(f, ['fecha y hora'])),
       merchant: 'Wardadito',
+      operation_id: field_(f, ['numero de operacion'])
+    });
+  },
+  // Retiro de efectivo con la tarjeta de débito en un Agente BCP: el dinero sale de la cuenta → gasto.
+  bcp_cash_withdrawal: function (f, text, email, base) {
+    var amt = parseAmount(field_(f, ['monto retirado', 'monto'])) || headlineAmount_(text);
+    return Object.assign(base, {
+      kind: 'expense', channel: 'cash_withdrawal',
+      amount: amt ? amt.amount : null, currency: amt ? amt.currency : '',
+      occurred_at: parseDateEs(field_(f, ['fecha y hora'])),
+      merchant: field_(f, ['canal']) || 'Agente BCP',
+      instrument: 'debito ****' + lastDigits_(field_(f, ['numero de tarjeta de debito', 'numero de tarjeta']), 4),
       operation_id: field_(f, ['numero de operacion'])
     });
   },
