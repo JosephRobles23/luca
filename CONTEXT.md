@@ -13,6 +13,9 @@ significa otra cosa, el que está mal es el código o este archivo: arreglar uno
 - **LucaLib**: librería Apps Script compartida en solo lectura, versionada. Toda la lógica y la UI del Sheet.
 - **Web** (`lucaa.lat`): producto principal. Login Google, onboarding, dashboard, escritura en la Sheet.
   Sin base de datos.
+- **App instalada**: la Web añadida a la pantalla de inicio del celular (PWA, ADR-011). Misma web, a pantalla completa.
+- **Copia local**: la última lectura de la Sheet guardada en el dispositivo (sin secretos) para verla **sin conexión**,
+  en solo lectura. Se borra al cerrar sesión. No es una base de datos de Luca: vive en el navegador del usuario.
 - **Worker** (`luca-mcp`, `mcp.lucaa.lat`): servidor MCP + pairing. Sin datos de usuarios salvo el tenant.
 - **Web App** (`/exec`): la copia del usuario desplegada como aplicación web ("ejecutar como yo", "cualquiera").
   Opcional; necesaria para iPhone y para la IA. Se activa en el paso **Activar conexiones**.

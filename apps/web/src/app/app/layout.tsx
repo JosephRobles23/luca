@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { auth, CLIENT_MODE, signOut } from "@/auth";
 import AppShell from "@/components/AppShell";
+import SignOutForm from "@/components/SignOutForm";
 
 // Panel privado: fuera de buscadores aunque alguien enlace a una URL interna.
 export const metadata: Metadata = { title: "Panel", robots: { index: false, follow: false } };
@@ -14,9 +15,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     return (
       <main className="mx-auto max-w-xl px-4 py-24">
         <p>Tu sesión con Google caducó o el permiso fue revocado.</p>
-        <form action={async () => { "use server"; await signOut({ redirectTo: "/" }); }}>
+        <SignOutForm action={async () => { "use server"; await signOut({ redirectTo: "/" }); }}>
           <button className="btn primary mt-4">Volver a entrar</button>
-        </form>
+        </SignOutForm>
       </main>
     );
   }

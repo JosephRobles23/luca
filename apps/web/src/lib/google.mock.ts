@@ -41,6 +41,13 @@ const KEY = "luca.mock.store";
 const SCENARIO_KEY = "luca.mock.scenario";
 const LATENCY = 120;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+/** Con `luca.mock.offline=1` (e2e) se comporta como `fetch` sin red: lanza TypeError (ADR-011, copia local). */
+const MOCK_OFFLINE_KEY = "luca.mock.offline";
+function net() {
+  let off = false;
+  try { off = localStorage.getItem(MOCK_OFFLINE_KEY) === "1"; } catch { /* sin storage */ }
+  if (off) throw new TypeError("Failed to fetch");
+}
 const url = (id: string) => `https://docs.google.com/spreadsheets/d/${id}/edit`;
 
 function seed(scenario: MockScenario): Store {
@@ -100,6 +107,7 @@ export class GoogleMockClient implements GoogleClient {
   }
 
   async findLedgerFiles(): Promise<LedgerFile[]> {
+    net();
     await sleep(LATENCY);
     return this.store.files.filter((f) => f.tagged).map((f) => this.strip(f));
   }
@@ -145,6 +153,7 @@ export class GoogleMockClient implements GoogleClient {
   }
 
   async readRange(sheetId: string, range: string): Promise<string[][]> {
+    net();
     await sleep(LATENCY);
     const f = this.file(sheetId);
     const { tab, cols } = this.tab(range);
@@ -178,6 +187,7 @@ export class GoogleMockClient implements GoogleClient {
   }
 
   async updateCells(sheetId: string, writes: CellWrite[]): Promise<void> {
+    net();
     await sleep(LATENCY);
     const sheet = this.store.sheets[sheetId] ?? (this.store.sheets[sheetId] = {});
     for (const w of writes) {
@@ -196,6 +206,7 @@ export class GoogleMockClient implements GoogleClient {
   }
 
   async appendRows(sheetId: string, tab: string, rows: string[][]): Promise<void> {
+    net();
     await sleep(LATENCY);
     const sheet = this.store.sheets[sheetId] ?? (this.store.sheets[sheetId] = {});
     (sheet[tab] ?? (sheet[tab] = [])).push(...rows.map((r) => [...r]));
@@ -203,6 +214,7 @@ export class GoogleMockClient implements GoogleClient {
   }
 
   async upsertKeyValue(sheetId: string, tab: string, updates: Record<string, string>): Promise<void> {
+    net();
     const sheet = this.store.sheets[sheetId] ?? (this.store.sheets[sheetId] = {});
     const rows = sheet[tab] ?? (sheet[tab] = [["key", "value"]]);
     const plan = planKeyValueUpsert(tab, rows, updates);

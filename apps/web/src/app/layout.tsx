@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { PwaRegister } from "@/components/Pwa";
 import { THEME_BOOT } from "@/components/ThemeToggle";
 import { SITE } from "@/lib/seo";
 import "./globals.css";
@@ -21,6 +22,8 @@ export const metadata: Metadata = {
   formatDetection: { telephone: false, email: false, address: false },
   openGraph: { type: "website", siteName: SITE.name, locale: SITE.locale, url: "/", title: SITE.title, description: SITE.description },
   twitter: { card: "summary_large_image", title: SITE.title, description: SITE.description },
+  // App instalada en iPhone (ADR-011): pantalla completa, nombre corto bajo el ícono y barra de estado normal.
+  appleWebApp: { capable: true, title: SITE.name, statusBarStyle: "default" },
   robots: { index: true, follow: true, googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 } },
 };
 
@@ -32,7 +35,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="es" className={`${geist.variable} ${geistMono.variable}`} suppressHydrationWarning>
       <head><script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} /></head>
-      <body className="font-sans antialiased min-h-screen">{children}</body>
+      <body className="font-sans antialiased min-h-screen">{children}<PwaRegister /></body>
     </html>
   );
 }

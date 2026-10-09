@@ -7,8 +7,9 @@ import type { ClientConfig } from "@/lib/google-client";
 import { LedgerProvider, useLedger } from "./LedgerProvider";
 import { ToastProvider } from "./Toast";
 import { Step1Sheet, Step2Authorize, Step3Import, Step4Connections, useOnboardingStep } from "./Onboarding";
-import { Notice } from "./ui";
+import { Notice, timeAgo } from "./ui";
 import VersionNotice from "./VersionNotice";
+import SignOutForm from "./SignOutForm";
 import ThemeToggle from "./ThemeToggle";
 import { IconActualizar, IconAjustes, IconBuscar, IconConexiones, IconExterno, IconLista, IconMas, IconResumen, IconSalir } from "./icons";
 
@@ -50,7 +51,7 @@ function Brand({ className = "" }: { className?: string }) {
 }
 
 function Shell({ children, signOutAction }: { children: ReactNode; signOutAction: () => Promise<void> }) {
-  const { state, user, refresh, refreshing, sessionExpired, mode } = useLedger();
+  const { state, user, refresh, refreshing, offlineSince, sessionExpired, mode } = useLedger();
   const step = useOnboardingStep();
   const path = usePathname();
   const ready = state.phase === "ready";
@@ -58,7 +59,8 @@ function Shell({ children, signOutAction }: { children: ReactNode; signOutAction
   const sheetUrl = state.phase === "ready" ? state.file.webViewLink ?? `https://docs.google.com/spreadsheets/d/${state.file.id}/edit` : "";
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[236px_minmax(0,1fr)]">
+    // `data-app-shell`: el service worker solo guarda páginas que lo llevan (no la pantalla de sesión caducada).
+    <div className="min-h-screen lg:grid lg:grid-cols-[236px_minmax(0,1fr)]" data-app-shell>
       <a href="#contenido" className="btn sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-2 focus:z-50">Ir al contenido</a>
 
       <aside className="sticky top-0 hidden h-screen flex-col gap-1 border-r border-line px-3.5 py-5 lg:flex" aria-label="Navegación principal">
@@ -90,7 +92,7 @@ function Shell({ children, signOutAction }: { children: ReactNode; signOutAction
             <b className="block truncate font-semibold">{user.name || "Tu cuenta"}</b>
             <small className="block truncate text-muted" title={user.email}>{user.email}</small>
           </div>
-          <form action={signOutAction}><button className="btn ghost sm" type="submit" title="Cerrar sesión"><IconSalir size={16} /><span>Salir</span></button></form>
+          <SignOutForm action={signOutAction}><button className="btn ghost sm" type="submit" title="Cerrar sesión"><IconSalir size={16} /><span>Salir</span></button></SignOutForm>
         </div>
       </aside>
 
@@ -101,7 +103,7 @@ function Shell({ children, signOutAction }: { children: ReactNode; signOutAction
           {mode === "mock" && <p className="text-center text-[11px] text-muted" data-testid="mock-banner">Modo de prueba (LUCA_MOCK): datos sintéticos en tu navegador, sin Google.</p>}
 
           {sessionExpired && (
-            <Notice kind="warn" action={<form action={signOutAction}><button className="btn primary" type="submit">Volver a entrar</button></form>}>
+            <Notice kind="warn" action={<SignOutForm action={signOutAction}><button className="btn primary" type="submit">Volver a entrar</button></SignOutForm>}>
               Tu sesión con Google caducó o el permiso fue revocado. Vuelve a entrar para seguir.
             </Notice>
           )}
@@ -115,6 +117,13 @@ function Shell({ children, signOutAction }: { children: ReactNode; signOutAction
                 {step === 3 && <Step3Import />}
                 {step === 4 && <Step4Connections />}
                 {state.error && <Notice kind="warn">No pude leer la hoja: {state.error}</Notice>}
+                {offlineSince != null && (
+                  <div data-testid="offline-notice">
+                    <Notice kind="warn" action={<button type="button" className="btn sm" onClick={refresh} disabled={refreshing}>{refreshing ? "Reintentando…" : "Reintentar"}</button>}>
+                      <b className="font-semibold">Sin conexión.</b> Ves tus datos guardados en este dispositivo, de {timeAgo(new Date(offlineSince).toISOString())}. Solo lectura hasta que vuelva internet.
+                    </Notice>
+                  </div>
+                )}
                 {/* En el Resumen el aviso va debajo del saludo (lo pinta Dashboard). */}
                 {path !== "/app" && <VersionNotice />}
                 {children}
