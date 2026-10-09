@@ -6,6 +6,7 @@
  */
 import { useState, type CSSProperties } from "react";
 import { fmtPEN, toBase, type Tx } from "@/lib/ledger";
+import { tcLabel } from "@/lib/fx";
 import { planMarkTransfer } from "@/lib/sheets-ops";
 import { canMarkTransfer } from "@/lib/movimientos";
 import TxRow from "../TxRow";
@@ -15,8 +16,9 @@ import { DrawCheck } from "../motion";
 import { SRC_LABEL } from "../ui";
 
 export default function MovRow({ t, usdRate, highlight, className, style }: { t: Tx; usdRate: number; highlight?: string; className?: string; style?: CSSProperties }) {
+  const tc = tcLabel(t, usdRate);
   const amountSub = t.moneda === "USD"
-    ? <>≈ {fmtPEN(toBase(t, usdRate))}<span className="block">TC {t.tipoCambio ?? usdRate}{t.tipoCambio ? "" : " (Ajustes)"}</span></>
+    ? <>≈ {fmtPEN(toBase(t, usdRate))}<span className="block">TC {tc.tc}{tc.origen === "correo" ? "" : ` (${tc.origen})`}</span></>
     : undefined;
   const meta = t.flags.length ? t.flags.map((fl) => <span key={fl} className="tag text-warning" title="Señal del parser">{fl}</span>) : undefined;
   return (
@@ -64,7 +66,7 @@ function MovDetail({ t }: { t: Tx }) {
         <Dt k="Medio" v={t.medio} /><Dt k="Asunto" v={t.asunto} /><Dt k="Comercio" v={t.comercio} />
         <Dt k="Contraparte" v={t.contraparte ? `${t.contraparte}${t.contraparteKey ? ` (${t.contraparteKey})` : ""}` : ""} />
         <Dt k="Categoría" v={t.categoria ? `${t.categoria} (origen: ${t.categoriaOrigen || "—"})` : "por categorizar"} />
-        <Dt k="Tipo de cambio" v={t.tipoCambio ? String(t.tipoCambio) : ""} mono /><Dt k="Operación" v={t.operacion} mono />
+        <Dt k="Tipo de cambio" v={t.tipoCambio ? `${t.tipoCambio} (del correo)` : t.tcAuto ? `${t.tcAuto} (venta del día)` : ""} mono /><Dt k="Operación" v={t.operacion} mono />
         <Dt k="Gmail id" v={t.gmailId} mono /><Dt k="Flags" v={t.flags.join(", ")} /><Dt k="Creado" v={t.creadoEn} mono />
       </dl>
     </div>

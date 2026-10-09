@@ -19,7 +19,6 @@
  */
 
 var MCP_WORKER_URL_DEFAULT_ = 'https://mcp.lucaa.lat';
-var MCP_FX_DEFAULT_ = 3.5;              // ADR-005: USD→PEN si el correo no trae tipo de cambio
 var MCP_LIMA_OFFSET_ = '-05:00';
 var MCP_LIST_LIMIT_ = 50;
 var MCP_LIST_MAX_ = 200;
@@ -90,16 +89,16 @@ function mcpAction(e, sheetId, config) {
 /** Lista blanca de ops. Una op ↔ una tool del Worker con el mismo nombre y los mismos args. */
 var MCP_OPS_ = {
   get_summary: function (sheetId, config, a) {
-    return resumenMes_(mcpTxs_(sheetId, config), mcpMonth_(a.month), mcpFx_(config));
+    return resumenMes_(mcpTxs_(sheetId, config), mcpMonth_(a.month), mcpFx_(sheetId, config));
   },
   category_breakdown: function (sheetId, config, a) {
-    var month = mcpMonth_(a.month), fx = mcpFx_(config);
+    var month = mcpMonth_(a.month), fx = mcpFx_(sheetId, config);
     var exp = mcpDelMes_(mcpTxs_(sheetId, config), month).filter(function (t) { return t.tipo === 'expense'; });
     var total = mcpSuma_(exp, fx);
     return { month: month, moneda: 'PEN', expense: total, categories: mcpPorCategoria_(exp, total, fx) };
   },
   top_merchants: function (sheetId, config, a) {
-    var month = mcpMonth_(a.month), fx = mcpFx_(config);
+    var month = mcpMonth_(a.month), fx = mcpFx_(sheetId, config);
     var limit = mcpLimit_(a.limit, MCP_TOP_DEFAULT_, MCP_TOP_MAX_);
     var exp = mcpDelMes_(mcpTxs_(sheetId, config), month).filter(function (t) { return t.tipo === 'expense'; });
     return { month: month, moneda: 'PEN', expense: mcpSuma_(exp, fx), merchants: mcpPorComercio_(exp, fx).slice(0, limit) };
@@ -135,11 +134,8 @@ function mcpLimit_(v, def, max) {
   if (isNaN(n) || n < 1) return def;
   return Math.min(n, max);
 }
-function mcpFx_(config) {
-  var a = (config && config.ajustes) || {};
-  var v = parseFloat(a['fx.usd_pen']);
-  return v > 0 ? v : MCP_FX_DEFAULT_;
-}
+/** USD→PEN de respaldo (ADR-012): el manual, o el último dato del BCRP, o `fx.usd_pen`. */
+function mcpFx_(sheetId, config) { return fxContexto_(sheetId, config).respaldo; }
 function mcpFold_(s) {
   return String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
 }
@@ -185,8 +181,13 @@ function mcpRowToTx_(r) {
   };
 }
 
+/** `tc_auto`: venta del BCRP del día del movimiento (null en modo manual o sin `_TipoCambio`). */
 function mcpTxs_(sheetId, config) {
-  return readLedger_(sheetId, config).map(mcpRowToTx_).filter(function (t) { return !!t.id; });
+  var fx = fxContexto_(sheetId, config);
+  return readLedger_(sheetId, config).map(mcpRowToTx_).filter(function (t) { return !!t.id; }).map(function (t) {
+    t.tc_auto = t.moneda === 'USD' && !t.tipo_cambio ? fx.usdEn(t.fecha) : null;
+    return t;
+  });
 }
 
 /** Lo que ve el modelo por cada movimiento (añade `monto_pen` ya convertido). */
@@ -204,9 +205,9 @@ function mcpPublicTx_(t, fx) {
 function mcpMonthOf_(fecha) { return mcpStr_(fecha).slice(0, 7); }
 function mcpDelMes_(txs, month) { return txs.filter(function (t) { return mcpMonthOf_(t.fecha) === month; }); }
 
-/** Importe en PEN: USD con el tipo de cambio del correo o el de Ajustes; el resto se asume PEN. */
+/** Importe en PEN: USD con el TC del correo, si no el BCRP de su día, si no `fx`; el resto se asume PEN. */
 function mcpToBase_(t, fx) {
-  if (t.moneda === 'USD') return t.monto * (t.tipo_cambio || fx);
+  if (t.moneda === 'USD') return t.monto * (t.tipo_cambio || t.tc_auto || fx);
   return t.monto;
 }
 function mcpSuma_(txs, fx) {
@@ -291,7 +292,7 @@ function resumenMes_(txs, month, fx) {
 // --- Ops de lectura ---
 
 function mcpListTransactions_(sheetId, config, a) {
-  var fx = mcpFx_(config);
+  var fx = mcpFx_(sheetId, config);
   var month = a.month != null && a.month !== '' ? mcpMonth_(a.month) : '';
   var from = a.from ? mcpDate_(a.from, 'from') : '';
   var to = a.to ? mcpDate_(a.to, 'to') : '';
@@ -348,7 +349,7 @@ function mcpAddExpense_(sheetId, config, a) {
   var contraparte = mcpStr_(a.contraparte).replace(/\s+/g, ' ').trim();
   var categoria = mcpStr_(a.categoria).trim();
   var nota = mcpStr_(a.nota).trim();
-  var fx = mcpFx_(config);
+  var fx = mcpFx_(sheetId, config);
 
   var lock = LockService.getUserLock();
   lock.waitLock(10000);

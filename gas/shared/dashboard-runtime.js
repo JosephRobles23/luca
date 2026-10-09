@@ -5,7 +5,7 @@
  * Misma semántica que apps/web/src/lib/ledger.ts (summarize, lastMonths, toBase, txLabel) — test de paridad en
  * tests/dashboard.test.mjs: gasto = `expense`; ingresos = `income`; `transfer_in` (yapeos recibidos) va aparte y
  * nunca suma a ingresos; `internal_transfer` no cuenta como gasto. USD → PEN con el tipo de cambio del propio
- * correo o `Ajustes.fx.usd_pen` (ADR-005).
+ * correo, si no el del BCRP de su día, si no el de respaldo (ADR-012, fx-runtime.js).
  *
  * Sin import/export: runtime de Apps Script.
  */
@@ -29,11 +29,12 @@ function fechaDash_(v, tz) {
 }
 
 function txsDashboard_(sheetId, config) {
+  var fx = fxContexto_(sheetId, config);
   return readLedger_(sheetId, config).filter(function (r) { return str_(r.id); }).map(function (r) {
-    var tc = str_(r.tipo_cambio);
+    var tc = str_(r.tipo_cambio), fecha = fechaDash_(r.fecha, config.timezone), moneda = str_(r.moneda) || 'PEN';
     return {
-      fecha: fechaDash_(r.fecha, config.timezone), tipo: str_(r.tipo), monto: numDash_(r.monto),
-      moneda: str_(r.moneda) || 'PEN', tipoCambio: tc ? numDash_(tc) : null,
+      fecha: fecha, tipo: str_(r.tipo), monto: numDash_(r.monto),
+      moneda: moneda, tipoCambio: tc ? numDash_(tc) : null, tcAuto: moneda === 'USD' && !tc ? fx.usdEn(fecha) : null,
       comercio: str_(r.comercio), contraparte: str_(r.contraparte), categoria: str_(r.categoria),
       canal: str_(r.canal), fuente: str_(r.fuente)
     };
@@ -42,7 +43,7 @@ function txsDashboard_(sheetId, config) {
 
 function mesDash_(iso) { return String(iso).slice(0, 7); }
 
-function aBase_(t, usd) { return t.moneda === 'USD' ? t.monto * (t.tipoCambio || usd) : t.monto; }
+function aBase_(t, usd) { return t.moneda === 'USD' ? t.monto * (t.tipoCambio || t.tcAuto || usd) : t.monto; }
 
 /** Nombre a mostrar (txLabel de la web). */
 function etiquetaTx_(t) {
@@ -72,7 +73,7 @@ function diasDelMes_(mes) { var p = mes.split('-'); return new Date(Date.UTC(+p[
  */
 function resumenDashboard(sheetId, config, opts) {
   opts = opts || {};
-  var usd = parseFloat((config.ajustes || {})['fx.usd_pen']) || 3.5;
+  var usd = fxContexto_(sheetId, config).respaldo;
   var hoy = /^\d{4}-\d{2}-\d{2}$/.test(opts.hoy || '') ? opts.hoy : hoyLima_();
   var mesHoy = hoy.slice(0, 7);
   var mes = /^\d{4}-\d{2}$/.test(opts.mes || '') ? opts.mes : mesHoy;

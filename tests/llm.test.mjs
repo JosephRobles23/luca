@@ -242,17 +242,19 @@ test('categorizarPendientes: reglas → caché → LLM sobre filas sin categorí
 });
 
 test('runDispatcher: al final de la pasada categoriza pendientes solo si hay key (y un fallo no rompe la pasada)', () => {
+  // La pasada también consulta el tipo de cambio (ADR-012): aquí solo cuentan las llamadas al LLM.
+  const llmCalls = (h) => h.fetchCalls.filter((c) => !/bcrp\.gob\.pe|er-api\.com/.test(c.url)).length;
   const ledger = () => [LEDGER_HEADERS, ledgerRow({ id: 'bcp:9', tipo: 'expense', monto: 20, moneda: 'PEN', comercio: 'ALGO RARO', fuente: 'bcp_email' })];
   const sin = harnessLlm({ withKey: false, spreadsheets: { Movimientos: ledger() } });
   const out1 = plain(sin.api.runDispatcher(SID, configFor(sin, SID)));
   assert.equal(out1.llm, undefined);
-  assert.equal(sin.fetchCalls.length, 0);
+  assert.equal(llmCalls(sin), 0);
 
   const con = harnessLlm({ fetch: () => geminiOk({ categoria: 'Otros', confianza: 0.75 }), spreadsheets: { Movimientos: ledger() } });
   const out2 = plain(con.api.runDispatcher(SID, configFor(con, SID)));
   assert.equal(out2.llm.categorizadas, 1);
   assert.equal(out2.llm.llmCalls, 1);
-  assert.equal(con.fetchCalls.length, 1);
+  assert.equal(llmCalls(con), 1);
   const data = con.tab(SID, 'Movimientos');
   assert.deepEqual([data[1][col(data, 'categoria')], data[1][col(data, 'categoria_origen')]], ['Otros', 'llm']);
   const stats = JSON.parse(con.api.getAjustes_(SID, configFor(con, SID))['scan.lastStats']);

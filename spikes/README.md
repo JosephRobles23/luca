@@ -123,6 +123,12 @@ Exportar 2–3 `.eml` por tipo (Gmail → ⋮ → "Descargar mensaje") a `spikes
 
 `docs/guides/guia-atajos-ios27-yape.md`, experimentos 1–3.
 
+## S8 — `UrlFetchApp` contra la API del BCRP (Imperva)
+
+**Pregunta:** ¿LucaLib puede leer el tipo de cambio SBS del BCRP (`PD04639PD` compra, `PD04640PD` venta, `PD04648PD` EUR) desde las IPs de Google, o lo bloquea Imperva?
+Script standalone desechable `spikes/s8-bcrp-urlfetch/` (dueño petter). Se ejecuta `probar` desde el editor: `clasp run` exige proyecto GCP estándar (ADR-001) y la `/exec` creada con `clasp create-deployment` respondió 404.
+Investigación: `docs/research/2026-10-tipo-de-cambio-apis.md`. Decisión: ADR-012.
+
 ---
 
 ## Resultados
@@ -136,3 +142,4 @@ Exportar 2–3 `.eml` por tipo (Gmail → ⋮ → "Descargar mensaje") a `spikes
 | S5 | 2026-10-04 | `wrangler tail` de una conexión desde ChatGPT: GET /authorize → POST /enroll ×2 → POST /authorize → POST /token (sin /register: cliente ya registrado). Estimación por el diseño de workers-oauth-provider: 3–5 escrituras KV por conexión y ~2 por refresh (TTL 1 h → ~48/usuario activo/día) | Salida del tail en chat | Cuenta compartida con Vera. En luca-mcp: `accessTokenTTL` = 24 h. Disparador: Writes (24h) > 600 → Workers Paid $5 |
 | S6 | | | | |
 | S7 | 2026-10-04 | **Resuelto.** Gmail bloqueado con pantalla apagada 1–2 min: llegó completo sin confirmación (~28 s). Yape, yapeo **recibido** de S/ 1.50: `title` "Confirmación de Pago", `body` "Yape! <NOMBRE> te envió un pago por S/ 1.5". **Al enviar NO hay push** (confirmado). Cobertura de envíos: ≥ S/10 → correo Yape; a cuentas de otros bancos → correo BCP (cualquier monto); < S/10 a cuentas BCP/Yape → **sin captura automática** (solo manual) | JSON en chat (PII; no se guarda). Parser: `gas/shared/push-parsers-runtime.js` | **Canal iPhone entra en v0**: cubre ingresos y montos < S/10. Construir `/events` en el Worker |
+| S8 | 2026-10-09 | Corrida 1 (6 llamadas sueltas, sin reintento): 4 JSON, **2 desafíos de Imperva**, que llegan como **HTTP 200 + HTML** (uno sin las palabras "Incapsula"). Corrida 2 (20 rondas de hasta 4 intentos, con y sin cookies de Imperva): **20/20 a la primera**. Total: 25 de 27 llamadas OK (~7 % de desafío), 0 rondas perdidas. Último dato publicado: 06-oct (lag de 1–3 días; `n.d.` en feriados) | Registros de ejecución pegados en chat | Viable desde LucaLib **si** se valida que el cuerpo sea JSON (no fiarse del status), se reintenta con espera y se cae a open.er-api.com. Las cookies no hacen falta |

@@ -27,7 +27,8 @@ significa otra cosa, el que está mal es el código o este archivo: arreglar uno
 |---|---|
 | `Movimientos` | el ledger (una fila por movimiento) |
 | `_Procesados` | ids de correos/eventos ya vistos y su resultado (`tx`, `tx:llm`, `ignored:*`, `unknown`) |
-| `Ajustes` | key/value de configuración no sensible (`gmail.*`, `import.*`, `fx.usd_pen`, `llm.provider`, `llm.extractUnknown`, `conexiones.*`, `luca.version`) |
+| `Ajustes` | key/value de configuración no sensible (`gmail.*`, `import.*`, `fx.*`, `llm.provider`, `llm.extractUnknown`, `conexiones.*`, `luca.version`) |
+| `_TipoCambio` | oculta; una fila por día con el tipo de cambio del BCRP (sistema bancario SBS: compra/venta USD, venta EUR) o de open.er-api si falló (ADR-012) |
 | `Categorías` | taxonomía editable |
 | `Comercios` | caché comercio/contraparte → categoría, con `categoria_origen` |
 

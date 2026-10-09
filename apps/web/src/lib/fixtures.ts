@@ -155,9 +155,25 @@ export function buildComercios(movs: string[][], now = new Date()): string[][] {
 }
 
 /** Sheet completa de un usuario que ya autorizó y conectó iPhone + IA. */
+/**
+ * `_TipoCambio` como la escribe el script (ADR-012): días hábiles de los últimos ~100 días con una venta que se
+ * mueve poco, sin los 2 días más recientes (el BCRP publica con retraso). Determinista.
+ */
+export function buildTipoCambio(now = new Date()): string[][] {
+  const rows: string[][] = [["fecha", "usd_compra", "usd_venta", "eur_venta", "fuente", "leido_en"]];
+  for (let i = 100; i >= 2; i--) {
+    const ymd = isoLima(new Date(now.getTime() - i * 86400000)).slice(0, 10);
+    const dow = new Date(`${ymd}T12:00:00Z`).getUTCDay();
+    if (dow === 0 || dow === 6) continue;
+    const venta = Math.round((3.42 + 0.03 * Math.sin(i / 6)) * 1000) / 1000;
+    rows.push([ymd, (venta - 0.007).toFixed(3), venta.toFixed(3), (venta * 1.12).toFixed(3), "bcrp", isoLima(now)]);
+  }
+  return rows;
+}
+
 export function buildFullSheet(now = new Date()): MockSheet {
   const movs = buildMovimientos(now);
-  return { Movimientos: movs, Ajustes: buildAjustes({ iphone: true, mcp: true }, now), Categorías: buildCategorias(), Comercios: buildComercios(movs, now) };
+  return { Movimientos: movs, Ajustes: buildAjustes({ iphone: true, mcp: true }, now), Categorías: buildCategorias(), Comercios: buildComercios(movs, now), _TipoCambio: buildTipoCambio(now) };
 }
 
 /** Sheet recién copiada de la plantilla: sin `Movimientos` ni `luca.version` (falta Autorizar). */
@@ -168,11 +184,11 @@ export function buildFreshSheet(): MockSheet {
 /** Sheet autorizada con la Web App publicada pero sin iPhone ni IA (punto de partida del asistente "Conectar iPhone"). */
 export function buildWebAppSheet(now = new Date()): MockSheet {
   const movs = buildMovimientos(now);
-  return { Movimientos: movs, Ajustes: buildAjustes({ execUrl: MOCK_EXEC_URL }, now), Categorías: buildCategorias(), Comercios: buildComercios(movs, now) };
+  return { Movimientos: movs, Ajustes: buildAjustes({ execUrl: MOCK_EXEC_URL }, now), Categorías: buildCategorias(), Comercios: buildComercios(movs, now), _TipoCambio: buildTipoCambio(now) };
 }
 
 /** Sheet autorizada pero sin conexiones (paso 3 pendiente). */
 export function buildAuthorizedSheet(now = new Date()): MockSheet {
   const movs = buildMovimientos(now);
-  return { Movimientos: movs, Ajustes: buildAjustes({}, now), Categorías: buildCategorias(), Comercios: buildComercios(movs, now) };
+  return { Movimientos: movs, Ajustes: buildAjustes({}, now), Categorías: buildCategorias(), Comercios: buildComercios(movs, now), _TipoCambio: buildTipoCambio(now) };
 }

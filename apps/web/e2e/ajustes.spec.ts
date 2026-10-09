@@ -36,6 +36,17 @@ test.describe("Ajustes, Conexiones y páginas legales", () => {
     expect(written["import.since"]).toBe("2026-01-01");
     expect(written["import.status"]).toBe("running");
 
+    // ADR-012: en automático cada USD usa la venta del BCRP de su día (`_TipoCambio`).
+    await page.getByTestId("a-fx-modo").getByRole("radio", { name: "Automático" }).click();
+    await expect(page.getByTestId("a-fx")).toHaveCount(0);
+    await expect(page.getByTestId("a-fx-info")).toContainText("BCRP");
+    await page.getByTestId("ajustes-form").getByRole("button", { name: "Guardar" }).click();
+    await expect(toast(page)).toContainText("Ajustes guardados");
+    await page.goto("/app/movimientos?q=UDEMY");
+    await expect(page.getByTestId("movs-list").locator("li").first()).toContainText("(del día)");
+    await page.goto("/app/ajustes");
+    await expect(page.getByTestId("a-fx-modo").getByRole("radio", { name: "Automático" })).toHaveAttribute("aria-checked", "true");
+
     await expect(page.getByTestId("sheet-card").getByRole("link", { name: /Abrir mi Sheet/ })).toHaveAttribute("href", /docs\.google\.com\/spreadsheets\/d\/sheet-mock-1/);
     await page.getByRole("button", { name: "Cerrar sesión" }).click();
     await expect(page).toHaveURL(/\/$/);

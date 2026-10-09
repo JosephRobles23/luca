@@ -27,7 +27,7 @@ export function Features() {
       <Reveal className={`${s.bento} mt-9`}>
         <Tile className={s.bA} icon={<IconLista size={18} />} title="Movimientos que llegan solos"
           extra={<MovesFeed />}>
-          Consumos con tarjeta, transferencias y yapeos, con el comercio y la moneda original. Los dólares se convierten a soles con tu tipo de cambio.
+          Consumos con tarjeta, transferencias y yapeos, con el comercio y la moneda original. Los dólares se convierten a soles con el tipo de cambio bancario de cada día (BCRP).
         </Tile>
 
         <Tile className={s.bB} icon={<IconIA size={18} />} title="Pregúntale a tu IA"

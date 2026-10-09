@@ -5,6 +5,11 @@ Skill de release: `.claude/skills/deploy-luca/SKILL.md`
 Actualizado: 2026-10-09. Fuente de verdad de qué está hecho, en curso y pendiente. Commits en `main`.
 
 ## Hecho y publicado
+- LucaLib **v6** — **tipo de cambio automático (ADR-012):** la copia lee una vez al día la venta USD del sistema
+  bancario SBS (BCRP, `fx-runtime.js`) con validación del cuerpo (Imperva responde 200 + HTML; spike S8), reintento y
+  respaldo open.er-api; pestaña oculta `_TipoCambio` con histórico bajo demanda. Cada USD sin TC en el correo se
+  convierte con el tipo de su día en web, MCP y dashboard; Ajustes con modo automático/manual (`fx.modo`). Los totales
+  de meses pasados con USD cambian una vez al actualizar. 278 tests + e2e. Pendiente: términos de uso de BCRPData.
 - LucaLib **v5** — **retiro en Agente BCP sin LLM:** parser `bcp_cash_withdrawal` ("Realizaste un retiro en un Agente
   BCP") → `expense` con canal `cash_withdrawal`; regla → categoría nueva **"Retiro de Agente"** (taxonomía inicial,
   color e icono en Sheet y web). Antes caía en `bcp_unknown` y lo extraía el LLM. Pendiente: muestra del retiro en

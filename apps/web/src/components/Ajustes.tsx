@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { apiKeyConfigured, importStatus, usdRate } from "@/lib/ajustes";
+import { fxContext, fxInfo, fxModo, type FxModo } from "@/lib/fx";
 import { todayLima } from "@/lib/ledger";
 import { CardHead, StatusPill } from "./conexiones/parts";
 import { IconExterno, IconIA, IconSheet, IconSistema } from "./icons";
@@ -35,6 +36,8 @@ function AjustesForm({ saved, onSaved, rise }: { saved: Saved; onSaved: (what: s
   const { state, saveAjustes, cambiarSheet, signOutAction } = useLedger();
   const a = useMemo(() => (state.phase === "ready" ? state.data.ajustes : {}), [state]);
   const [fx, setFx] = useState(() => a["fx.usd_pen"] || String(usdRate(a)));
+  const [modo, setModo] = useState<FxModo>(() => fxModo(a));
+  const info = useMemo(() => fxInfo(fxContext(a, state.phase === "ready" ? state.data.fx ?? [] : [])), [a, state]);
   const [senders, setSenders] = useState(() => a["gmail.senders"] ?? "");
   const [batch, setBatch] = useState(() => a["gmail.batch"] || "40");
   const [since, setSince] = useState(() => a["import.since"] || "");
@@ -66,16 +69,31 @@ function AjustesForm({ saved, onSaved, rise }: { saved: Saved; onSaved: (what: s
 
       <InstallCard className={rise} style={delay(2)} />
 
-      <form className={`card grid gap-4 ${rise}`} style={delay(2)} onSubmit={(e) => { e.preventDefault(); run("lectura", () => saveAjustes({ "fx.usd_pen": fx.replace(",", "."), "gmail.senders": senders.trim(), "gmail.batch": String(parseInt(batch, 10) || 40) })); }} data-testid="ajustes-form">
+      <form className={`card grid gap-4 ${rise}`} style={delay(2)} onSubmit={(e) => { e.preventDefault(); run("lectura", () => saveAjustes({ "fx.modo": modo, "fx.usd_pen": fx.replace(",", "."), "gmail.senders": senders.trim(), "gmail.batch": String(parseInt(batch, 10) || 40) })); }} data-testid="ajustes-form">
         <CardHead title="Lectura y conversión" sub="Cómo lee tu script los correos del banco." />
-        <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
-          <Field label="Tipo de cambio USD → PEN" htmlFor="a-fx" hint="Se usa solo para mostrar cuando el correo no trae su propio tipo de cambio (ADR-005).">
-            <input id="a-fx" className="input num sm:!w-40" inputMode="decimal" value={fx} onChange={(e) => setFx(e.target.value)} data-testid="a-fx" />
-          </Field>
-          <Field label="Correos por lote" htmlFor="a-batch" hint="Por pasada del escaneo.">
-            <input id="a-batch" className="input num !w-28" inputMode="numeric" value={batch} onChange={(e) => setBatch(e.target.value)} />
-          </Field>
+        <div className="grid gap-2">
+          <span className="text-sm font-medium text-ink" id="a-fx-modo">Tipo de cambio USD → PEN</span>
+          <div className="segmented w-fit" role="radiogroup" aria-labelledby="a-fx-modo" data-testid="a-fx-modo">
+            {(["auto", "manual"] as const).map((m) => (
+              <button key={m} type="button" role="radio" aria-checked={modo === m} onClick={() => setModo(m)}>{m === "auto" ? "Automático" : "Manual"}</button>
+            ))}
+          </div>
+          {modo === "auto" ? (
+            <p className="text-xs text-muted" data-testid="a-fx-info">
+              {info
+                ? <>Ahora <span className="num text-ink">S/ {info.venta}</span> por US$ · {info.fuente}, {info.fecha}.{info.atribucion && <> <a className="underline" href="https://www.exchangerate-api.com" target="_blank" rel="noreferrer">Rates By Exchange Rate API</a>.</>}</>
+                : <>Tu script traerá el tipo de cambio del BCRP en el próximo escaneo (actualiza LucaLib si no aparece). Mientras, se usa S/ {usdRate(a)}.</>}
+              {" "}Cada gasto en dólares usa el tipo de su día, salvo que el correo traiga el suyo.
+            </p>
+          ) : (
+            <Field label="Tipo fijo" htmlFor="a-fx" hint="Se usa para todos los gastos en dólares sin tipo de cambio propio en el correo.">
+              <input id="a-fx" className="input num sm:!w-40" inputMode="decimal" value={fx} onChange={(e) => setFx(e.target.value)} data-testid="a-fx" />
+            </Field>
+          )}
         </div>
+        <Field label="Correos por lote" htmlFor="a-batch" hint="Por pasada del escaneo.">
+          <input id="a-batch" className="input num !w-28" inputMode="numeric" value={batch} onChange={(e) => setBatch(e.target.value)} />
+        </Field>
         <Field label="Remitentes transaccionales" htmlFor="a-senders" hint="Separados por coma. Tu script solo lee correos de estas direcciones.">
           <textarea id="a-senders" className="input font-mono !text-[12.5px]" rows={2} value={senders} onChange={(e) => setSenders(e.target.value)} />
         </Field>

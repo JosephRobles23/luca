@@ -286,6 +286,8 @@ function runDispatcher(sheetId, config) {
       var llm = categorizarPendientesAuto_(sheetId, config);
       if (llm) { out.llm = llm; out.scan.llm = llm; }
     }
+    // Tipo de cambio del BCRP (ADR-012): como máximo una lectura correcta al día; nunca lanza.
+    out.fx = actualizarTipoCambio_(sheetId, config);
     writeTelemetria_(sheetId, config, out.scan || out.import);
     return out;
   } finally {

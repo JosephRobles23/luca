@@ -9,7 +9,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { GoogleApiError, RANGES, TABS, getGoogleClient, type ClientConfig, type GoogleClient, type LedgerFile, type PickerOptions } from "@/lib/google-client";
 import { isoLima, rowsToTxs, type Tx } from "@/lib/ledger";
-import { parseAjustes, parseCategorias, usdRate, type Ajustes } from "@/lib/ajustes";
+import { parseAjustes, parseCategorias, type Ajustes } from "@/lib/ajustes";
+import { applyFx, fxContext, parseTipoCambio, type FxRow } from "@/lib/fx";
 import { buildManualRow, merchantKey, planMarkTransfer, planMerchantUpsert, planRecategorize, planRowFields, type ManualInput } from "@/lib/sheets-ops";
 import { isNetworkError, sanitizeData, usableSnapshot, type Snapshot } from "@/lib/offline";
 import { loadSnapshot, saveSnapshot } from "@/lib/offline-store";
@@ -23,6 +24,9 @@ export type LedgerData = {
   categorias: string[];
   comerciosRows: string[][];
   hasMovimientos: boolean;
+  /** `_TipoCambio` de la copia (ADR-012); vacía si el script aún no la creó. */
+  fx?: FxRow[];
+  /** USD→PEN de respaldo: manual, último dato del BCRP o `fx.usd_pen`. */
   usdRate: number;
   loadedAt: number;
 };
@@ -133,9 +137,11 @@ export function LedgerProvider({ cfg, user, signOutAction, children }: Props) {
     try { rows = await c.readRange(fileId, RANGES.ledger); } catch (e) {
       if (e instanceof GoogleApiError && e.missingRange) hasMovimientos = false; else throw e;
     }
-    const [aj, cat, com] = await Promise.all([optional(RANGES.settings), optional(RANGES.categories), optional(RANGES.merchants)]);
+    const [aj, cat, com, tc] = await Promise.all([optional(RANGES.settings), optional(RANGES.categories), optional(RANGES.merchants), optional(RANGES.fx)]);
     const ajustes = parseAjustes(aj);
-    return { rows, txs: rowsToTxs(rows), ajustes, categorias: parseCategorias(cat), comerciosRows: com, hasMovimientos, usdRate: usdRate(ajustes), loadedAt: Date.now() };
+    const fx = parseTipoCambio(tc);
+    const ctx = fxContext(ajustes, fx);
+    return { rows, txs: applyFx(rowsToTxs(rows), fx, ctx), ajustes, fx, categorias: parseCategorias(cat), comerciosRows: com, hasMovimientos, usdRate: ctx.respaldo, loadedAt: Date.now() };
   }, []);
 
   const loadLedger = useCallback(async (file: LedgerFile) => {
@@ -156,7 +162,7 @@ export function LedgerProvider({ cfg, user, signOutAction, children }: Props) {
       }
       setState((s) => (s.phase === "ready" && s.file.id === file.id)
         ? { ...s, error: (e as Error).message }
-        : { phase: "ready", file, data: { rows: [], txs: [], ajustes: {}, categorias: parseCategorias([]), comerciosRows: [], hasMovimientos: false, usdRate: usdRate({}), loadedAt: Date.now() }, error: (e as Error).message });
+        : { phase: "ready", file, data: { rows: [], txs: [], ajustes: {}, categorias: parseCategorias([]), comerciosRows: [], hasMovimientos: false, usdRate: fxContext({}, []).respaldo, loadedAt: Date.now() }, error: (e as Error).message });
     }
   }, [loadData, remember, fromSnapshot]);
 
@@ -233,7 +239,11 @@ export function LedgerProvider({ cfg, user, signOutAction, children }: Props) {
     if (state.phase !== "ready") return null;
     try {
       const ajustes = parseAjustes(await client().readRange(state.file.id, RANGES.settings));
-      setState((s) => (s.phase === "ready" ? { ...s, data: { ...s.data, ajustes, usdRate: usdRate(ajustes) } } : s));
+      setState((s) => {
+        if (s.phase !== "ready") return s;
+        const fx = s.data.fx ?? [], ctx = fxContext(ajustes, fx);
+        return { ...s, data: { ...s.data, ajustes, txs: applyFx(s.data.txs, fx, ctx), usdRate: ctx.respaldo } };
+      });
       return ajustes;
     } catch (e) {
       if (e instanceof GoogleApiError && e.needsReauth) setSessionExpired(true);

@@ -16,6 +16,8 @@ Fecha: 2026-10-04 · Estado: **aceptado**
 - Supuesto pendiente de verificar en el buzón del usuario: **BCP no envía correo por abonos**. Si es así, `income` nace solo de la carga manual (campo de sueldo recurrente) y la UI lo declara ("Ingresos registrados a mano").
 
 ## Multi-moneda
+> La conversión (segundo punto) la sustituye [ADR-012](adr-012-tipo-de-cambio-automatico.md): tipo de cambio diario del BCRP.
+
 - Se guardan siempre `monto` y `moneda` originales (PEN/USD) y `tipo_cambio` si el correo lo trae.
 - Conversión **solo al mostrar**: (1) tipo de cambio del propio correo, (2) si no, `Ajustes.fx.usd_pen` (3.50 por defecto, editable). Tipo de cambio diario (SUNAT/API) en v1.
 

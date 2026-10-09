@@ -29,6 +29,7 @@ export const RUNTIME_FILES = [
   'categorize-runtime.js',
   'llm-extract-runtime.js',
   'ledger-runtime.js',
+  'fx-runtime.js',
   'mime-runtime.js',
   'gmail-scan-runtime.js',
   'webapp-runtime.js',

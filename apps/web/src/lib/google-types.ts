@@ -42,10 +42,11 @@ export interface GoogleClient {
 }
 
 /** Rango que lee la web de cada pestaña. */
-export const TABS = { ledger: "Movimientos", settings: "Ajustes", categories: "Categorías", merchants: "Comercios" } as const;
+export const TABS = { ledger: "Movimientos", settings: "Ajustes", categories: "Categorías", merchants: "Comercios", fx: "_TipoCambio" } as const;
 export const RANGES = {
   ledger: `${TABS.ledger}!A:S`,
   settings: `${TABS.settings}!A:B`,
   categories: `${TABS.categories}!A:A`,
   merchants: `${TABS.merchants}!A:F`,
+  fx: `${TABS.fx}!A:F`,
 } as const;

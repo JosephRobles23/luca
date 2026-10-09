@@ -12,6 +12,8 @@ export type Tx = {
   monto: number;
   moneda: string;
   tipoCambio: number | null;
+  /** Venta del BCRP del día (ADR-012); la pone `applyFx` solo a USD sin `tipoCambio`. */
+  tcAuto?: number | null;
   comercio: string;
   contraparte: string;
   contraparteKey: string;
@@ -74,11 +76,11 @@ export function rowsToTxs(rows: string[][]): Tx[] {
 export const monthOf = (iso: string) => iso.slice(0, 7);
 
 /**
- * Importe en moneda base (PEN). ADR-005: conversión solo al mostrar; primero el tipo de cambio del
- * propio correo y, si no lo trae, `Ajustes.fx.usd_pen`. Lo que no sea USD se asume PEN.
+ * Importe en moneda base (PEN), solo al mostrar (ADR-005). USD: tipo de cambio del propio correo, si no el del
+ * BCRP de su día (`tcAuto`, ADR-012), si no `usdRate` (respaldo). Lo que no sea USD se asume PEN.
  */
 export function toBase(tx: Tx, usdRate: number): number {
-  if (tx.moneda === "USD") return tx.monto * (tx.tipoCambio || usdRate);
+  if (tx.moneda === "USD") return tx.monto * (tx.tipoCambio || tx.tcAuto || usdRate);
   return tx.monto;
 }
 

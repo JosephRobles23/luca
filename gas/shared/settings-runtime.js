@@ -12,7 +12,7 @@
  * Versión de LucaLib que se escribe en `Ajustes.luca.version` en cada pasada (ADR-006 §5): la web y el
  * sidebar comparan con la última publicada para avisar "hay una versión nueva". Subirla en cada release.
  */
-var LUCA_VERSION = '5';
+var LUCA_VERSION = '6';
 // Versión mínima del stub que esta librería necesita (stub v2 = pasa setupTriggers y execUrl/stubVersion).
 var STUB_MIN_VERSION_ = '2';
 
@@ -60,8 +60,15 @@ var AJUSTES_DEFAULTS_ = {
   'llm.lastError': '',
   // Opt-in (ADR-008): extraer con el LLM los correos `*_unknown` enviando el texto ENMASCARADO. Solo con key.
   'llm.extractUnknown': 'false',
-  // Tipo de cambio de respaldo para mostrar USD en PEN (ADR-005).
+  // Tipo de cambio USD→PEN (ADR-012): `auto` = BCRP diario (pestaña `_TipoCambio`); `manual` = `fx.usd_pen` fijo.
+  // Vacío = auto, salvo que `fx.usd_pen` ya se hubiera cambiado del 3.50 (ver fxModo_).
+  'fx.modo': '',
   'fx.usd_pen': '3.50',
+  // Telemetría del tipo de cambio (fx-runtime.js). No editar a mano.
+  'fx.ultimo': '',
+  'fx.fuente': '',
+  'fx.lastRunAt': '',
+  'fx.lastError': '',
   // Wiki en Drive.
   'brain.folderId': '',
   // Telemetría que escribe el Apps Script y leen la web y el sidebar (ADR-003/006). No editar a mano.
