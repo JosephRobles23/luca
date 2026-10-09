@@ -39,10 +39,16 @@ from:(notificaciones@notificacionesbcp.com.pe OR notificaciones@yape.pe) after:<
 | B2 | `Constancia de Transferencia Entre mis Cuentas - Servicio de Notificaciones BCP` | `Realizaste una transferencia de S/ 57.95 desde tu Clasica.` | `internal_transfer` (no es gasto) |
 | B3 | `Realizaste un retiro de tu wardadito.` | `Realizaste un retiro de S/ 10.00 en tu wardadito Ahorro libre.` | `internal_transfer` |
 | B4 | `Constancia de Pago con QR - Servicios de Notificaciones BCP` | `Realizaste un yapeo a celular de S/ 2.00 desde tu Clasica Soles.` | `expense` (P2P) |
+| B6 | `Realizaste un retiro en un Agente BCP - Servicio de Notificaciones BCP` | `Realizaste un retiro de S/ 60.00 con tu Tarjeta de Débito BCP en un Agente BCP.` | `expense`, canal `cash_withdrawal` → categoría "Retiro de Agente" (regla) |
 | B5 | `Se rechazó tu compra por fondos insuficientes - Servicio de Notificaciones BCP` | `tu compra fue rechazada debido a que tu cuenta no tiene saldo suficiente` | `rejected` (no registrar; opcional alerta) |
 
 Nota: en B4 hay un yapeo de **S/ 2.00** con correo. Los pagos con QR / yapeos desde la app BCP
 parecen no tener el umbral de S/10 de Yape. Hay que confirmarlo con más muestras.
+
+**Campos B6 (retiro en Agente BCP):** etiqueta y valor en filas separadas: `Monto retirado`, `Comisión por operación`
+(`GRATIS`), `Operación realizada` (`Retiro`), `Fecha y hora` (`19 de septiembre de 2026 - 16:45 PM`: hora de 24 h
+con un `PM` sobrante), `Número de Tarjeta de Débito`, `Cuenta de cargo`, `Canal` (`Agente BCP`), `Código de agente`,
+`Número de operación`. Aún no hay muestra del retiro en cajero automático.
 
 **Campos B1 (consumo con débito):** tabla de pares etiqueta → valor
 

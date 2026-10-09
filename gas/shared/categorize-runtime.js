@@ -29,6 +29,7 @@ var CATEGORIAS_INICIALES_ = [
   ['Ropa', 'gasto', 'Ropa y calzado'],
   ['Ocio', 'gasto', 'Cine, salidas, viajes'],
   ['Transferencias', 'gasto', 'Yapeos a personas y movimientos entre cuentas propias'],
+  ['Retiro de Agente', 'gasto', 'Retiros de efectivo en Agentes BCP'],
   ['Otros', 'gasto', 'Lo que no encaja en otra'],
   ['Ingreso', 'ingreso', 'Sueldo, abonos']
 ];
@@ -47,6 +48,7 @@ var REGLAS_CATEGORIA_ = [
   { re: /luz del sur|enel|pluz|sedapal|calidda|movistar|claro|entel|bitel|win\b|america movil|telefonica/, categoria: 'Servicios' },
   { re: /zara|h&m|saga|falabella|ripley|oechsle|adidas|nike|marathon/, categoria: 'Ropa' },
   { re: /cineplanet|cinemark|cine\b|teleticket|joinnus|steam|playstation|nintendo|xbox/, categoria: 'Ocio' },
+  { canal: 'cash_withdrawal', categoria: 'Retiro de Agente' },
   { canal: 'yape_topup', categoria: 'Servicios' },
   { canal: 'yape_service', categoria: 'Servicios' },
   { tipo: 'internal_transfer', categoria: 'Transferencias' }

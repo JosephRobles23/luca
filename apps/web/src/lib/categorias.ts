@@ -11,7 +11,7 @@ export const CAT_PALETTE = ["--cat-peach", "--cat-mint", "--cat-blue", "--cat-la
 const FIXED: Record<string, (typeof CAT_PALETTE)[number]> = {
   Vivienda: "--cat-sand", Supermercado: "--cat-mint", "Comidas fuera": "--cat-peach", Transporte: "--cat-teal",
   Servicios: "--cat-gold", Suscripciones: "--cat-lavender", Salud: "--cat-rose", "Educación": "--cat-blue",
-  Ropa: "--cat-rose", Ocio: "--cat-peach", Transferencias: "--cat-blue", Otros: "--cat-sand", Ingreso: "--cat-mint",
+  Ropa: "--cat-rose", Ocio: "--cat-peach", Transferencias: "--cat-blue", "Retiro de Agente": "--cat-gold", Otros: "--cat-sand", Ingreso: "--cat-mint",
 };
 
 const hash = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); };
@@ -76,7 +76,7 @@ export function suggestCategory(tx: Tx, txs: Tx[]): string | null {
 const ICON_BY_CAT: Record<string, string> = {
   Vivienda: "casa", Supermercado: "carrito", "Comidas fuera": "cubiertos", Transporte: "bus", Servicios: "rayo",
   Suscripciones: "repetir", Salud: "salud", "Educación": "birrete", Ropa: "camisa", Ocio: "ticket",
-  Transferencias: "flechas", Otros: "etiqueta", Ingreso: "billetera", "Sin categoría": "duda",
+  Transferencias: "flechas", "Retiro de Agente": "banco", Otros: "etiqueta", Ingreso: "billetera", "Sin categoría": "duda",
 };
 
 /** Palabras clave (sin acentos, minúsculas) → icono para categorías propias; la primera que coincide gana (ICONO_PALABRAS_). */
