@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signIn } from "@/auth";
+import GitHubStars from "@/components/GitHubStars";
 import ThemeToggle from "@/components/ThemeToggle";
 import { DataPath, SectionHead } from "@/components/portada/DataPath";
 import { EntrarButton } from "@/components/portada/EntrarButton";
@@ -41,6 +42,7 @@ export default async function Home() {
             <a className={s.navLink} href="#que-hace">Qué hace</a>
             <a className={s.navLink} href="#en-tu-sheet">Tu Sheet</a>
             <a className={s.navLink} href="#faq">Preguntas</a>
+            <GitHubStars />
             <ThemeToggle />
             <EntrarButton action={entrar} label="Entrar" size="sm" className="ml-1" />
           </nav>
