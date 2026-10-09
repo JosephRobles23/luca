@@ -2,9 +2,13 @@
 
 Skill de release: `.claude/skills/deploy-luca/SKILL.md`
 
-Actualizado: 2026-10-07. Fuente de verdad de qué está hecho, en curso y pendiente. Commits en `main`.
+Actualizado: 2026-10-09. Fuente de verdad de qué está hecho, en curso y pendiente. Commits en `main`.
 
 ## Hecho y publicado
+- LucaLib **v5** — **retiro en Agente BCP sin LLM:** parser `bcp_cash_withdrawal` ("Realizaste un retiro en un Agente
+  BCP") → `expense` con canal `cash_withdrawal`; regla → categoría nueva **"Retiro de Agente"** (taxonomía inicial,
+  color e icono en Sheet y web). Antes caía en `bcp_unknown` y lo extraía el LLM. Pendiente: muestra del retiro en
+  cajero automático. Pendiente: fila en la pestaña `Categorías` de "Luca Template" (a mano) y `wrangler deploy`. 250 tests.
 - LucaLib **v4** — (a) **plantilla oficial de solo lectura (ADR-010):** en "Luca Template" no hay triggers, escaneo,
   eventos del iPhone ni del MCP; `lucaRun` solo lectura/estilo/paneles. (b) **URL /exec tras una "Nueva
   implementación":** `resolverExecUrl_` prueba manual → viva → MCP → guardada (antes la vieja, que sigue respondiendo,
