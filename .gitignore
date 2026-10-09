@@ -1,5 +1,8 @@
-# Capturas reales de Gmail (contienen PII): se quedan en local
-docs/img/Screenshot_*.png
+# Capturas y material de trabajo (bugs, inspiración, PII de Gmail): se quedan en local. Solo se versionan las
+# imágenes que usa el README.
+docs/img/*
+!docs/img/video-demo.jpg
+!docs/img/video-pitch.jpg
 
 # Exportes reales de la Sheet de un usuario (transacciones con PII)
 docs/excel-version/Luca Joseph.xlsx

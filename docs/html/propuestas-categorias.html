@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Selector de categoría en Movimientos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: cabecera breve → barra de control (propuesta + dispositivo) → escenario con la tarjeta de Movimientos real
+   (marco escritorio o teléfono) y, al lado, la ficha de la propuesta. Tokens copiados de apps/web/src/app/globals.css. */
+:root {
+  --primary: #d9623b; --primary-strong: #bf5230; --primary-soft: #fbe6dc; --on-primary: #fff;
+  --ink: #1d1a17; --body: #57524b; --muted: #716a60;
+  --line: #e6ddd1; --line-soft: #efe8de; --line-strong: #d3c8b8;
+  --canvas: #f4efe8; --card: #fffdf9; --raised: #ffffff; --strong: #ebe4d9; --sunken: #efe9e0;
+  --selected-bg: #1d1a17; --selected-fg: #f4efe8;
+  --success: #1a7a59; --success-soft: #dcefe5; --warning: #92600f; --warning-soft: #f6ead2;
+  --cat-peach: #dfa88f; --cat-mint: #9fc9a2; --cat-blue: #9fbbe0; --cat-lavender: #c0a8dd; --cat-gold: #c08532;
+  --cat-rose: #e3a3b4; --cat-sand: #d8c08f; --cat-teal: #8ec5c0; --cat-none: #cfc6b8;
+  --ios-bg: #d1d3d9; --ios-bar: #f2f2f7; --ios-band: rgba(118, 118, 128, .14); --ios-blue: #007aff; --ios-text: #000000; --ios-sep: #c6c6c8;
+  --scrim: rgba(29, 26, 23, .32); --shadow: 0 12px 32px -12px rgba(60, 40, 20, .28);
+  --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --ease-spring: cubic-bezier(.34, 1.4, .64, 1); --ease-out: cubic-bezier(.2, .7, .2, 1);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --primary-soft: #2e1710; --ink: #ede7dd; --body: #c4bdb3; --muted: #8b857c;
+  --line: #272727; --line-soft: #1d1d1d; --line-strong: #333333;
+  --canvas: #0b0b0b; --card: #171717; --raised: #1f1f1f; --strong: #242424; --sunken: #111111;
+  --selected-bg: #d9623b; --selected-fg: #0b0b0b;
+  --success: #6fbf8a; --success-soft: #13241a; --warning: #e2b25a; --warning-soft: #2a2110; --cat-none: #3d3d3d;
+  --ios-bg: #1c1c1e; --ios-bar: #2c2c2e; --ios-band: rgba(118, 118, 128, .26); --ios-blue: #0a84ff; --ios-text: #ffffff; --ios-sep: #38383a;
+  --scrim: rgba(0, 0, 0, .55); --shadow: 0 12px 32px -12px rgba(0, 0, 0, .7); color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --primary-soft: #2e1710; --ink: #ede7dd; --body: #c4bdb3; --muted: #8b857c;
+  --line: #272727; --line-soft: #1d1d1d; --line-strong: #333333;
+  --canvas: #0b0b0b; --card: #171717; --raised: #1f1f1f; --strong: #242424; --sunken: #111111;
+  --selected-bg: #d9623b; --selected-fg: #0b0b0b;
+  --success: #6fbf8a; --success-soft: #13241a; --warning: #e2b25a; --warning-soft: #2a2110; --cat-none: #3d3d3d;
+  --ios-bg: #1c1c1e; --ios-bar: #2c2c2e; --ios-band: rgba(118, 118, 128, .26); --ios-blue: #0a84ff; --ios-text: #ffffff; --ios-sep: #38383a;
+  --scrim: rgba(0, 0, 0, .55); --shadow: 0 12px 32px -12px rgba(0, 0, 0, .7); color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--canvas); color: var(--ink); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 56px; display: grid; gap: 22px; }
+h1 { font-size: clamp(22px, 3vw, 28px); font-weight: 600; letter-spacing: -.02em; margin: 0; text-wrap: balance; }
+.lede { margin: 6px 0 0; color: var(--body); max-width: 68ch; }
+.lede code, .note code { font-family: var(--font-mono); font-size: .88em; background: var(--strong); padding: 1px 5px; border-radius: 4px; }
+.eyebrow { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+
+/* Barra de control */
+.controls { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
+.segmented { display: inline-flex; flex-wrap: wrap; padding: 3px; gap: 2px; border-radius: 11px; background: var(--strong); }
+.segmented button { padding: 7px 12px; border-radius: 8px; font: inherit; font-size: 13px; font-weight: 500; color: var(--body); background: transparent; border: 0; cursor: pointer; }
+.segmented button[aria-pressed="true"] { background: var(--raised); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.segmented .rec { font-family: var(--font-mono); font-size: 10px; color: var(--primary); margin-left: 4px; letter-spacing: .04em; }
+
+/* Escenario */
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 22px; align-items: start; }
+@media (max-width: 900px) { .stage { grid-template-columns: minmax(0, 1fr); } }
+.frame { position: relative; overflow: hidden; background: var(--canvas); border: 1px solid var(--line); border-radius: 16px; padding: 18px; min-width: 0; }
+.frame:not(.phone) { overflow: visible; }
+.frame.phone { width: 100%; max-width: 390px; margin-inline: auto; border-radius: 34px; border: 8px solid var(--ink); padding: 14px 12px 22px; min-height: 700px; }
+.frame.phone::before { content: ""; display: block; width: 92px; height: 22px; border-radius: 0 0 14px 14px; background: var(--ink); margin: -14px auto 10px; }
+.frame-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 12px; }
+.frame-head b { font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+.frame-head span { font-size: 12px; color: var(--muted); }
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 8px; }
+.day { font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding: 8px 10px 4px; display: flex; justify-content: space-between; }
+.row { border-radius: 12px; transition: background .15s; }
+.row.open { background: var(--sunken); }
+.row-btn { width: 100%; display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px; background: none; border: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; border-radius: 12px; }
+.row-btn:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.avatar { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; font-size: 12px; font-weight: 600; color: var(--ink); background: var(--strong); }
+.who { min-width: 0; }
+.who b { display: block; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.who small { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; color: var(--muted); font-size: 12px; }
+.amt { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 14px; text-align: right; }
+.tag { font-family: var(--font-mono); font-size: 10px; font-weight: 500; letter-spacing: .4px; text-transform: uppercase; color: var(--muted); background: var(--strong); border-radius: 4px; padding: 1px 6px; }
+.tag.pend { color: var(--warning); background: var(--warning-soft); }
+.detail { padding: 2px 10px 14px 56px; display: grid; gap: 10px; }
+.phone .detail { padding-left: 10px; }
+
+/* Chips (idénticos a .chip de la web) */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; min-height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font: inherit; font-size: 13px; font-weight: 500; color: var(--body); cursor: pointer; white-space: nowrap; transition: background .15s, border-color .15s, color .15s, transform .15s var(--ease-spring); }
+.chip:hover { border-color: var(--line-strong); color: var(--ink); }
+.chip[aria-pressed="true"] { background: var(--selected-bg); color: var(--selected-fg); border-color: var(--selected-bg); }
+.chip:active { transform: scale(.96); }
+.chip .sw { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.phone .chip { min-height: 36px; }
+select.chip { appearance: none; -webkit-appearance: none; padding-right: 12px; }
+/* A: el desplegable se reconoce como tal */
+.more { border-style: dashed; border-color: var(--line-strong); color: var(--ink); }
+select.more { padding-right: 28px; background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%); background-position: calc(100% - 15px) 52%, calc(100% - 10px) 52%; background-size: 5px 5px; background-repeat: no-repeat; }
+.more .n { font-family: var(--font-mono); font-size: 12px; }
+.ctx { font-family: var(--font-mono); font-size: 9.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--primary); }
+.chip[aria-pressed="true"] .ctx { color: inherit; opacity: .8; }
+.chips.all .chip { animation: pop .28s var(--ease-out) both; }
+@keyframes pop { from { opacity: 0; transform: translateY(4px) scale(.96); } }
+.hint { font-size: 12.5px; color: var(--muted); }
+.hint b { font-weight: 500; color: var(--body); }
+.saved { display: flex; gap: 8px; align-items: center; font-size: 13px; font-weight: 500; color: var(--success); }
+.btn { display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px; font: inherit; font-size: 13px; font-weight: 500; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--raised); color: var(--ink); cursor: pointer; }
+.problem { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; color: var(--warning); background: var(--warning-soft); border-radius: 10px; padding: 8px 10px; }
+
+/* A+B escritorio: menú propio */
+.menu { position: absolute; z-index: 5; top: calc(100% + 6px); left: 0; width: 236px; padding: 6px; display: grid; gap: 1px;
+  background: color-mix(in srgb, var(--raised) 86%, transparent); -webkit-backdrop-filter: blur(16px) saturate(1.5); backdrop-filter: blur(16px) saturate(1.5);
+  border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); transform-origin: top left; animation: menu .16s var(--ease-out) both; }
+.menu.flip { left: auto; right: 0; transform-origin: top right; }
+.menu-h { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 6px 10px 5px; }
+.mi { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 34px; padding: 0 10px; border: 0; border-radius: 9px; background: none; color: var(--ink); font: inherit; font-size: 13.5px; text-align: left; cursor: pointer; }
+.mi.active { background: var(--strong); }
+.mi:focus-visible { outline: none; box-shadow: inset 0 0 0 1px var(--line-strong); }
+.mi .sw { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.mi .ck { margin-left: auto; color: var(--primary); }
+.kbd { display: flex; gap: 10px; padding: 7px 10px 3px; border-top: 1px solid var(--line-soft); margin-top: 4px; font-size: 11px; color: var(--muted); }
+.kbd kbd { font-family: var(--font-mono); font-size: 10.5px; background: var(--strong); border-radius: 4px; padding: 0 4px; }
+@keyframes menu { from { opacity: 0; transform: scale(.96) translateY(-4px); } }
+
+/* A+B móvil: simulación del selector nativo de iOS (en un iPhone real se usa <select> y lo dibuja el sistema) */
+.ios { position: absolute; z-index: 7; left: 0; right: 0; bottom: 0; background: var(--ios-bg); color: var(--ios-text); padding-bottom: 22px; animation: up .28s var(--ease-out) both;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", var(--font-sans); }
+.ios-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; background: var(--ios-bar); border-bottom: 1px solid var(--ios-sep); }
+.ios-bar button { border: 0; background: none; color: var(--ios-blue); font: inherit; font-size: 16px; cursor: pointer; padding: 2px 0; }
+.ios-bar .done { font-weight: 600; }
+.ios-bar span { font-size: 12px; color: var(--muted); }
+.wheel-wrap { position: relative; height: 180px; margin-top: 8px; }
+.band { position: absolute; left: 10px; right: 10px; top: 72px; height: 36px; border-radius: 8px; background: var(--ios-band); pointer-events: none; }
+.wheel { position: relative; height: 100%; overflow-y: auto; scroll-snap-type: y mandatory; padding-block: 72px; scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(transparent, #000 38%, #000 62%, transparent); mask-image: linear-gradient(transparent, #000 38%, #000 62%, transparent); }
+.wheel::-webkit-scrollbar { display: none; }
+.wi { height: 36px; display: flex; align-items: center; justify-content: center; font-size: 20px; scroll-snap-align: center; opacity: .4; transition: opacity .12s; cursor: pointer; }
+.wi.on { opacity: 1; }
+
+/* D: panel flotante (escritorio) y hoja inferior (móvil) */
+.anchor { position: relative; display: inline-flex; }
+.pop { position: absolute; z-index: 5; top: calc(100% + 6px); left: 0; width: 280px; background: var(--raised); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 8px; display: grid; gap: 6px; animation: pop .18s var(--ease-out) both; }
+.search { width: 100%; font: inherit; font-size: 14px; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; min-height: 38px; }
+.search:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent); }
+.list { max-height: 260px; overflow-y: auto; display: grid; gap: 1px; }
+.grp { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 8px 8px 4px; }
+.opt { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 36px; padding: 0 10px; border: 0; border-radius: 8px; background: none; color: var(--ink); font: inherit; font-size: 13.5px; text-align: left; cursor: pointer; }
+.opt:hover, .opt.active { background: var(--strong); }
+.opt .sw { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.opt .cur { margin-left: auto; font-size: 12px; color: var(--muted); }
+.empty { padding: 14px 10px; color: var(--muted); font-size: 13px; }
+.scrim { position: absolute; inset: 0; background: var(--scrim); z-index: 6; animation: fade .2s both; }
+.sheet { position: absolute; z-index: 7; left: 0; right: 0; bottom: 0; background: var(--raised); border-radius: 22px 22px 0 0; padding: 8px 14px 20px; display: grid; gap: 8px; animation: up .26s var(--ease-out) both; max-height: 78%; grid-template-rows: auto auto auto minmax(0, 1fr); }
+.sheet .grabber { width: 40px; height: 4px; border-radius: 4px; background: var(--line-strong); margin: 2px auto 4px; }
+.sheet .list { max-height: none; }
+.sheet .opt { min-height: 46px; font-size: 15px; }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; }
+.sheet-head b { font-size: 15px; font-weight: 600; }
+.x { border: 0; background: var(--strong); color: var(--body); width: 30px; height: 30px; border-radius: 50%; font: inherit; font-size: 16px; cursor: pointer; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes up { from { transform: translateY(100%); } }
+
+/* Ficha */
+.note { display: grid; gap: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+.note h2 { font-size: 17px; font-weight: 600; margin: 2px 0 0; letter-spacing: -.01em; }
+.note p { margin: 0; color: var(--body); font-size: 13.5px; }
+.note ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; color: var(--body); font-size: 13px; }
+.note h3 { margin: 0 0 4px; font-size: 11px; font-family: var(--font-mono); font-weight: 500; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.meter { display: flex; gap: 4px; align-items: center; }
+.meter i { width: 22px; height: 6px; border-radius: 3px; background: var(--strong); }
+.meter i.on { background: var(--primary); }
+.meter span { font-size: 12.5px; color: var(--body); margin-left: 6px; }
+.try { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--line-soft); padding-top: 12px; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Luca · Movimientos · maqueta</div>
+    <h1>Cómo elegir entre las 12 categorías sin llenar la fila de chips</h1>
+    <p class="lede">Toca un movimiento para abrir su detalle y asígnale una categoría. Las categorías son las de la hoja <code>Categorias</code> por defecto; tus 4 más usadas en el ejemplo son Comidas fuera, Supermercado, Transporte y Suscripciones. Nada se guarda: es una maqueta.</p>
+  </header>
+
+  <div class="controls">
+    <div class="segmented" role="group" aria-label="Propuesta" id="props"></div>
+    <div class="segmented" role="group" aria-label="Dispositivo" id="devs"></div>
+  </div>
+
+  <div class="stage">
+    <div id="frame" class="frame"></div>
+    <aside class="note" id="note" aria-live="polite"></aside>
+  </div>
+</div>
+
+<script>
+const CATS = ["Vivienda", "Supermercado", "Comidas fuera", "Transporte", "Servicios", "Suscripciones", "Salud", "Educación", "Ropa", "Ocio", "Transferencias", "Otros"];
+const COLOR = { Vivienda: "sand", Supermercado: "mint", "Comidas fuera": "peach", Transporte: "teal", Servicios: "gold", Suscripciones: "lavender", Salud: "rose", "Educación": "blue", Ropa: "rose", Ocio: "peach", Transferencias: "blue", Otros: "sand" };
+const TOP = ["Comidas fuera", "Supermercado", "Transporte", "Suscripciones"];
+const sw = (c) => `<i class="sw" style="background:var(--cat-${COLOR[c] || "none"})" aria-hidden="true"><\/i>`;
+
+const TXS = [
+  { id: "t1", day: "Lun 8 sep", who: "COSME RODRIGO QUIS", ini: "CQ", via: "Yape · a una persona", amt: "3.00", persona: true },
+  { id: "t2", day: "Lun 8 sep", who: "ALDO JEFERSON MEND", ini: "AM", via: "Yape · a una persona", amt: "8.00", persona: true },
+  { id: "t3", day: "Dom 7 sep", who: "INKAFARMA LARCO", ini: "IN", via: "Tarjeta débito BCP", amt: "24.90", suggestion: "Salud" },
+  { id: "t4", day: "Dom 7 sep", who: "PLAZA VEA SAN ISIDRO", ini: "PV", via: "Tarjeta débito BCP", amt: "86.40" },
+];
+
+const PROPS = {
+  now: { label: "Hoy", title: "Lo que hay hoy", effort: 0, effortText: "Ya en producción",
+    body: "Cuatro chips con tus categorías más usadas y un quinto elemento, “Otra…”, que es un select nativo con la lista completa. Se ve igual que un chip, así que nada indica que esconde 8 categorías más.",
+    pros: ["Una sola línea en escritorio y en móvil", "El select nativo usa el selector del sistema en el teléfono"],
+    cons: ["“Otra…” no parece un desplegable", "A una persona por Yape no se le ofrece Transferencias"],
+    tryIt: "Abre el Yape a COSME: Transferencias no aparece entre los chips." },
+  ab: { label: "A + B", rec: true, title: "A + B · desplegable visible y chips por contexto", effort: 1, effortText: "Bajo-medio · menú propio + select nativo en táctil",
+    body: "El quinto elemento dice cuántas categorías quedan (“+8 más”) y lleva flecha y borde punteado. En escritorio abre un menú propio con el color de cada categoría; en el teléfono, el selector nativo de iOS. Si la contraparte es una persona, Transferencias entra como primer chip.",
+    pros: ["No suma opciones visibles: siguen siendo 4 chips + 1", "Menú con el estilo de la web en escritorio, con teclado", "Selector del sistema en el iPhone, el más cómodo para el dedo", "Transferencias aparece justo cuando hace falta"],
+    cons: ["Dos caminos que mantener: menú propio y select nativo", "Con muchas categorías propias, ninguno de los dos se puede buscar"],
+    tryIt: "Abre “+8 más” en Escritorio y muévete con ↑ ↓. Luego cambia a Móvil: verás la rueda de iOS (simulada aquí; en un iPhone real, la del sistema)." },
+  c: { label: "C", title: "C · “+N más” despliega todos los chips", effort: 2, effortText: "Bajo-medio · estado de expandido y su test",
+    body: "“+8 más” abre el resto de categorías como chips en la misma fila, y “Menos” las vuelve a ocultar. Todo queda a un toque y se ve de una vez.",
+    pros: ["Todas las categorías visibles y con su color", "Solo se despliega en el detalle de una fila, cuando lo pides"],
+    cons: ["En móvil ocupa 3 o 4 líneas al abrirse", "Escala mal con más de unas 20 categorías propias"],
+    tryIt: "Cambia a Móvil y abre “+8 más” para ver cuánto crece." },
+  d: { label: "D", title: "D · buscador en panel flotante u hoja inferior", effort: 3, effortText: "Medio-alto · foco, teclado, Esc y e2e",
+    body: "“Buscar categoría” abre un panel con un buscador y dos grupos: Sugeridas y Todas. En escritorio es un panel flotante bajo el botón; en móvil, una hoja que sube desde abajo con filas grandes para el dedo.",
+    pros: ["Escala con cualquier número de categorías", "Escribir “tra” basta para llegar a Transferencias"],
+    cons: ["Es el que más código pide (accesibilidad, foco, cierre)", "Un toque más que un chip para las categorías poco usadas"],
+    tryIt: "Abre el buscador, escribe “sa” y usa ↑ ↓ y Enter. En Móvil se convierte en hoja inferior." },
+};
+
+let S = { prop: "ab", dev: "desk", open: "t1", saved: {}, expanded: false, panel: false, q: "", active: 0, menu: false, mi: 0, wi: 0 };
+// En un teléfono real (puntero táctil) la maqueta usa el <select> nativo: iOS dibuja su propio selector.
+const TOUCH = matchMedia("(pointer: coarse)").matches;
+const restOf = (tx) => { const chips = chipsFor(tx, true); return CATS.filter((c) => !chips.includes(c)); };
+try { const k = localStorage.getItem("luca-cat-prop"); if (k && PROPS[k]) S.prop = k; } catch (e) {}
+
+function chipsFor(tx, contextual) {
+  let top = TOP.slice();
+  if (contextual && tx.persona && !top.includes("Transferencias")) top = ["Transferencias", ...top.slice(0, 3)];
+  if (tx.suggestion && !top.includes(tx.suggestion)) top = [tx.suggestion, ...top.slice(0, 3)];
+  return top;
+}
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+function chip(tx, c, extra = "") {
+  const on = S.saved[tx.id] === c;
+  return `<button type="button" class="chip" aria-pressed="${on}" data-pick="${esc(c)}">${sw(c)}${esc(c)}${extra}<\/button>`;
+}
+
+function picker(tx) {
+  const contextual = S.prop === "ab";
+  const chips = chipsFor(tx, contextual);
+  const rest = CATS.filter((c) => !chips.includes(c));
+  const cur = S.saved[tx.id] || "";
+  const base = chips.map((c) => chip(tx, c, contextual && tx.persona && c === "Transferencias" ? ` <span class="ctx">persona<\/span>` : "")).join("");
+
+  if (S.prop === "now") {
+    return `<div class="chips">${base}<select class="chip" id="sel-${tx.id}" aria-label="Otra categoría" data-select>
+      <option value="">Otra…<\/option>${CATS.map((c) => `<option ${cur === c ? "selected" : ""}>${esc(c)}<\/option>`).join("")}<\/select><\/div>
+      <div class="problem"><span aria-hidden="true">!<\/span><span>“Otra…” parece un chip más. Nada indica que dentro hay ${rest.length} categorías.<\/span><\/div>`;
+  }
+  if (S.prop === "ab") {
+    const hiddenSel = rest.includes(cur) ? cur : "";
+    const label = hiddenSel ? `${sw(hiddenSel)}${esc(hiddenSel)}` : `<span>+${rest.length} más<\/span>`;
+    const caret = `<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 3.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><\/svg>`;
+    if (S.dev === "phone" && TOUCH) {
+      return `<div class="chips">${base}<select class="chip more" id="sel-${tx.id}" aria-label="Más categorías (${rest.length})" data-select>
+        <option value="">${hiddenSel ? esc(hiddenSel) : `+${rest.length} más`}<\/option>${rest.map((c) => `<option ${hiddenSel === c ? "selected" : ""}>${esc(c)}<\/option>`).join("")}<\/select><\/div>`;
+    }
+    if (S.dev === "phone") return `<div class="chips">${base}<button type="button" class="chip more" data-ios aria-haspopup="listbox">${label} ${caret}<\/button><\/div>`;
+    const menu = !S.menu ? "" : `<div class="menu" role="listbox" aria-label="Más categorías"><div class="menu-h">${rest.length} categorías más<\/div>
+      ${rest.map((c, i) => `<button type="button" role="option" aria-selected="${cur === c}" class="mi ${i === S.mi ? "active" : ""}" data-pick="${esc(c)}" data-mi="${i}">${sw(c)}${esc(c)}${cur === c ? `<span class="ck">✓<\/span>` : ""}<\/button>`).join("")}
+      <div class="kbd"><span><kbd>↑<\/kbd><kbd>↓<\/kbd> moverse<\/span><span><kbd>↵<\/kbd> elegir<\/span><span><kbd>esc<\/kbd> cerrar<\/span><\/div><\/div>`;
+    return `<div class="chips">${base}<span class="anchor"><button type="button" class="chip more" data-menu aria-haspopup="listbox" aria-expanded="${S.menu}">${label} ${caret}<\/button>${menu}<\/span><\/div>`;
+  }
+  if (S.prop === "c") {
+    if (!S.expanded) return `<div class="chips">${base}<button type="button" class="chip more" data-expand aria-expanded="false">+<span class="n">${rest.length}<\/span> más<\/button><\/div>`;
+    return `<div class="chips all">${chips.map((c) => chip(tx, c)).join("")}${rest.map((c) => chip(tx, c)).join("")}<button type="button" class="chip more" data-expand aria-expanded="true">Menos<\/button><\/div>`;
+  }
+  // D
+  const trigger = `<button type="button" class="chip more" data-panel aria-haspopup="dialog" aria-expanded="${S.panel}">
+    <svg width="13" height="13" viewBox="0 0 16 16" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M11 11l3.5 3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><\/svg>
+    ${rest.includes(cur) ? esc(cur) : "Buscar categoría"}<\/button>`;
+  const pop = S.panel && S.dev === "desk" ? panelHTML(tx, false) : "";
+  return `<div class="chips">${base}<span class="anchor">${trigger}${pop}<\/span><\/div>`;
+}
+
+function filtered(tx) {
+  const q = S.q.trim().toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+  const match = (c) => c.toLowerCase().normalize("NFD").replace(/\p{M}/gu, "").includes(q);
+  const sug = chipsFor(tx, true).filter(match);
+  const all = CATS.filter((c) => !sug.includes(c) && match(c));
+  return { sug: q ? [] : sug, all: q ? CATS.filter(match) : all };
+}
+
+function panelHTML(tx, sheet) {
+  const { sug, all } = filtered(tx);
+  const flat = [...sug, ...all];
+  if (S.active >= flat.length) S.active = Math.max(0, flat.length - 1);
+  let i = 0;
+  const opt = (c) => `<button type="button" class="opt ${i++ === S.active ? "active" : ""}" data-pick="${esc(c)}" role="option">${sw(c)}${esc(c)}${S.saved[tx.id] === c ? `<span class="cur">actual<\/span>` : ""}<\/button>`;
+  const list = flat.length
+    ? `${sug.length ? `<div class="grp">Sugeridas<\/div>${sug.map(opt).join("")}` : ""}<div class="grp">${S.q ? "Resultados" : "Todas"}<\/div>${all.map(opt).join("")}`
+    : `<div class="empty">Ninguna categoría contiene “${esc(S.q)}”.<\/div>`;
+  const input = `<input class="search" id="cat-search" type="search" placeholder="Buscar categoría" autocomplete="off" value="${esc(S.q)}" aria-label="Buscar categoría">`;
+  if (!sheet) return `<div class="pop" role="dialog" aria-label="Elegir categoría">${input}<div class="list" role="listbox">${list}<\/div><\/div>`;
+  return `<div class="scrim" data-close><\/div><div class="sheet" role="dialog" aria-label="Elegir categoría"><div class="grabber"><\/div>
+    <div class="sheet-head"><b>Categoría de ${esc(tx.who)}<\/b><button type="button" class="x" data-close aria-label="Cerrar">×<\/button><\/div>${input}<div class="list" role="listbox">${list}<\/div><\/div>`;
+}
+
+function iosHTML(tx) {
+  const rest = restOf(tx);
+  return `<div class="scrim" data-ios-close><\/div><div class="ios" role="dialog" aria-label="Elegir categoría">
+    <div class="ios-bar"><button type="button" data-ios-close>Cancelar<\/button><span>Simulación del selector de iOS<\/span><button type="button" class="done" data-ios-done>Listo<\/button><\/div>
+    <div class="wheel-wrap"><div class="band"><\/div><div class="wheel" id="wheel" role="listbox" tabindex="0">
+      ${rest.map((c, i) => `<div class="wi ${i === S.wi ? "on" : ""}" role="option" aria-selected="${i === S.wi}" data-wi="${i}">${esc(c)}<\/div>`).join("")}<\/div><\/div><\/div>`;
+}
+
+function rowHTML(tx) {
+  const open = S.open === tx.id;
+  const cat = S.saved[tx.id];
+  const meta = cat ? `${sw(cat)}${esc(cat)}` : `<span class="tag pend">por categorizar<\/span>`;
+  const detail = !open ? "" : `<div class="detail">${picker(tx)}${cat
+    ? `<span class="saved" role="status"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><\/svg>Guardado en tu Sheet (simulado).<\/span>`
+    : tx.suggestion ? `<span class="hint">Sugerencia por movimientos anteriores: <b>${tx.suggestion}<\/b><\/span>` : ""}<\/div>`;
+  return `<div class="row ${open ? "open" : ""}"><button type="button" class="row-btn" data-row="${tx.id}" aria-expanded="${open}">
+    <span class="avatar" aria-hidden="true">${tx.ini}<\/span>
+    <span class="who"><b>${esc(tx.who)}<\/b><small>${esc(tx.via)} · ${meta}<\/small><\/span>
+    <span class="amt">−S/ ${tx.amt}<\/span><\/button>${detail}<\/div>`;
+}
+
+function render(focusSearch) {
+  document.getElementById("props").innerHTML = Object.entries(PROPS).map(([k, p]) =>
+    `<button type="button" data-prop="${k}" aria-pressed="${S.prop === k}">${p.label}${p.rec ? `<span class="rec">recomendada<\/span>` : ""}<\/button>`).join("");
+  document.getElementById("devs").innerHTML = [["desk", "Escritorio"], ["phone", "Móvil"]].map(([k, l]) =>
+    `<button type="button" data-dev="${k}" aria-pressed="${S.dev === k}">${l}<\/button>`).join("");
+
+  const frame = document.getElementById("frame");
+  frame.className = `frame ${S.dev === "phone" ? "phone" : ""}`;
+  const days = [...new Set(TXS.map((t) => t.day))];
+  const openTx = TXS.find((t) => t.id === S.open);
+  frame.innerHTML = `<div class="frame-head"><b>Movimientos<\/b><span>sep 2026 · 4 de 61<\/span><\/div>
+    <div class="card">${days.map((d) => `<div class="day"><span>${d}<\/span><\/div>${TXS.filter((t) => t.day === d).map(rowHTML).join("")}`).join("")}<\/div>
+    ${S.prop === "d" && S.panel && S.dev === "phone" && openTx ? panelHTML(openTx, true) : ""}
+    ${S.prop === "ab" && S.ios && openTx ? iosHTML(openTx) : ""}`;
+  const wheel = document.getElementById("wheel");
+  if (wheel) wheel.scrollTop = S.wi * 36;
+  const menu = frame.querySelector(".menu");
+  if (menu && menu.getBoundingClientRect().right > frame.getBoundingClientRect().right - 8) menu.classList.add("flip");
+
+  const p = PROPS[S.prop];
+  document.getElementById("note").innerHTML = `<div><div class="eyebrow">Propuesta<\/div><h2>${p.title}<\/h2><\/div>
+    <p>${p.body}<\/p>
+    <div><h3>Esfuerzo<\/h3><div class="meter">${[1, 2, 3].map((n) => `<i class="${n <= p.effort ? "on" : ""}"><\/i>`).join("")}<span>${p.effortText}<\/span><\/div><\/div>
+    <div><h3>A favor<\/h3><ul>${p.pros.map((x) => `<li>${x}<\/li>`).join("")}<\/ul><\/div>
+    <div><h3>En contra<\/h3><ul>${p.cons.map((x) => `<li>${x}<\/li>`).join("")}<\/ul><\/div>
+    <p class="try">${p.tryIt}<\/p>`;
+
+  if (focusSearch) { const s = document.getElementById("cat-search"); if (s) { s.focus(); s.setSelectionRange(s.value.length, s.value.length); } }
+}
+
+function pick(c) {
+  if (!S.open || !c) return;
+  S.saved[S.open] = c; S.panel = false; S.q = ""; S.active = 0; S.menu = false; S.ios = false;
+  render();
+}
+
+document.addEventListener("click", (e) => {
+  const t = e.target.closest("[data-prop],[data-dev],[data-row],[data-pick],[data-expand],[data-panel],[data-close],[data-menu],[data-ios],[data-ios-close],[data-ios-done],[data-wi]");
+  if (!t) { if ((S.panel && !e.target.closest(".pop,.sheet")) || (S.menu && !e.target.closest(".menu"))) { S.panel = false; S.menu = false; render(); } return; }
+  if ("menu" in t.dataset) { S.menu = !S.menu; S.mi = 0; render(); if (S.menu) document.querySelector(".mi.active")?.focus(); return; }
+  if ("ios" in t.dataset) { const tx = TXS.find((x) => x.id === S.open); S.ios = true; S.wi = Math.max(0, restOf(tx).indexOf(S.saved[S.open])); render(); return; }
+  if ("iosClose" in t.dataset) { S.ios = false; render(); return; }
+  if ("iosDone" in t.dataset) { const tx = TXS.find((x) => x.id === S.open); return pick(restOf(tx)[S.wi]); }
+  if ("wi" in t.dataset) { document.getElementById("wheel").scrollTo({ top: Number(t.dataset.wi) * 36, behavior: "smooth" }); return; }
+  if (t.dataset.prop) { S.prop = t.dataset.prop; S.expanded = false; S.panel = false; S.menu = false; S.ios = false; S.q = ""; try { localStorage.setItem("luca-cat-prop", S.prop); } catch (err) {} }
+  else if (t.dataset.dev) { S.dev = t.dataset.dev; S.panel = false; S.menu = false; S.ios = false; }
+  else if (t.dataset.row) { S.open = S.open === t.dataset.row ? null : t.dataset.row; S.expanded = false; S.panel = false; S.menu = false; S.ios = false; S.q = ""; }
+  else if (t.dataset.pick) return pick(t.dataset.pick);
+  else if ("expand" in t.dataset) S.expanded = !S.expanded;
+  else if ("panel" in t.dataset) { S.panel = !S.panel; S.q = ""; S.active = 0; render(S.panel); return; }
+  else if ("close" in t.dataset) S.panel = false;
+  render();
+});
+document.addEventListener("change", (e) => { if (e.target.matches("[data-select]")) pick(e.target.value); });
+document.addEventListener("input", (e) => { if (e.target.id === "cat-search") { S.q = e.target.value; S.active = 0; render(true); } });
+// La rueda: el elemento centrado es el elegido (como en iOS); se resalta sin redibujar.
+document.addEventListener("scroll", (e) => {
+  if (e.target.id !== "wheel") return;
+  S.wi = Math.round(e.target.scrollTop / 36);
+  e.target.querySelectorAll(".wi").forEach((el, i) => { el.classList.toggle("on", i === S.wi); el.setAttribute("aria-selected", String(i === S.wi)); });
+}, true);
+document.addEventListener("keydown", (e) => {
+  if (S.menu) {
+    const n = document.querySelectorAll(".mi").length;
+    if (e.key === "Escape") { S.menu = false; render(); document.querySelector("[data-menu]")?.focus(); }
+    else if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); S.mi = (S.mi + (e.key === "ArrowDown" ? 1 : n - 1)) % n; render(); document.querySelector(".mi.active")?.focus(); }
+    else if (e.key === "Enter") { e.preventDefault(); document.querySelector(".mi.active")?.click(); }
+    return;
+  }
+  if (S.ios && e.key === "Escape") { S.ios = false; render(); return; }
+  if (!S.panel) return;
+  const tx = TXS.find((t) => t.id === S.open);
+  const { sug, all } = filtered(tx); const flat = [...sug, ...all];
+  if (e.key === "Escape") { S.panel = false; render(); document.querySelector("[data-panel]")?.focus(); }
+  else if (e.key === "ArrowDown") { e.preventDefault(); S.active = Math.min(flat.length - 1, S.active + 1); render(true); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); S.active = Math.max(0, S.active - 1); render(true); }
+  else if (e.key === "Enter" && flat[S.active]) { e.preventDefault(); pick(flat[S.active]); }
+});
+
+render();
+</script>
+</body>
+</html>
