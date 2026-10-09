@@ -1,6 +1,9 @@
 # Capturas reales de Gmail (contienen PII): se quedan en local
 docs/img/Screenshot_*.png
 
+# Exportes reales de la Sheet de un usuario (transacciones con PII)
+docs/excel-version/Luca Joseph.xlsx
+
 # Correos reales exportados; solo se versionan fixtures anonimizados en tests/fixtures/
 *.eml
 !tests/fixtures/**/*.eml
