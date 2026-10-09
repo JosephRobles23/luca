@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
   parseFilters, filtersToQuery, hasFilters, moreFiltersCount, applyFilters, countByTipo, expenseTotal, countLabel,
   activeFilterChips, monthsOf, fuentesOf, canMarkTransfer, parseAmount, sanitizeAmountInput, quickDates, firstError, EMPTY_FILTERS,
-  sortTxs, filterTotals, barsMonth, dailyBars, highlightParts, toCsv,
+  sortTxs, filterTotals, barsMonth, dailyBars, highlightParts, setPeriod,
 } from "./movimientos.ts";
 
 const tx = (o) => ({ id: "x", fecha: "2026-10-04T10:00:00-05:00", tipo: "expense", monto: 10, moneda: "PEN", tipoCambio: null, comercio: "", contraparte: "", contraparteKey: "", categoria: "", categoriaOrigen: "", medio: "", canal: "", fuente: "bcp_email", operacion: "", gmailId: "", flags: [], asunto: "", creadoEn: "", ...o });
@@ -20,12 +20,14 @@ const TXS = [
 
 test("parseFilters / filtersToQuery: ida y vuelta, solo claves conocidas y no vacías", () => {
   const f = parseFilters(new URLSearchParams("q=plaza vea&tipo=expense&otro=1&mes="));
-  assert.deepEqual(plain(f), { tipo: "expense", fuente: "", categoria: "", q: "plaza vea", mes: "" });
+  assert.deepEqual(plain(f), { tipo: "expense", fuente: "", categoria: "", q: "plaza vea", mes: "", desde: "", hasta: "" });
   assert.equal(filtersToQuery(f), "tipo=expense&q=plaza+vea");
   assert.equal(filtersToQuery(EMPTY_FILTERS), "");
   assert.equal(hasFilters(EMPTY_FILTERS), false);
   assert.equal(hasFilters(f), true);
-  assert.equal(moreFiltersCount({ ...f, mes: "2026-10", categoria: "__pending__" }), 2);
+  // El periodo tiene su propio control: "Más filtros" solo cuenta fuente y categoría.
+  assert.equal(moreFiltersCount({ ...f, mes: "2026-10", categoria: "__pending__" }), 1);
+  assert.equal(filtersToQuery({ ...EMPTY_FILTERS, desde: "2026-09-15", hasta: "2026-10-04" }), "desde=2026-09-15&hasta=2026-10-04");
 });
 
 test("applyFilters: mes + tipo + texto, ordenado del más reciente", () => {
@@ -33,6 +35,18 @@ test("applyFilters: mes + tipo + texto, ordenado del más reciente", () => {
   assert.deepEqual(applyFilters(TXS, { ...EMPTY_FILTERS, mes: "2026-10" }).map((t) => t.id), ["c", "a", "b"]);
   assert.deepEqual(applyFilters(TXS, { ...EMPTY_FILTERS, categoria: "__pending__", tipo: "expense" }).map((t) => t.id), ["b"]);
   assert.deepEqual(applyFilters(TXS, { ...EMPTY_FILTERS, q: "plaza" }).map((t) => t.id), ["a"]);
+});
+
+test("applyFilters: rango de fechas inclusivo por día (desde, hasta o ambos)", () => {
+  assert.deepEqual(applyFilters(TXS, { ...EMPTY_FILTERS, desde: "2026-09-21", hasta: "2026-10-04" }).map((t) => t.id), ["a", "b", "e"]);
+  assert.deepEqual(applyFilters(TXS, { ...EMPTY_FILTERS, desde: "2026-10-05" }).map((t) => t.id), ["c"]);
+  assert.deepEqual(applyFilters(TXS, { ...EMPTY_FILTERS, hasta: "2026-09-20" }).map((t) => t.id), ["d"]);
+});
+
+test("setPeriod: mes y rango se excluyen; vacío vuelve a todos los meses", () => {
+  assert.deepEqual(plain(setPeriod({ mes: "2026-10" })), { mes: "2026-10", desde: "", hasta: "" });
+  assert.deepEqual(plain(setPeriod({ desde: "2026-10-04", hasta: "2026-09-15" })), { mes: "", desde: "2026-09-15", hasta: "2026-10-04" });
+  assert.deepEqual(plain(setPeriod({})), { mes: "", desde: "", hasta: "" });
 });
 
 test("countByTipo: ignora el tipo elegido pero respeta los demás filtros", () => {
@@ -47,12 +61,15 @@ test("expenseTotal y countLabel", () => {
 });
 
 test("activeFilterChips: etiquetas legibles por filtro", () => {
-  const chips = activeFilterChips({ tipo: "transfer_in", fuente: "yape_email", categoria: "__pending__", q: " plaza ", mes: "2026-10" }, { yape_email: "Yape email" });
+  const chips = activeFilterChips({ ...EMPTY_FILTERS, tipo: "transfer_in", fuente: "yape_email", categoria: "__pending__", q: " plaza ", mes: "2026-10" }, { yape_email: "Yape email" });
   assert.deepEqual(plain(chips), [
     { key: "q", label: "“plaza”" }, { key: "tipo", label: "Recibido por Yape" }, { key: "mes", label: "Oct 2026" },
     { key: "fuente", label: "Yape email" }, { key: "categoria", label: "Por categorizar" },
   ]);
   assert.deepEqual(activeFilterChips(EMPTY_FILTERS), []);
+  // El rango es un solo chip que borra ambas fechas.
+  assert.deepEqual(plain(activeFilterChips({ ...EMPTY_FILTERS, desde: "2026-09-15", hasta: "2026-10-04" })),
+    [{ key: "desde", label: "15 sep – 4 oct 2026", clear: { desde: "", hasta: "" } }]);
 });
 
 test("monthsOf / fuentesOf", () => {
@@ -111,6 +128,8 @@ test("filterTotals: gastos, ingresos y Yape aparte; entre cuentas no suma", () =
 test("barsMonth y dailyBars: mes filtrado u hoy; sin Vivienda; días futuros marcados", () => {
   assert.equal(barsMonth({ ...EMPTY_FILTERS, mes: "2026-09" }, "2026-10-08"), "2026-09");
   assert.equal(barsMonth(EMPTY_FILTERS, "2026-10-08"), "2026-10");
+  assert.equal(barsMonth({ ...EMPTY_FILTERS, desde: "2026-08-20", hasta: "2026-09-10" }, "2026-10-08"), "2026-09");
+  assert.equal(barsMonth({ ...EMPTY_FILTERS, desde: "2026-08-20" }, "2026-10-08"), "2026-10");
   const bars = dailyBars([
     tx({ fecha: "2026-10-01T09:00:00-05:00", monto: 1300, categoria: "Vivienda" }),
     tx({ fecha: "2026-10-02T09:00:00-05:00", monto: 12.5 }), tx({ fecha: "2026-10-02T19:00:00-05:00", monto: 7.5 }),
@@ -129,10 +148,4 @@ test("highlightParts: ignora acentos y mayúsculas; null si no hay coincidencia"
   assert.deepEqual(highlightParts("PLAZA VEA", "plaza"), ["", "PLAZA", " VEA"]);
   assert.equal(highlightParts("RAPPI", "uber"), null);
   assert.equal(highlightParts("RAPPI", "  "), null);
-});
-
-test("toCsv: encabezado, comillas escapadas y monto en soles", () => {
-  const csv = toCsv([tx({ id: "t1", comercio: 'Café "Bueno"', monto: 2, moneda: "USD", tipoCambio: 3.75 })], 3.5).split("\n");
-  assert.equal(csv[0], '"id","fecha","tipo","comercio","contraparte","categoria","moneda","monto","monto_pen","fuente","medio"');
-  assert.match(csv[1], /^"t1",.*"Café ""Bueno""",.*"USD","2","7.5","bcp_email",""$/);
 });

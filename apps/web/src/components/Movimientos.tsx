@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Movimientos (DESIGN.md §Layout · Movimientos): título + CSV → banda de totales de lo filtrado (gastos con barras
+ * Movimientos (DESIGN.md §Layout · Movimientos): título + selector de periodo → banda de totales de lo filtrado (gastos con barras
  * por día, ingresos, Yape, por categorizar) → buscador, chips de tipo y "Más filtros" → lista con orden (recientes o
  * mayor monto), agrupada por día, con la búsqueda resaltada, detalle desplegable por fila y "Mostrar más".
  */
@@ -12,15 +12,15 @@ import { fmtPEN, todayLima } from "@/lib/ledger";
 import { groupByDay, scanFreshness } from "@/lib/dias";
 import {
   EMPTY_FILTERS, PAGE_SIZE, PENDING, applyFilters, barsMonth, countByTipo, countLabel, dailyBars, filterTotals, filtersToQuery, fuentesOf,
-  hasFilters, monthsOf, parseFilters, sortTxs, toCsv, type Filters, type Sort,
+  hasFilters, monthsOf, parseFilters, setPeriod, sortTxs, type Filters, type Sort,
 } from "@/lib/movimientos";
-import { useToast } from "./Toast";
 import MovTotals from "./movimientos/MovTotals";
 import { useLedger } from "./LedgerProvider";
 import { useFirstView } from "./motion";
-import { IconDescargar, IconMas } from "./icons";
+import { IconMas } from "./icons";
 import Filtros from "./movimientos/Filtros";
 import MovRow from "./movimientos/MovRow";
+import PeriodPicker from "./movimientos/PeriodPicker";
 
 /** Filas que entran escalonadas en la primera vista (el resto aparece sin animar). */
 const RISE_ROWS = 12;
@@ -48,7 +48,6 @@ function MovimientosInner() {
   const [page, setPage] = useState(1);
   const setF = (patch: Partial<Filters>) => { setFState((prev) => ({ ...prev, ...patch })); setPage(1); };
   const clear = () => { setFState(EMPTY_FILTERS); setPage(1); };
-  const { toast } = useToast();
   const [now] = useState(() => Date.now());
 
   // Cambio de URL que no hicimos nosotros (buscador global, enlace del Resumen): manda la URL.
@@ -74,6 +73,7 @@ function MovimientosInner() {
   const usdRate = state.phase === "ready" ? state.data.usdRate : 3.5;
   const categorias = state.phase === "ready" ? state.data.categorias : [];
   const months = useMemo(() => monthsOf(txs), [txs]);
+  const txDays = useMemo(() => new Set(txs.map((t) => t.fecha.slice(0, 10))), [txs]);
   const fuentes = useMemo(() => fuentesOf(txs), [txs]);
   const list = useMemo(() => applyFilters(txs, f), [txs, f]);
   const counts = useMemo(() => countByTipo(txs, f), [txs, f]);
@@ -107,16 +107,6 @@ function MovimientosInner() {
     return <MovRow key={t.id} t={t} usdRate={usdRate} highlight={f.q} className={rise ? "rise" : undefined} style={rise ? ({ "--i": i } as CSSProperties) : undefined} />;
   };
 
-  function downloadCsv() {
-    const blob = new Blob(["\ufeff" + toCsv(sorted, usdRate)], { type: "text/csv;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `luca-movimientos${f.mes ? `-${f.mes}` : ""}.csv`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-    toast(`${countLabel(sorted.length)} exportados a CSV`);
-  }
-
   return (
     <div className="grid gap-4">
       <header className="flex flex-wrap items-end justify-between gap-3">
@@ -125,7 +115,7 @@ function MovimientosInner() {
           <p className="mt-1 text-sm text-muted"><span className="num">{txs.length}</span> en tu Sheet · {scanFreshness(ajustes["scan.lastRunAt"], now)}</p>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" className="btn" onClick={downloadCsv} disabled={!list.length} title="Descargar lo filtrado como CSV" data-testid="movs-csv"><IconDescargar />CSV</button>
+          <PeriodPicker value={f} months={months} days={txDays} today={today} onChange={(p) => setF(setPeriod(p))} />
           <Link className="btn primary icon flex-none sm:w-auto sm:px-4 lg:hidden" href="/app/agregar" aria-label="Agregar movimiento"><IconMas /><span className="hidden sm:inline">Agregar</span></Link>
         </div>
       </header>
@@ -133,7 +123,7 @@ function MovimientosInner() {
       <MovTotals totals={totals} bars={bars} barsMonth={bMonth} pending={pending} pendingOn={pendingOn}
         onPending={() => setF(pendingOn ? { categoria: "" } : { categoria: PENDING, tipo: "expense" })} />
 
-      <Filtros f={f} setF={setF} counts={counts} months={months} fuentes={fuentes} categorias={categorias} onClear={clear} />
+      <Filtros f={f} setF={setF} counts={counts} fuentes={fuentes} categorias={categorias} onClear={clear} />
 
       {!list.length ? (
         <section className="card grid justify-items-start gap-3 py-8" data-testid="movs-empty">

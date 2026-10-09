@@ -216,18 +216,41 @@ test.describe("Movimientos: totales, orden, búsqueda y exportación", () => {
     await expect(rows).toHaveCount(Math.min(80, all));
   });
 
-  test("CSV descarga lo filtrado con encabezado", async ({ page }) => {
-    await page.getByTestId("filter-q").fill("plaza vea");
-    await expect(page.getByTestId("movs-list").locator("li").first()).toContainText("PLAZA VEA");
-    const n = Number((await page.getByTestId("movs-count").innerText()).split(" ")[0]);
-    const [download] = await Promise.all([page.waitForEvent("download"), page.getByTestId("movs-csv").click()]);
-    expect(download.suggestedFilename()).toMatch(/^luca-movimientos.*\.csv$/);
-    const text = (await (await download.createReadStream()).toArray()).map(String).join("").replace(/^﻿/, "");
-    const lines = text.split("\n");
-    expect(lines[0]).toBe('"id","fecha","tipo","comercio","contraparte","categoria","moneda","monto","monto_pen","fuente","medio"');
-    expect(lines.length - 1).toBe(n);
-    expect(lines.slice(1).every((l) => /PLAZA VEA/i.test(l))).toBe(true);
-    await expect(toast(page)).toContainText("exportados a CSV");
-    await page.screenshot({ path: `${SHOTS}/21-movimientos-v2.png`, fullPage: true });
+  test("selector de periodo: un mes, todos los meses y un rango personalizado", async ({ page }) => {
+    const picker = page.getByTestId("period-picker");
+    const panel = page.getByTestId("period-panel");
+    await expect(picker).toHaveText("Todos los meses");
+    const all = Number((await page.getByTestId("movs-count").innerText()).split(" ")[0]);
+
+    // Un mes de la cuadrícula (solo los que tienen movimientos se pueden elegir).
+    await picker.click();
+    await panel.getByRole("button", { name: "Septiembre 2026" }).click();
+    await expect(panel).toBeHidden();
+    await expect(page).toHaveURL(/mes=2026-09/);
+    await expect(picker).toHaveText("Septiembre 2026");
+    const sep = Number((await page.getByTestId("movs-count").innerText()).split(" ")[0]);
+    expect(sep).toBeGreaterThan(0);
+    expect(sep).toBeLessThan(all);
+
+    await picker.click();
+    await panel.getByRole("button", { name: "Todos los meses" }).click();
+    await expect(page).not.toHaveURL(/mes=/);
+    await expect(page.getByTestId("movs-count")).toContainText(`${all} movimientos`);
+
+    // Rango: del día 1 del mes en curso a hoy, con dos toques en el calendario.
+    const today = await page.evaluate(() => new Date(Date.now() - 5 * 3600 * 1000).toISOString().slice(0, 10));
+    const first = `${today.slice(0, 8)}01`;
+    await picker.click();
+    await page.getByTestId("period-custom").click();
+    await panel.locator(`[data-day="${first}"]`).click();
+    await panel.locator(`[data-day="${today}"]`).click();
+    await expect(page.getByTestId("period-range-label")).toContainText(/^1 – \d+ \w+ \d{4}$|^\d+ \w+ \d{4}$/);
+    await page.getByTestId("period-apply").click();
+    await expect(page).toHaveURL(new RegExp(`desde=${first}&hasta=${today}`));
+    const chips = page.getByRole("list", { name: "Filtros activos" });
+    await expect(chips).toContainText(await picker.innerText());
+    await chips.getByRole("button", { name: /^Quitar filtro/ }).click();
+    await expect(page).not.toHaveURL(/desde=/);
+    await expect(picker).toHaveText("Todos los meses");
   });
 });

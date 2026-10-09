@@ -143,9 +143,9 @@ etiquetas de sección usan `eyebrow`; los títulos de tarjeta `card-title` (15px
   → rejilla de 12 columnas sin huecos: ritmo del mes (8) + perfil de gasto (4) · en qué se fue + comercios
   principales + por categorizar (4 + 4 + 4) · últimos 6 meses (5) + movimientos del mes (7, alto máx. con scroll).
   Referencia: `docs/html/maqueta-resumen-v2.html`.
-- **Movimientos**: título + "N en tu Sheet" + CSV → banda de totales de lo filtrado (gastos con barras por día ·
-  ingresos · recibido por Yape · por categorizar, que filtra) → buscador + chips de tipo + "Más filtros" (mes,
-  fuente, categoría) + "Filtrando por" con "Limpiar todo" → lista con orden (recientes / mayor monto), agrupada
+- **Movimientos**: título + "N en tu Sheet" + selector de periodo → banda de totales de lo filtrado (gastos con barras por día ·
+  ingresos · recibido por Yape · por categorizar, que filtra) → buscador + chips de tipo + "Más filtros" (fuente,
+  categoría) + "Filtrando por" con "Limpiar todo" → lista con orden (recientes / mayor monto), agrupada
   por día, búsqueda resaltada, detalle desplegable por fila y "Mostrar más" de 40 en 40.
   Referencia: `docs/html/maqueta-movimientos-v2.html`.
 - **Agregar**: formulario centrado máx. 560px; el monto es el protagonista (amount-hero editable).
@@ -170,6 +170,11 @@ Nivel 0 `canvas` · nivel 1 `card` con `line` · nivel 1b `sunken` dentro de una
 - **Barra inferior (móvil)**: Resumen · Movimientos · **Agregar** (botón naranja elevado) · Conexiones · Ajustes.
 - **Topbar**: buscador (Enter → `/app/movimientos?q=`; tecla `/` lo enfoca) · Actualizar · Agregar.
 - **Selector de mes**: ‹ mes › ; tocar el mes abre la lista completa; ← → con teclado.
+- **Selector de periodo** (Movimientos): botón con calendario que dice lo que se ve ("Todos los meses", "Octubre
+  2026", "15 sep – 4 oct 2026"). Panel: "Todos los meses", meses por año en cuadrícula de 4 (solo los que tienen
+  movimientos) y "Personalizado": calendario por días (dos toques marcan el rango, punto en días con movimientos,
+  sin días futuros) o, en táctil, dos `<input type="date">` nativos. Mes y rango se excluyen; van en la URL
+  (`mes`, `desde`/`hasta`).
 - **Desplegable** (`Dropdown.tsx`, todo selector de un valor): con puntero táctil, `<select>` nativo (el teléfono
   usa su selector; en iPhone, el de iOS). Con ratón, menú de la app en portal: `raised` translúcido con desenfoque,
   radio 14 px, punto de color por categoría, ✓ en la elegida, ↑ ↓ / letra / Enter / Esc; se abre hacia donde cabe.
